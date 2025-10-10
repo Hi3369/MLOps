@@ -1,0 +1,61 @@
+flowchart TD
+    Start([GitHub Issue Created])
+
+    Start --> Detect[Issue Detector Agent<br/>Parse YAML/JSON]
+    Detect --> Validate{Valid<br/>Config?}
+
+    Validate -->|No| Error1[Error Notification]
+    Validate -->|Yes| PrepData[Data Preparation Agent<br/>Load & Preprocess Data]
+
+    PrepData --> DataValid{Data<br/>Valid?}
+    DataValid -->|No| Error2[Error Notification]
+    DataValid -->|Yes| Train[Training Agent<br/>Start SageMaker Job]
+
+    Train --> TrainType{Learning<br/>Type?}
+
+    TrainType -->|Supervised| TrainSupervised[Supervised Learning<br/>Classification/Regression]
+    TrainType -->|Unsupervised| TrainUnsupervised[Unsupervised Learning<br/>Clustering/PCA]
+    TrainType -->|Reinforcement| TrainRL[Reinforcement Learning<br/>Ray RLlib]
+
+    TrainSupervised --> TrainComplete[Training Complete]
+    TrainUnsupervised --> TrainComplete
+    TrainRL --> TrainComplete
+
+    TrainComplete --> Eval[Evaluation Agent<br/>Calculate Metrics]
+
+    Eval --> Judge[Judge Agent<br/>Compare with Threshold]
+
+    Judge --> Decision{Evaluation<br/>Result?}
+
+    Decision -->|Pass| Register[Register Model<br/>to Model Registry]
+    Decision -->|Fail Below Threshold| CheckRetry{Retry<br/>Count?}
+    Decision -->|Error| Rollback[Rollback Agent<br/>Restore Previous Model]
+
+    CheckRetry -->|< Max Retry| Notify[Notification Agent<br/>Notify Operator]
+    CheckRetry -->|>= Max Retry| Rollback
+
+    Notify --> Wait[Wait for<br/>Operator Input]
+    Wait --> Adjust[Operator Adjusts<br/>Hyperparameters]
+    Adjust --> PrepData
+
+    Register --> SaveHistory[History Writer Agent<br/>Save to GitHub]
+    Rollback --> SaveHistory
+
+    SaveHistory --> NotifySuccess[Notification Agent<br/>Post Results to Issue]
+
+    NotifySuccess --> End([Complete])
+    Error1 --> End
+    Error2 --> End
+
+    style Start fill:#e1f5fe
+    style End fill:#c8e6c9
+    style Error1 fill:#ffcdd2
+    style Error2 fill:#ffcdd2
+    style Register fill:#c8e6c9
+    style Rollback fill:#ffe0b2
+    style Notify fill:#fff9c4
+    style Decision fill:#e1bee7
+    style Validate fill:#e1bee7
+    style DataValid fill:#e1bee7
+    style TrainType fill:#e1bee7
+    style CheckRetry fill:#e1bee7

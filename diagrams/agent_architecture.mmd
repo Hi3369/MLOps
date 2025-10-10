@@ -1,0 +1,77 @@
+graph LR
+    subgraph Trigger["Trigger Layer"]
+        GH[GitHub Issue]
+    end
+
+    subgraph DetectionLayer["Detection Layer"]
+        IssueDetector["Issue Detector Agent<br/>・Webhook reception<br/>・YAML/JSON parsing<br/>・Validation"]
+    end
+
+    subgraph OrchestrationLayer["Orchestration Layer"]
+        StepFunctions["AWS Step Functions<br/>・State management<br/>・Error handling<br/>・Retry logic"]
+    end
+
+    subgraph AgentLayer["Agent Layer"]
+        DataPrep["Data Preparation Agent<br/>・Data loading<br/>・Preprocessing<br/>・Validation"]
+
+        Training["Training Agent<br/>・SageMaker job creation<br/>・Training monitoring<br/>・Model output"]
+
+        Evaluation["Evaluation Agent<br/>・Model loading<br/>・Metrics calculation<br/>・Result storage"]
+
+        Judge["Judge Agent<br/>・Threshold comparison<br/>・Decision making<br/>・Action routing"]
+
+        Notification["Notification Agent<br/>・GitHub comments<br/>・Slack messages<br/>・Email sending"]
+
+        Rollback["Rollback Agent<br/>・Version management<br/>・Model restoration<br/>・State recovery"]
+
+        HistoryWriter["History Writer Agent<br/>・Markdown generation<br/>・GitHub commit<br/>・History tracking"]
+    end
+
+    subgraph StorageLayer["Storage Layer"]
+        S3["Amazon S3<br/>・Training data<br/>・Models<br/>・Evaluation results"]
+
+        Registry["SageMaker Model Registry<br/>・Model versioning<br/>・Metadata storage<br/>・Approval workflow"]
+
+        Secrets["AWS Secrets Manager<br/>・GitHub tokens<br/>・API keys<br/>・Credentials"]
+    end
+
+    subgraph MonitoringLayer["Monitoring Layer"]
+        CloudWatch["CloudWatch<br/>・Logs<br/>・Metrics<br/>・Alarms"]
+    end
+
+    GH -->|Webhook| IssueDetector
+    IssueDetector -->|Start Execution| StepFunctions
+
+    StepFunctions -->|Invoke| DataPrep
+    StepFunctions -->|Invoke| Training
+    StepFunctions -->|Invoke| Evaluation
+    StepFunctions -->|Invoke| Judge
+    StepFunctions -->|Invoke| Notification
+    StepFunctions -->|Invoke| Rollback
+    StepFunctions -->|Invoke| HistoryWriter
+
+    DataPrep <-->|Read/Write| S3
+    Training <-->|Read/Write| S3
+    Evaluation <-->|Read| S3
+    Judge <-->|Register/Query| Registry
+    Rollback <-->|Version Control| Registry
+    HistoryWriter -->|Commit| GH
+
+    IssueDetector <-->|Get Secrets| Secrets
+    Notification <-->|Get Secrets| Secrets
+    HistoryWriter <-->|Get Secrets| Secrets
+
+    DataPrep -->|Logs| CloudWatch
+    Training -->|Logs| CloudWatch
+    Evaluation -->|Logs| CloudWatch
+    Judge -->|Logs| CloudWatch
+    StepFunctions -->|Logs| CloudWatch
+
+    Notification -->|Post Comment| GH
+
+    style Trigger fill:#e1f5fe
+    style DetectionLayer fill:#f3e5f5
+    style OrchestrationLayer fill:#e8f5e9
+    style AgentLayer fill:#fff9c4
+    style StorageLayer fill:#fce4ec
+    style MonitoringLayer fill:#f1f8e9

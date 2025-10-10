@@ -1,0 +1,294 @@
+graph TB
+    Root["MLOps/<br/>(プロジェクトルート)"]
+
+    subgraph Documentation["📄 ドキュメント"]
+        README["README.md<br/>プロジェクト概要・使い方"]
+        ReqSpec["requirements_specification.md<br/>要件仕様書"]
+        ArchDesign["architecture_design.md<br/>アーキテクチャ設計書"]
+        TestDesign["test_design.md<br/>テスト設計書"]
+        ProjStruct["PROJECT_STRUCTURE.md<br/>プロジェクト構造ガイド"]
+    end
+
+    subgraph Config["⚙️ 設定ファイル"]
+        ReqTxt["requirements.txt<br/>Python依存関係"]
+        GitIgnore[".gitignore<br/>Git除外設定"]
+    end
+
+    subgraph Diagrams["📊 Mermaidダイアグラム"]
+        DiagramsDir["diagrams/<br/>各種アーキテクチャ図"]
+        SysArch["system_architecture.mmd"]
+        DataFlow["data_flow.mmd"]
+        StepFunc["step_functions_workflow.mmd"]
+        AgentArch["agent_architecture.mmd"]
+        S3Struct["s3_bucket_structure.mmd"]
+        LearnTypes["learning_types.mmd"]
+        DirStruct["directory_structure.mmd"]
+    end
+
+    subgraph Agents["🤖 エージェント実装"]
+        AgentsDir["agents/"]
+
+        Common["common/<br/>共通モジュール"]
+        CommonAWS["aws_client.py"]
+        CommonGH["github_client.py"]
+        CommonLog["logger.py"]
+        CommonExc["exceptions.py"]
+
+        IssueDetector["issue_detector/<br/>Issue検知"]
+        IssueHandler["handler.py"]
+        IssueParser["parser.py"]
+        IssueValidator["validator.py"]
+
+        DataPrep["data_preparation/<br/>データ準備"]
+        DataHandler["handler.py"]
+        DataLoader["loader.py"]
+        DataPreprocessor["preprocessor.py"]
+        DataValidator["validator.py"]
+
+        Training["training/<br/>学習"]
+        TrainHandler["handler.py"]
+        Supervised["supervised/"]
+        Unsupervised["unsupervised/"]
+        Reinforcement["reinforcement/"]
+
+        Evaluation["evaluation/<br/>評価"]
+        EvalHandler["handler.py"]
+        EvalMetrics["metrics.py"]
+        EvalVisualizer["visualizer.py"]
+
+        Judge["judge/<br/>判定"]
+        JudgeHandler["handler.py"]
+        JudgeDecision["decision.py"]
+
+        Notification["notification/<br/>通知"]
+        NotifyHandler["handler.py"]
+        NotifyGH["github_notifier.py"]
+        NotifySlack["slack_notifier.py"]
+        NotifyEmail["email_notifier.py"]
+
+        Rollback["rollback/<br/>ロールバック"]
+        RollbackHandler["handler.py"]
+        RollbackMgr["model_version_manager.py"]
+
+        History["history_writer/<br/>履歴保存"]
+        HistoryHandler["handler.py"]
+        HistoryFormatter["formatter.py"]
+        HistoryWriter["github_writer.py"]
+    end
+
+    subgraph CDK["☁️ Infrastructure as Code"]
+        CDKDir["cdk/"]
+        CDKApp["app.py<br/>CDKアプリケーション"]
+        CDKReq["requirements.txt"]
+        CDKJson["cdk.json"]
+        CDKPkg["package.json"]
+
+        Stacks["stacks/"]
+        PipelineStack["pipeline_stack.py<br/>Step Functions/Lambda"]
+        StorageStack["storage_stack.py<br/>S3/DynamoDB"]
+        ComputeStack["compute_stack.py<br/>ECS/SageMaker"]
+        MonitoringStack["monitoring_stack.py<br/>CloudWatch"]
+    end
+
+    subgraph Tests["🧪 テストコード"]
+        TestsDir["tests/"]
+        Conftest["conftest.py<br/>pytest設定"]
+
+        Fixtures["fixtures/<br/>テストデータ"]
+        MockData["mock_data.py"]
+        SampleData["sample_datasets/"]
+
+        UnitTests["unit/<br/>単体テスト"]
+        UnitIssue["test_issue_detector.py"]
+        UnitData["test_data_preparation.py"]
+        UnitTrain["test_training.py"]
+        UnitEval["test_evaluation.py"]
+        UnitJudge["test_judge.py"]
+        UnitNotify["test_notification.py"]
+        UnitRollback["test_rollback.py"]
+        UnitHistory["test_history_writer.py"]
+
+        IntegTests["integration/<br/>統合テスト"]
+        IntegAgent["test_agent_integration.py"]
+        IntegStep["test_step_functions.py"]
+
+        SysTests["system/<br/>システムテスト"]
+        SysSupervised["test_e2e_supervised.py"]
+        SysUnsupervised["test_e2e_unsupervised.py"]
+        SysRL["test_e2e_reinforcement.py"]
+    end
+
+    subgraph ConfigEnv["📝 環境設定"]
+        ConfigDir["config/"]
+        DevConfig["dev_config.yaml<br/>開発環境"]
+        TestConfig["test_config.yaml<br/>テスト環境"]
+        ProdConfig["prod_config.yaml<br/>本番環境"]
+    end
+
+    subgraph Docs["📖 追加ドキュメント"]
+        DocsDir["docs/"]
+        GettingStarted["getting_started.md"]
+        APIRef["api_reference.md"]
+        DeployGuide["deployment_guide.md"]
+        Troubleshoot["troubleshooting.md"]
+    end
+
+    subgraph TrainingHistory["📜 学習履歴"]
+        HistoryDir["training_history/<br/>(自動生成)"]
+        Train001["train-20250110-001.md"]
+        Train002["train-20250110-002.md"]
+    end
+
+    subgraph GitHub["⚡ CI/CD"]
+        GHDir[".github/"]
+        Workflows["workflows/"]
+        CICD["ci-cd.yaml"]
+        SecScan["security-scan.yaml"]
+        Deploy["deploy.yaml"]
+    end
+
+    Root --> Documentation
+    Root --> Config
+    Root --> Diagrams
+    Root --> Agents
+    Root --> CDK
+    Root --> Tests
+    Root --> ConfigEnv
+    Root --> Docs
+    Root --> TrainingHistory
+    Root --> GitHub
+
+    Documentation --> README
+    Documentation --> ReqSpec
+    Documentation --> ArchDesign
+    Documentation --> TestDesign
+    Documentation --> ProjStruct
+
+    Config --> ReqTxt
+    Config --> GitIgnore
+
+    Diagrams --> DiagramsDir
+    DiagramsDir --> SysArch
+    DiagramsDir --> DataFlow
+    DiagramsDir --> StepFunc
+    DiagramsDir --> AgentArch
+    DiagramsDir --> S3Struct
+    DiagramsDir --> LearnTypes
+    DiagramsDir --> DirStruct
+
+    Agents --> AgentsDir
+    AgentsDir --> Common
+    Common --> CommonAWS
+    Common --> CommonGH
+    Common --> CommonLog
+    Common --> CommonExc
+
+    AgentsDir --> IssueDetector
+    IssueDetector --> IssueHandler
+    IssueDetector --> IssueParser
+    IssueDetector --> IssueValidator
+
+    AgentsDir --> DataPrep
+    DataPrep --> DataHandler
+    DataPrep --> DataLoader
+    DataPrep --> DataPreprocessor
+    DataPrep --> DataValidator
+
+    AgentsDir --> Training
+    Training --> TrainHandler
+    Training --> Supervised
+    Training --> Unsupervised
+    Training --> Reinforcement
+
+    AgentsDir --> Evaluation
+    Evaluation --> EvalHandler
+    Evaluation --> EvalMetrics
+    Evaluation --> EvalVisualizer
+
+    AgentsDir --> Judge
+    Judge --> JudgeHandler
+    Judge --> JudgeDecision
+
+    AgentsDir --> Notification
+    Notification --> NotifyHandler
+    Notification --> NotifyGH
+    Notification --> NotifySlack
+    Notification --> NotifyEmail
+
+    AgentsDir --> Rollback
+    Rollback --> RollbackHandler
+    Rollback --> RollbackMgr
+
+    AgentsDir --> History
+    History --> HistoryHandler
+    History --> HistoryFormatter
+    History --> HistoryWriter
+
+    CDK --> CDKDir
+    CDKDir --> CDKApp
+    CDKDir --> CDKReq
+    CDKDir --> CDKJson
+    CDKDir --> CDKPkg
+    CDKDir --> Stacks
+    Stacks --> PipelineStack
+    Stacks --> StorageStack
+    Stacks --> ComputeStack
+    Stacks --> MonitoringStack
+
+    Tests --> TestsDir
+    TestsDir --> Conftest
+    TestsDir --> Fixtures
+    Fixtures --> MockData
+    Fixtures --> SampleData
+
+    TestsDir --> UnitTests
+    UnitTests --> UnitIssue
+    UnitTests --> UnitData
+    UnitTests --> UnitTrain
+    UnitTests --> UnitEval
+    UnitTests --> UnitJudge
+    UnitTests --> UnitNotify
+    UnitTests --> UnitRollback
+    UnitTests --> UnitHistory
+
+    TestsDir --> IntegTests
+    IntegTests --> IntegAgent
+    IntegTests --> IntegStep
+
+    TestsDir --> SysTests
+    SysTests --> SysSupervised
+    SysTests --> SysUnsupervised
+    SysTests --> SysRL
+
+    ConfigEnv --> ConfigDir
+    ConfigDir --> DevConfig
+    ConfigDir --> TestConfig
+    ConfigDir --> ProdConfig
+
+    Docs --> DocsDir
+    DocsDir --> GettingStarted
+    DocsDir --> APIRef
+    DocsDir --> DeployGuide
+    DocsDir --> Troubleshoot
+
+    TrainingHistory --> HistoryDir
+    HistoryDir --> Train001
+    HistoryDir --> Train002
+
+    GitHub --> GHDir
+    GHDir --> Workflows
+    Workflows --> CICD
+    Workflows --> SecScan
+    Workflows --> Deploy
+
+    style Root fill:#e1f5fe,stroke:#01579b,stroke-width:3px
+    style Documentation fill:#f3e5f5,stroke:#4a148c
+    style Config fill:#fff9c4,stroke:#f57f17
+    style Diagrams fill:#e8f5e9,stroke:#1b5e20
+    style Agents fill:#ffe0b2,stroke:#e65100
+    style CDK fill:#e0f2f1,stroke:#004d40
+    style Tests fill:#fce4ec,stroke:#880e4f
+    style ConfigEnv fill:#fff9c4,stroke:#f57f17
+    style Docs fill:#f3e5f5,stroke:#4a148c
+    style TrainingHistory fill:#e8f5e9,stroke:#1b5e20
+    style GitHub fill:#e1f5fe,stroke:#01579b

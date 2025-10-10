@@ -1,0 +1,80 @@
+graph TB
+    Start([Training Agent])
+
+    Start --> LearningType{Learning<br/>Type?}
+
+    LearningType -->|Supervised| Supervised[Supervised Learning]
+    LearningType -->|Unsupervised| Unsupervised[Unsupervised Learning]
+    LearningType -->|Reinforcement| Reinforcement[Reinforcement Learning]
+
+    Supervised --> SupervisedTask{Task<br/>Type?}
+    SupervisedTask -->|Classification| Classification[Classification]
+    SupervisedTask -->|Regression| Regression[Regression]
+
+    Classification --> ClassAlgo{Algorithm?}
+    ClassAlgo -->|Random Forest| RF[Random Forest<br/>scikit-learn]
+    ClassAlgo -->|XGBoost| XGB[XGBoost<br/>SageMaker built-in]
+    ClassAlgo -->|Neural Network| NN1[Neural Network<br/>TensorFlow/PyTorch]
+
+    Regression --> RegAlgo{Algorithm?}
+    RegAlgo -->|Linear Regression| LR[Linear Regression<br/>scikit-learn]
+    RegAlgo -->|XGBoost| XGB2[XGBoost<br/>SageMaker built-in]
+    RegAlgo -->|Neural Network| NN2[Neural Network<br/>TensorFlow/PyTorch]
+
+    Unsupervised --> UnsupervisedTask{Task<br/>Type?}
+    UnsupervisedTask -->|Clustering| Clustering[Clustering]
+    UnsupervisedTask -->|Dimensionality Reduction| DimReduction[Dimensionality Reduction]
+
+    Clustering --> ClusterAlgo{Algorithm?}
+    ClusterAlgo -->|K-Means| KMeans[K-Means<br/>SageMaker built-in]
+    ClusterAlgo -->|DBSCAN| DBSCAN[DBSCAN<br/>scikit-learn]
+    ClusterAlgo -->|Autoencoder| AE[Autoencoder<br/>TensorFlow/PyTorch]
+
+    DimReduction --> DimAlgo{Algorithm?}
+    DimAlgo -->|PCA| PCA[PCA<br/>SageMaker built-in]
+    DimAlgo -->|t-SNE| TSNE[t-SNE<br/>scikit-learn]
+
+    Reinforcement --> RLAlgo{Algorithm?}
+    RLAlgo -->|PPO| PPO[PPO<br/>Ray RLlib]
+    RLAlgo -->|DQN| DQN[DQN<br/>Ray RLlib]
+    RLAlgo -->|A3C| A3C[A3C<br/>Ray RLlib]
+
+    RF --> SMTrain[SageMaker Training Job]
+    XGB --> SMTrain
+    NN1 --> SMTrain
+    LR --> SMTrain
+    XGB2 --> SMTrain
+    NN2 --> SMTrain
+    KMeans --> SMTrain
+    DBSCAN --> SMTrain
+    AE --> SMTrain
+    PCA --> SMTrain
+    TSNE --> SMTrain
+    PPO --> SMTrain
+    DQN --> SMTrain
+    A3C --> SMTrain
+
+    SMTrain --> Output([Trained Model])
+
+    style Start fill:#e1f5fe
+    style Output fill:#c8e6c9
+
+    style Supervised fill:#f3e5f5
+    style Unsupervised fill:#fff9c4
+    style Reinforcement fill:#ffe0b2
+
+    style Classification fill:#e1bee7
+    style Regression fill:#e1bee7
+    style Clustering fill:#fff9c4
+    style DimReduction fill:#fff9c4
+
+    style LearningType fill:#b39ddb
+    style SupervisedTask fill:#ce93d8
+    style UnsupervisedTask fill:#ffeb3b
+    style ClassAlgo fill:#ce93d8
+    style RegAlgo fill:#ce93d8
+    style ClusterAlgo fill:#ffeb3b
+    style DimAlgo fill:#ffeb3b
+    style RLAlgo fill:#ffb74d
+
+    style SMTrain fill:#81c784

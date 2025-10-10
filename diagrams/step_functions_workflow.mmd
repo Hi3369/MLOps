@@ -1,0 +1,71 @@
+stateDiagram-v2
+    [*] --> PrepareData: Start Workflow
+
+    PrepareData --> TrainModel: Data Ready
+    PrepareData --> HandleError: Error
+
+    TrainModel --> EvaluateModel: Training Complete
+    TrainModel --> HandleTrainingError: Training Failed
+
+    EvaluateModel --> JudgeResults: Evaluation Complete
+    EvaluateModel --> HandleError: Error
+
+    JudgeResults --> DecisionSwitch
+
+    state DecisionSwitch <<choice>>
+    DecisionSwitch --> RegisterModel: Pass (Threshold Met)
+    DecisionSwitch --> CheckRetryLimit: Retrain (Below Threshold)
+    DecisionSwitch --> RollbackModel: Fail
+
+    state CheckRetryLimit <<choice>>
+    CheckRetryLimit --> NotifyOperator: Retry < Max
+    CheckRetryLimit --> HandleMaxRetryExceeded: Retry >= Max
+
+    NotifyOperator --> WaitForOperatorInput: Notification Sent
+    WaitForOperatorInput --> IncrementRetry: Operator Adjusted Config
+    IncrementRetry --> TrainModel: Retry Training
+
+    RegisterModel --> WriteHistory: Model Registered
+    WriteHistory --> NotifySuccess: History Saved
+    NotifySuccess --> [*]: Complete
+
+    RollbackModel --> NotifyFailure: Rollback Complete
+    NotifyFailure --> [*]: Complete
+
+    HandleTrainingError --> RollbackModel: Restore Previous Version
+    HandleMaxRetryExceeded --> RollbackModel: Max Retries Reached
+    HandleError --> [*]: Error Handled
+
+    note right of PrepareData
+        Lambda/ECS Agent
+        - Load data from S3
+        - Validate & preprocess
+        - Save to S3
+    end note
+
+    note right of TrainModel
+        SageMaker Training Job
+        - Supervised Learning
+        - Unsupervised Learning
+        - Reinforcement Learning
+    end note
+
+    note right of EvaluateModel
+        Lambda Agent
+        - Load model & test data
+        - Calculate metrics
+        - Save results to S3
+    end note
+
+    note right of JudgeResults
+        Lambda Agent
+        - Compare with threshold
+        - Decide next action
+    end note
+
+    note right of WaitForOperatorInput
+        Task Token Pattern
+        - Wait for GitHub comment
+        - Parse adjusted config
+        - Resume workflow
+    end note

@@ -1,0 +1,62 @@
+graph TD
+    Root["s3://mlops-bucket/"]
+
+    Root --> Datasets["datasets/"]
+    Root --> Models["models/"]
+    Root --> Evaluations["evaluations/"]
+    Root --> Logs["logs/"]
+
+    Datasets --> Dataset1["&lt;dataset_id&gt;/"]
+    Dataset1 --> Raw["raw/"]
+    Dataset1 --> Processed["processed/"]
+
+    Raw --> RawTrain["train.csv"]
+    Raw --> RawTest["test.csv"]
+    Raw --> RawMeta["metadata.json"]
+
+    Processed --> ProcTrain["train/"]
+    Processed --> ProcVal["validation/"]
+    Processed --> ProcTest["test/"]
+
+    Models --> Model1["&lt;model_id&gt;/"]
+    Model1 --> Version1["v1.0.0/"]
+    Model1 --> Version2["v1.1.0/"]
+    Model1 --> Version3["v1.2.0/"]
+
+    Version1 --> ModelFile1["model.tar.gz"]
+    Version1 --> ModelMeta1["model_metadata.json"]
+    Version1 --> TrainLogs1["training_logs/"]
+
+    Version2 --> ModelFile2["model.tar.gz"]
+    Version2 --> ModelMeta2["model_metadata.json"]
+    Version2 --> TrainLogs2["training_logs/"]
+
+    Version3 --> ModelFile3["model.tar.gz"]
+    Version3 --> ModelMeta3["model_metadata.json"]
+    Version3 --> TrainLogs3["training_logs/"]
+
+    Evaluations --> Eval1["&lt;training_job_name&gt;/"]
+    Eval1 --> EvalResults["results.json"]
+    Eval1 --> ConfMatrix["confusion_matrix.png"]
+    Eval1 --> MetricsCSV["metrics.csv"]
+
+    Logs --> LogJob1["&lt;training_job_name&gt;/"]
+    LogJob1 --> TrainingLog["training.log"]
+
+    style Root fill:#e1f5fe,stroke:#01579b,stroke-width:3px
+    style Datasets fill:#f3e5f5,stroke:#4a148c
+    style Models fill:#e8f5e9,stroke:#1b5e20
+    style Evaluations fill:#fff9c4,stroke:#f57f17
+    style Logs fill:#fce4ec,stroke:#880e4f
+
+    style Dataset1 fill:#f3e5f5
+    style Raw fill:#fce4ec
+    style Processed fill:#fce4ec
+
+    style Model1 fill:#e8f5e9
+    style Version1 fill:#c8e6c9
+    style Version2 fill:#c8e6c9
+    style Version3 fill:#c8e6c9
+
+    style Eval1 fill:#fff9c4
+    style LogJob1 fill:#fce4ec

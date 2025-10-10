@@ -1,0 +1,83 @@
+graph TB
+    subgraph GitHub["GitHub Repository"]
+        Issue["Issue<br/>(Trigger)"]
+        Documents["Documents<br/>(Specs)"]
+        History["Training History<br/>(Results)"]
+    end
+
+    subgraph AWS["AWS Cloud"]
+        subgraph Integration["GitHub Integration Service"]
+            Lambda1["Lambda<br/>(Webhook)"]
+            Secrets["Secrets Manager<br/>(GitHub Token)"]
+            Lambda1 --> Secrets
+        end
+
+        subgraph StepFunctions["AWS Step Functions (Orchestrator)"]
+            Prepare["Prepare<br/>Data"]
+            Train["Train<br/>Model"]
+            Evaluate["Evaluate<br/>Model"]
+            Decide["Decide<br/>& Act"]
+            Prepare --> Train
+            Train --> Evaluate
+            Evaluate --> Decide
+        end
+
+        subgraph Agents["Agent Layer"]
+            DataAgent["Lambda/ECS<br/>Data Agent"]
+            SageMaker["SageMaker<br/>Training"]
+            EvalAgent["Lambda<br/>Eval Agent"]
+            JudgeAgent["Lambda<br/>Judge Agent"]
+        end
+
+        subgraph Storage["Amazon S3 Storage"]
+            TrainData["Training<br/>Data"]
+            Models["Models<br/>(Versioned)"]
+            EvalResults["Evaluation<br/>Results"]
+        end
+
+        Registry["SageMaker Model Registry<br/>Model v1.0 | Model v1.1 | Model v1.2"]
+
+        subgraph Monitoring["Monitoring & Logging"]
+            CWLogs["CloudWatch<br/>Logs"]
+            CWMetrics["CloudWatch<br/>Metrics"]
+            CloudTrail["CloudTrail<br/>(Audit)"]
+        end
+
+        subgraph Notification["Notification Service"]
+            SNS["SNS<br/>(Topics)"]
+            Slack["Slack<br/>(Webhook)"]
+            Email["Email<br/>(SES/SMTP)"]
+            SNS --> Slack
+            SNS --> Email
+        end
+    end
+
+    Issue -->|Webhook/API| Lambda1
+    Lambda1 -->|Trigger| StepFunctions
+
+    Prepare --> DataAgent
+    Train --> SageMaker
+    Evaluate --> EvalAgent
+    Decide --> JudgeAgent
+
+    DataAgent --> Storage
+    SageMaker --> Storage
+    EvalAgent --> Storage
+    JudgeAgent --> Registry
+
+    JudgeAgent --> Notification
+
+    History -.->|Commit| AWS
+    AWS -.->|Write Results| History
+
+    StepFunctions --> Monitoring
+
+    style GitHub fill:#e1f5fe
+    style AWS fill:#fff3e0
+    style Integration fill:#f3e5f5
+    style StepFunctions fill:#e8f5e9
+    style Agents fill:#fff9c4
+    style Storage fill:#fce4ec
+    style Registry fill:#e0f2f1
+    style Monitoring fill:#f1f8e9
+    style Notification fill:#fce4ec
