@@ -12,7 +12,7 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 - ✅ **拡張性**: 新しいアルゴリズムや評価指標を容易に追加
 - ✅ **ベンダーニュートラル**: クラウドプロバイダーに非依存
 
-## MCPサーバー一覧（5つのコアMCPサーバー）
+## MCPサーバー一覧（6つのコアMCPサーバー）
 
 ### Phase 1: MLOps コア機能（Week 1-6）
 
@@ -85,7 +85,7 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 - `generate_evaluation_report` - 評価レポートの生成
 - `save_evaluation_results` - 評価結果をS3に保存
 
-### Phase 2: 統合機能（Week 7-10）
+### Phase 2: 統合機能（Week 7-12）
 
 #### 4. GitHub Integration Server ⭐ 新規追加
 
@@ -120,7 +120,6 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 
 **影響を受けるエージェント**:
 - Issue Detector Agent → MCPクライアント化
-- Notification Agent → MCPクライアント化
 - History Writer Agent → MCPクライアント化
 
 #### 5. Model Registry Server ⭐ 新規追加
@@ -159,6 +158,40 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 **影響を受けるエージェント**:
 - Training Agent → MCPクライアント化（モデル登録部分）
 - Rollback Agent → MCPクライアント化
+
+#### 6. Notification Server ⭐ 新規追加
+
+**ディレクトリ**: `notification/`
+
+**責務**: 通知チャネルの統合管理
+
+**提供ツール**:
+
+**GitHub通知**:
+- `notify_github_issue` - GitHub Issueにコメント投稿
+- `update_github_issue_status` - Issueのステータス更新
+
+**Slack通知**:
+- `send_slack_message` - Slackメッセージ送信
+- `send_slack_thread_reply` - スレッド返信
+- `send_slack_dm` - DM送信
+
+**Email通知**:
+- `send_email` - Email送信
+- `send_email_with_attachment` - 添付ファイル付きEmail送信
+
+**Microsoft Teams通知**:
+- `send_teams_message` - Teamsメッセージ送信
+
+**Discord通知**:
+- `send_discord_message` - Discordメッセージ送信
+
+**通知テンプレート**:
+- `render_notification_template` - テンプレートレンダリング
+- `get_notification_templates` - テンプレート一覧取得
+
+**影響を受けるエージェント**:
+- Notification Agent → MCPクライアント化（通知チャネル部分）
 
 ## ディレクトリ構造
 
@@ -236,16 +269,30 @@ mcp_servers/
 │   ├── Dockerfile
 │   └── requirements.txt
 │
-└── model_registry/                        # 5. Model Registry MCP Server ⭐ NEW
+├── model_registry/                        # 5. Model Registry MCP Server ⭐ NEW
+│   ├── __init__.py
+│   ├── server.py
+│   ├── tools/
+│   │   ├── __init__.py
+│   │   ├── model_registration.py         # モデル登録
+│   │   ├── version_management.py         # バージョン管理
+│   │   ├── status_management.py          # ステータス管理
+│   │   ├── rollback.py                   # ロールバック
+│   │   └── search.py                     # モデル検索
+│   ├── Dockerfile
+│   └── requirements.txt
+│
+└── notification/                          # 6. Notification MCP Server ⭐ NEW
     ├── __init__.py
     ├── server.py
     ├── tools/
     │   ├── __init__.py
-    │   ├── model_registration.py         # モデル登録
-    │   ├── version_management.py         # バージョン管理
-    │   ├── status_management.py          # ステータス管理
-    │   ├── rollback.py                   # ロールバック
-    │   └── search.py                     # モデル検索
+    │   ├── github_notifier.py            # GitHub通知
+    │   ├── slack_notifier.py             # Slack通知
+    │   ├── email_notifier.py             # Email通知
+    │   ├── teams_notifier.py             # Teams通知
+    │   ├── discord_notifier.py           # Discord通知
+    │   └── template_manager.py           # テンプレート管理
     ├── Dockerfile
     └── requirements.txt
 ```
@@ -267,6 +314,7 @@ cd mcp_servers/ml_evaluation && python -m server
 # Phase 2: 統合MCPサーバー
 cd mcp_servers/github_integration && python -m server
 cd mcp_servers/model_registry && python -m server
+cd mcp_servers/notification && python -m server
 ```
 
 ### MCPサーバーのテスト
@@ -280,6 +328,7 @@ pytest tests/mcp_servers/test_ml_evaluation.py
 # 単体テスト (Phase 2) ⭐ NEW
 pytest tests/mcp_servers/test_github_integration.py
 pytest tests/mcp_servers/test_model_registry.py
+pytest tests/mcp_servers/test_notification.py
 
 # 統合テスト
 pytest tests/integration/test_agent_mcp_integration.py

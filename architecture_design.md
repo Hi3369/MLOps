@@ -642,7 +642,7 @@ project/
 
 これらを解決するため、専門機能を**Model Context Protocol (MCP)** サーバーとして実装します。
 
-### 11.2 MCP化対象コンポーネント（5つのコアMCPサーバー）
+### 11.2 MCP化対象コンポーネント（6つのコアMCPサーバー）
 
 #### Phase 1: MLOps コア機能（Week 1-6）
 
@@ -661,31 +661,38 @@ project/
 - モデルの評価・可視化
 - 提供ツール: `evaluate_classifier/regressor/clustering/reinforcement`, `compare_models`, `generate_evaluation_report`
 
-#### Phase 2: 統合機能（Week 7-10）
+#### Phase 2: 統合機能（Week 7-12）
 
 **MCP Server 4: GitHub Integration Server** ⭐ 新規追加
 
 - GitHub連携機能の統合（Issue管理、ラベル管理、リポジトリ操作、Webhook処理）
-- 影響: Issue Detector Agent、Notification Agent、History Writer Agent
+- 影響: Issue Detector Agent、History Writer Agent
 
 **MCP Server 5: Model Registry Server** ⭐ 新規追加
 
 - モデルバージョン管理・レジストリ操作
 - 影響: Training Agent、Rollback Agent
 
+**MCP Server 6: Notification Server** ⭐ 新規追加
+
+- 通知チャネルの統合管理（Slack、Email、Teams、Discord）
+- 通知テンプレート管理
+- 影響: Notification Agent
+
 ### 11.3 MCP対応アーキテクチャ
 
 ```text
 Lambda Agents (MCP Clients)
     ↓ MCP Protocol (JSON-RPC over stdio/SSE)
-5つのMCPサーバー (ECS Fargate or Lambda)
+6つのMCPサーバー (ECS Fargate or Lambda)
     ├─ Data Preparation Server
     ├─ ML Training Server
     ├─ ML Evaluation Server
     ├─ GitHub Integration Server
-    └─ Model Registry Server
-    ↓ AWS SDK / GitHub API
-S3 / SageMaker / GitHub / その他サービス
+    ├─ Model Registry Server
+    └─ Notification Server
+    ↓ AWS SDK / GitHub API / Slack API / Email API
+S3 / SageMaker / GitHub / Slack / Email / その他サービス
 ```
 
 **詳細**: [mcp_design.md](mcp_design.md) および [mcp_extended_design.md](mcp_extended_design.md) を参照
@@ -699,8 +706,9 @@ S3 / SageMaker / GitHub / その他サービス
 - ✅ **ベンダーニュートラル**: クラウドプロバイダーに依存しない設計
 - ✅ **GitHub連携の一元化**: GitHub APIコードが1箇所に集約
 - ✅ **モデルガバナンス強化**: モデルバージョン管理が標準化
+- ✅ **通知チャネル統合**: Slack/Email/Teams/Discord等を一元管理
 
-**MCP化範囲**: システムの約80%の機能がMCP化され、残り20%（Judge Agentなど）は既存実装を継続
+**MCP化範囲**: システムの約90%の機能がMCP化され、残り10%（Judge Agentなど）は既存実装を継続
 
 ---
 

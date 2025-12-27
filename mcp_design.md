@@ -170,14 +170,48 @@ Model Context Protocol (MCP) として専門機能を実装することで:
 - Training Agent → MCPクライアント化（モデル登録部分）
 - Rollback Agent → MCPクライアント化
 
+#### MCP Server 6: Notification Server ⭐ Phase 2 追加推奨
+
+**責務**: 通知チャネルの統合管理
+
+**提供ツール**:
+
+**GitHub通知**:
+
+- `notify_github_issue`: GitHub Issueにコメント投稿
+- `update_github_issue_status`: Issueのステータス更新
+
+**Slack通知**:
+
+- `send_slack_message`: Slackメッセージ送信
+- `send_slack_thread_reply`: スレッド返信
+- `send_slack_dm`: DM送信
+
+**Email通知**:
+
+- `send_email`: Email送信
+- `send_email_with_attachment`: 添付ファイル付きEmail送信
+
+**Microsoft Teams通知**:
+
+- `send_teams_message`: Teamsメッセージ送信
+
+**Discord通知**:
+
+- `send_discord_message`: Discordメッセージ送信
+
+**通知テンプレート**:
+
+- `render_notification_template`: テンプレートレンダリング
+- `get_notification_templates`: テンプレート一覧取得
+
+**影響を受けるエージェント**:
+
+- Notification Agent → MCPクライアント化（通知チャネル部分）
+
 #### Phase 3: 追加MCPサーバー（オプション）
 
 以下のMCPサーバーは将来的に追加可能:
-
-**MCP Server 6: Notification Server** 💡
-
-- Slack/Email/Teams/Discord等の通知チャネル統合
-- 通知テンプレート管理
 
 **MCP Server 7: Experiment Tracking Server** 💡
 
@@ -195,12 +229,19 @@ Model Context Protocol (MCP) として専門機能を実装することで:
 
 ## 3. アーキテクチャ設計
 
-### 3.1 システムアーキテクチャ（5つのMCPサーバー統合版）
+### 3.1 システムアーキテクチャ（6つのMCPサーバー統合版）
 
 ```mermaid
 graph TB
     subgraph "GitHub"
         GH_ISSUE[GitHub Issue]
+    end
+
+    subgraph "External Services"
+        SLACK[Slack]
+        EMAIL[Email/SES]
+        TEAMS[Microsoft Teams]
+        DISCORD[Discord]
     end
 
     subgraph "AWS Cloud"
@@ -231,6 +272,7 @@ graph TB
         subgraph "Integration MCP Servers (Phase 2)"
             MCP_GITHUB[4. GitHub Integration<br/>MCP Server]
             MCP_REGISTRY[5. Model Registry<br/>MCP Server]
+            MCP_NOTIFY[6. Notification<br/>MCP Server]
         end
 
         subgraph "Storage"
@@ -255,6 +297,7 @@ graph TB
     TRAINING -->|MCP| MCP_TRAIN
     TRAINING -->|MCP| MCP_REGISTRY
     EVALUATION -->|MCP| MCP_EVAL
+    NOTIFICATION -->|MCP| MCP_NOTIFY
     NOTIFICATION -->|MCP| MCP_GITHUB
     ROLLBACK -->|MCP| MCP_REGISTRY
     HISTORY -->|MCP| MCP_GITHUB
@@ -264,6 +307,10 @@ graph TB
     MCP_EVAL <--> S3
     MCP_REGISTRY <--> SAGEMAKER_REGISTRY
     MCP_GITHUB <--> GH_ISSUE
+    MCP_NOTIFY --> SLACK
+    MCP_NOTIFY --> EMAIL
+    MCP_NOTIFY --> TEAMS
+    MCP_NOTIFY --> DISCORD
 ```
 
 ### 3.2 エージェント・MCPサーバー連携フロー
@@ -662,16 +709,30 @@ MLOps/
 │   │   ├── Dockerfile
 │   │   └── requirements.txt
 │   │
-│   └── model_registry/                    # 5. Model Registry MCP Server ⭐ NEW
+│   ├── model_registry/                    # 5. Model Registry MCP Server ⭐ NEW
+│   │   ├── __init__.py
+│   │   ├── server.py
+│   │   ├── tools/
+│   │   │   ├── __init__.py
+│   │   │   ├── model_registration.py     # モデル登録
+│   │   │   ├── version_management.py     # バージョン管理
+│   │   │   ├── status_management.py      # ステータス管理
+│   │   │   ├── rollback.py               # ロールバック
+│   │   │   └── search.py                 # モデル検索
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   │
+│   └── notification/                      # 6. Notification MCP Server ⭐ NEW
 │       ├── __init__.py
 │       ├── server.py
 │       ├── tools/
 │       │   ├── __init__.py
-│       │   ├── model_registration.py     # モデル登録
-│       │   ├── version_management.py     # バージョン管理
-│       │   ├── status_management.py      # ステータス管理
-│       │   ├── rollback.py               # ロールバック
-│       │   └── search.py                 # モデル検索
+│       │   ├── github_notifier.py        # GitHub通知
+│       │   ├── slack_notifier.py         # Slack通知
+│       │   ├── email_notifier.py         # Email通知
+│       │   ├── teams_notifier.py         # Teams通知
+│       │   ├── discord_notifier.py       # Discord通知
+│       │   └── template_manager.py       # テンプレート管理
 │       ├── Dockerfile
 │       └── requirements.txt
 │
@@ -681,7 +742,8 @@ MLOps/
 │   │   ├── test_ml_training.py
 │   │   ├── test_ml_evaluation.py
 │   │   ├── test_github_integration.py    # ⭐ NEW
-│   │   └── test_model_registry.py        # ⭐ NEW
+│   │   ├── test_model_registry.py        # ⭐ NEW
+│   │   └── test_notification.py          # ⭐ NEW
 │   └── integration/
 │       └── test_agent_mcp_integration.py
 │
@@ -693,7 +755,7 @@ MLOps/
 
 ---
 
-## 7. 移行戦略（5つのMCPサーバー対応）
+## 7. 移行戦略（6つのMCPサーバー対応）
 
 ### 7.1 段階的移行アプローチ
 
@@ -720,13 +782,12 @@ MLOps/
 - [ ] 単体テスト・統合テスト
 - [ ] デプロイ・動作確認
 
-#### Phase 2: 統合MCPサーバー構築（Week 7-10）
+#### Phase 2: 統合MCPサーバー構築（Week 7-12）
 
 **Week 7-8: GitHub Integration MCPサーバー** ⭐ 新規
 
 - [ ] GitHub Integration MCPサーバーの実装
 - [ ] Issue Detector AgentをMCPクライアント化
-- [ ] Notification AgentをMCPクライアント化
 - [ ] History Writer AgentをMCPクライアント化
 - [ ] 単体テスト・統合テスト
 - [ ] デプロイ・動作確認
@@ -739,7 +800,16 @@ MLOps/
 - [ ] 単体テスト・統合テスト
 - [ ] デプロイ・動作確認
 
-#### Phase 3: E2Eテスト・ドキュメント整備（Week 11-12）
+**Week 11-12: Notification MCPサーバー** ⭐ 新規
+
+- [ ] Notification MCPサーバーの実装
+- [ ] Notification AgentをMCPクライアント化（通知チャネル部分）
+- [ ] Slack/Email/Teams/Discord通知機能の実装
+- [ ] 通知テンプレート管理機能の実装
+- [ ] 単体テスト・統合テスト
+- [ ] デプロイ・動作確認
+
+#### Phase 3: E2Eテスト・ドキュメント整備（Week 13-14）
 
 - [ ] E2Eテストの実施（全学習方式）
 - [ ] 全MCPサーバー統合テスト
@@ -869,15 +939,16 @@ MLOps/
 
 ### 13.1 MCP化の範囲
 
-**Phase 1-2で実装する5つのコアMCPサーバー** (合計12週間):
+**Phase 1-2で実装する6つのコアMCPサーバー** (合計14週間):
 
 1. **Data Preparation MCP Server** - データ前処理・特徴量エンジニアリング
 2. **ML Training MCP Server** - 機械学習モデルの学習
 3. **ML Evaluation MCP Server** - モデルの評価・可視化
 4. **GitHub Integration MCP Server** ⭐ - GitHub連携機能の統合
 5. **Model Registry MCP Server** ⭐ - モデルバージョン管理・レジストリ操作
+6. **Notification MCP Server** ⭐ - 通知チャネルの統合管理
 
-この5つのMCPサーバーで、**システムの約80%の機能をMCP化**します。
+この6つのMCPサーバーで、**システムの約90%の機能をMCP化**します。
 
 ### 13.2 期待される効果
 
@@ -887,14 +958,14 @@ MLOps/
 - ✅ **拡張性**: 新しいアルゴリズムや機能を容易に追加
 - ✅ **標準化**: MCPという業界標準プロトコルに準拠
 - ✅ **ベンダーニュートラル**: クラウドプロバイダーに非依存
+- ✅ **通知チャネル統合**: Slack/Email/Teams/Discord等を一元管理
 
 ### 13.3 追加で検討可能なMCPサーバー (Phase 3以降)
 
 将来的に必要に応じて追加可能:
 
-- **Notification MCP Server** - 通知チャネル統合
-- **Experiment Tracking MCP Server** - 実験追跡ツール統合
-- **Data Versioning MCP Server** - データバージョニングツール統合
+- **Experiment Tracking MCP Server** - 実験追跡ツール統合（MLflow、W&B等）
+- **Data Versioning MCP Server** - データバージョニングツール統合（DVC、Delta Lake等）
 
 詳細は [mcp_extended_design.md](mcp_extended_design.md) を参照。
 
@@ -906,3 +977,4 @@ MLOps/
 | --- | --- | --- | --- |
 | 1.0 | 2025-12-27 | 初版作成（3つのMCPサーバー） | - |
 | 2.0 | 2025-12-27 | 5つのMCPサーバーに拡張（GitHub Integration、Model Registry追加） | - |
+| 3.0 | 2025-12-27 | 6つのMCPサーバーに拡張（Notification追加）、システムの90%をMCP化 | - |
