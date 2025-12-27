@@ -627,8 +627,63 @@ project/
 
 ---
 
-## 11. 変更履歴
+---
+
+## 11. MCP (Model Context Protocol) 対応設計
+
+### 11.1 MCP化の背景
+
+現在の設計では、データ前処理・モデル学習・モデル評価などの専門機能がAWS Lambda/ECS Fargateに直接実装されていますが、以下の課題があります:
+
+- 再利用性の欠如
+- 保守性の低下
+- テストの困難さ
+- ベンダーロックイン
+
+これらを解決するため、専門機能を**Model Context Protocol (MCP)** サーバーとして実装します。
+
+### 11.2 MCP化対象コンポーネント
+
+#### MCP Server 1: Data Preparation Server
+
+- データ前処理・特徴量エンジニアリング
+- 提供ツール: `load_dataset`, `validate_data`, `preprocess_supervised/unsupervised/reinforcement`, `feature_engineering`, `split_dataset`
+
+#### MCP Server 2: ML Training Server
+
+- 機械学習モデルの学習
+- 提供ツール: 教師あり学習、教師なし学習、強化学習の各アルゴリズム実装
+
+#### MCP Server 3: ML Evaluation Server
+
+- モデルの評価・可視化
+- 提供ツール: `evaluate_classifier/regressor/clustering/reinforcement`, `compare_models`, `generate_evaluation_report`
+
+### 11.3 MCP対応アーキテクチャ
+
+```text
+Lambda Agents (MCP Clients)
+    ↓ MCP Protocol (JSON-RPC)
+MCP Servers (ECS Fargate or Lambda)
+    ↓ AWS SDK
+S3 / SageMaker / その他AWSサービス
+```
+
+**詳細**: [mcp_design.md](mcp_design.md) を参照
+
+### 11.4 メリット
+
+- ✅ **再利用性**: 標準プロトコルに準拠し、他プロジェクトでも利用可能
+- ✅ **保守性**: MCPサーバーとして独立しており、機能追加・変更が容易
+- ✅ **テスト容易性**: ローカル環境で単体テスト可能
+- ✅ **拡張性**: 新しいツール（アルゴリズム、評価指標）を容易に追加可能
+- ✅ **ベンダーニュートラル**: クラウドプロバイダーに依存しない設計
+
+---
+
+## 12. 変更履歴
 
 | バージョン | 日付 | 変更内容 | 作成者 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 0.1 | 2025-10-10 | 初版作成 | - |
+| 0.2 | 2025-12-27 | MCP対応設計を追加 | - |
