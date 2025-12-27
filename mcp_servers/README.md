@@ -12,9 +12,11 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 - ✅ **拡張性**: 新しいアルゴリズムや評価指標を容易に追加
 - ✅ **ベンダーニュートラル**: クラウドプロバイダーに非依存
 
-## MCPサーバー一覧
+## MCPサーバー一覧（5つのコアMCPサーバー）
 
-### 1. Data Preparation Server
+### Phase 1: MLOps コア機能（Week 1-6）
+
+#### 1. Data Preparation Server
 
 **ディレクトリ**: `data_preparation/`
 
@@ -30,7 +32,7 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 - `feature_engineering` - 特徴量エンジニアリング
 - `save_processed_data` - 処理済みデータをS3に保存
 
-### 2. ML Training Server
+#### 2. ML Training Server
 
 **ディレクトリ**: `ml_training/`
 
@@ -67,7 +69,7 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 - `get_training_metrics` - 学習中のメトリクスを取得
 - `save_model` - 学習済みモデルをS3に保存
 
-### 3. ML Evaluation Server
+#### 3. ML Evaluation Server
 
 **ディレクトリ**: `ml_evaluation/`
 
@@ -82,6 +84,81 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 - `compare_models` - 複数モデルの比較
 - `generate_evaluation_report` - 評価レポートの生成
 - `save_evaluation_results` - 評価結果をS3に保存
+
+### Phase 2: 統合機能（Week 7-10）
+
+#### 4. GitHub Integration Server ⭐ 新規追加
+
+**ディレクトリ**: `github_integration/`
+
+**責務**: GitHub連携機能の統合
+
+**提供ツール**:
+
+**Issue管理**:
+- `get_issue` - Issueの取得
+- `create_issue` - Issueの作成
+- `update_issue` - Issueの更新
+- `add_issue_comment` - Issueにコメント追加
+- `get_issue_comments` - Issueのコメント一覧取得
+- `parse_issue_body` - Issue本文のYAML/JSONパース
+
+**ラベル管理**:
+- `get_issue_labels` - Issueのラベル取得
+- `add_label` - ラベル追加
+- `remove_label` - ラベル削除
+
+**リポジトリ操作**:
+- `create_file` - ファイル作成（履歴保存用）
+- `update_file` - ファイル更新
+- `commit_changes` - 変更のコミット
+- `create_pull_request` - プルリクエスト作成
+
+**Webhook**:
+- `validate_webhook_signature` - Webhook署名の検証
+- `parse_webhook_payload` - Webhookペイロードのパース
+
+**影響を受けるエージェント**:
+- Issue Detector Agent → MCPクライアント化
+- Notification Agent → MCPクライアント化
+- History Writer Agent → MCPクライアント化
+
+#### 5. Model Registry Server ⭐ 新規追加
+
+**ディレクトリ**: `model_registry/`
+
+**責務**: モデルバージョン管理・レジストリ操作
+
+**提供ツール**:
+
+**モデル登録**:
+- `register_model` - モデルの登録
+- `update_model_metadata` - モデルメタデータの更新
+- `delete_model` - モデルの削除
+
+**モデルバージョン管理**:
+- `list_model_versions` - モデルバージョン一覧取得
+- `get_model_version` - 特定バージョンの取得
+- `promote_model_version` - モデルバージョンの昇格（Staging → Production）
+- `archive_model_version` - モデルバージョンのアーカイブ
+
+**モデルステータス管理**:
+- `approve_model` - モデルの承認
+- `reject_model` - モデルの却下
+- `get_model_status` - モデルステータスの取得
+
+**ロールバック**:
+- `rollback_model` - 前バージョンへのロールバック
+- `get_rollback_history` - ロールバック履歴の取得
+
+**モデル検索**:
+- `search_models` - モデル検索
+- `filter_models_by_metrics` - メトリクスでフィルタリング
+- `get_best_model` - 最良モデルの取得
+
+**影響を受けるエージェント**:
+- Training Agent → MCPクライアント化（モデル登録部分）
+- Rollback Agent → MCPクライアント化
 
 ## ディレクトリ構造
 
@@ -130,19 +207,45 @@ mcp_servers/
 │   ├── Dockerfile
 │   └── requirements.txt
 │
-└── ml_evaluation/                         # ML Evaluation MCP Server
+├── ml_evaluation/                         # 3. ML Evaluation MCP Server
+│   ├── __init__.py
+│   ├── server.py
+│   ├── tools/
+│   │   ├── __init__.py
+│   │   ├── load_model.py
+│   │   ├── evaluate_classifier.py
+│   │   ├── evaluate_regressor.py
+│   │   ├── evaluate_clustering.py
+│   │   ├── evaluate_reinforcement.py
+│   │   ├── compare_models.py
+│   │   ├── generate_report.py
+│   │   └── visualization.py
+│   ├── Dockerfile
+│   └── requirements.txt
+│
+├── github_integration/                    # 4. GitHub Integration MCP Server ⭐ NEW
+│   ├── __init__.py
+│   ├── server.py
+│   ├── tools/
+│   │   ├── __init__.py
+│   │   ├── issue_management.py           # Issue CRUD操作
+│   │   ├── label_management.py           # ラベル管理
+│   │   ├── repository_operations.py      # ファイル作成・コミット
+│   │   ├── webhook_handler.py            # Webhook処理
+│   │   └── parser.py                     # YAML/JSONパーサー
+│   ├── Dockerfile
+│   └── requirements.txt
+│
+└── model_registry/                        # 5. Model Registry MCP Server ⭐ NEW
     ├── __init__.py
     ├── server.py
     ├── tools/
     │   ├── __init__.py
-    │   ├── load_model.py
-    │   ├── evaluate_classifier.py
-    │   ├── evaluate_regressor.py
-    │   ├── evaluate_clustering.py
-    │   ├── evaluate_reinforcement.py
-    │   ├── compare_models.py
-    │   ├── generate_report.py
-    │   └── visualization.py
+    │   ├── model_registration.py         # モデル登録
+    │   ├── version_management.py         # バージョン管理
+    │   ├── status_management.py          # ステータス管理
+    │   ├── rollback.py                   # ロールバック
+    │   └── search.py                     # モデル検索
     ├── Dockerfile
     └── requirements.txt
 ```
@@ -156,26 +259,27 @@ mcp_servers/
 ### MCPサーバーの起動
 
 ```bash
-# Data Preparation Server
-cd mcp_servers/data_preparation
-python -m server
+# Phase 1: コアMLOps MCPサーバー
+cd mcp_servers/data_preparation && python -m server
+cd mcp_servers/ml_training && python -m server
+cd mcp_servers/ml_evaluation && python -m server
 
-# ML Training Server
-cd mcp_servers/ml_training
-python -m server
-
-# ML Evaluation Server
-cd mcp_servers/ml_evaluation
-python -m server
+# Phase 2: 統合MCPサーバー
+cd mcp_servers/github_integration && python -m server
+cd mcp_servers/model_registry && python -m server
 ```
 
 ### MCPサーバーのテスト
 
 ```bash
-# 単体テスト
+# 単体テスト (Phase 1)
 pytest tests/mcp_servers/test_data_preparation.py
 pytest tests/mcp_servers/test_ml_training.py
 pytest tests/mcp_servers/test_ml_evaluation.py
+
+# 単体テスト (Phase 2) ⭐ NEW
+pytest tests/mcp_servers/test_github_integration.py
+pytest tests/mcp_servers/test_model_registry.py
 
 # 統合テスト
 pytest tests/integration/test_agent_mcp_integration.py

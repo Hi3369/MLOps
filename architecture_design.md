@@ -642,42 +642,65 @@ project/
 
 これらを解決するため、専門機能を**Model Context Protocol (MCP)** サーバーとして実装します。
 
-### 11.2 MCP化対象コンポーネント
+### 11.2 MCP化対象コンポーネント（5つのコアMCPサーバー）
 
-#### MCP Server 1: Data Preparation Server
+#### Phase 1: MLOps コア機能（Week 1-6）
+
+**MCP Server 1: Data Preparation Server**
 
 - データ前処理・特徴量エンジニアリング
 - 提供ツール: `load_dataset`, `validate_data`, `preprocess_supervised/unsupervised/reinforcement`, `feature_engineering`, `split_dataset`
 
-#### MCP Server 2: ML Training Server
+**MCP Server 2: ML Training Server**
 
 - 機械学習モデルの学習
 - 提供ツール: 教師あり学習、教師なし学習、強化学習の各アルゴリズム実装
 
-#### MCP Server 3: ML Evaluation Server
+**MCP Server 3: ML Evaluation Server**
 
 - モデルの評価・可視化
 - 提供ツール: `evaluate_classifier/regressor/clustering/reinforcement`, `compare_models`, `generate_evaluation_report`
+
+#### Phase 2: 統合機能（Week 7-10）
+
+**MCP Server 4: GitHub Integration Server** ⭐ 新規追加
+
+- GitHub連携機能の統合（Issue管理、ラベル管理、リポジトリ操作、Webhook処理）
+- 影響: Issue Detector Agent、Notification Agent、History Writer Agent
+
+**MCP Server 5: Model Registry Server** ⭐ 新規追加
+
+- モデルバージョン管理・レジストリ操作
+- 影響: Training Agent、Rollback Agent
 
 ### 11.3 MCP対応アーキテクチャ
 
 ```text
 Lambda Agents (MCP Clients)
-    ↓ MCP Protocol (JSON-RPC)
-MCP Servers (ECS Fargate or Lambda)
-    ↓ AWS SDK
-S3 / SageMaker / その他AWSサービス
+    ↓ MCP Protocol (JSON-RPC over stdio/SSE)
+5つのMCPサーバー (ECS Fargate or Lambda)
+    ├─ Data Preparation Server
+    ├─ ML Training Server
+    ├─ ML Evaluation Server
+    ├─ GitHub Integration Server
+    └─ Model Registry Server
+    ↓ AWS SDK / GitHub API
+S3 / SageMaker / GitHub / その他サービス
 ```
 
-**詳細**: [mcp_design.md](mcp_design.md) を参照
+**詳細**: [mcp_design.md](mcp_design.md) および [mcp_extended_design.md](mcp_extended_design.md) を参照
 
-### 11.4 メリット
+### 11.4 期待される効果
 
 - ✅ **再利用性**: 標準プロトコルに準拠し、他プロジェクトでも利用可能
 - ✅ **保守性**: MCPサーバーとして独立しており、機能追加・変更が容易
 - ✅ **テスト容易性**: ローカル環境で単体テスト可能
 - ✅ **拡張性**: 新しいツール（アルゴリズム、評価指標）を容易に追加可能
 - ✅ **ベンダーニュートラル**: クラウドプロバイダーに依存しない設計
+- ✅ **GitHub連携の一元化**: GitHub APIコードが1箇所に集約
+- ✅ **モデルガバナンス強化**: モデルバージョン管理が標準化
+
+**MCP化範囲**: システムの約80%の機能がMCP化され、残り20%（Judge Agentなど）は既存実装を継続
 
 ---
 
