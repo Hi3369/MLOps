@@ -109,7 +109,7 @@ Model Context Protocol (MCP) として専門機能を実装することで:
 
 #### Capability 4: GitHub Integration
 
-**責務**: GitHub連携機能の統合
+**責務**: GitHub連携機能の統合（Issue/PR/リポジトリ操作、GitHub通知）
 
 **提供ツール**:
 
@@ -121,6 +121,7 @@ Model Context Protocol (MCP) として専門機能を実装することで:
 - `add_issue_comment`: Issueにコメント追加
 - `get_issue_comments`: Issueのコメント一覧取得
 - `parse_issue_body`: Issue本文のYAML/JSONパース
+- `update_issue_status`: Issueのステータス更新（ラベル変更、クローズ等）
 
 **ラベル管理**:
 
@@ -143,7 +144,7 @@ Model Context Protocol (MCP) として専門機能を実装することで:
 **影響を受けるエージェント**:
 
 - Issue Detector Agent → MCPクライアント化
-- Notification Agent → MCPクライアント化
+- Notification Agent → MCPクライアント化（GitHub通知部分）
 - History Writer Agent → MCPクライアント化
 
 #### Capability 5: Model Registry
@@ -189,14 +190,11 @@ Model Context Protocol (MCP) として専門機能を実装することで:
 
 #### Capability 6: Notification
 
-**責務**: 通知チャネルの統合管理
+**責務**: 外部通知チャネルの統合管理（Slack/Email/Teams/Discord）
+
+**注**: GitHub通知はCapability 4（GitHub Integration）で提供されます。
 
 **提供ツール**:
-
-**GitHub通知**:
-
-- `notify_github_issue`: GitHub Issueにコメント投稿
-- `update_github_issue_status`: Issueのステータス更新
 
 **Slack通知**:
 
@@ -963,33 +961,335 @@ MLOps/
 
 ---
 
-## 9. 代替案との比較
+## 9. セキュリティ設計
 
-### 9.1 Option A: 現状維持（Lambda/ECS直接実装）
+### 9.1 認証・認可
+
+#### MCP通信の認証
+
+統合MCPサーバーへのアクセスは、以下の認証メカニズムで保護します:
+
+**stdio通信モード（Lambda/ECS Agent → MCP Server）**:
+- Lambda/ECS AgentがMCPサーバーを子プロセスとして起動するため、プロセス間通信は信頼される
+- IAMロールベースの認証: Lambda/ECS AgentのIAMロールで権限を制御
+- 環境変数による設定: AWS_REGION、AWS_PROFILE等
+
+**SSE通信モード（HTTP経由）**:
+- API Keyベースの認証: カスタムヘッダー `X-API-Key` で認証
+- IAM認証: AWS SigV4署名による認証（API Gateway統合時）
+- VPC内通信: プライベートサブネット内のみでアクセス可能
+
+#### IAMロール設計
+
+**Lambda Agent用IAMロール**:
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject"
+      ],
+      "Resource": "arn:aws:s3:::mlops-bucket/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sagemaker:CreateTrainingJob",
+        "sagemaker:DescribeTrainingJob"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": "arn:aws:secretsmanager:*:*:secret:mlops/*"
+    }
+  ]
+}
+```
+
+**MCP Server用IAMロール（ECS Task Role）**:
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::mlops-bucket",
+        "arn:aws:s3:::mlops-bucket/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sagemaker:*"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "us-east-1"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": "arn:aws:secretsmanager:*:*:secret:mlops/*"
+    }
+  ]
+}
+```
+
+### 9.2 データ暗号化
+
+#### 保存時の暗号化（Encryption at Rest）
+
+**S3バケット暗号化**:
+- **デフォルト暗号化**: SSE-S3（AES-256）を有効化
+- **推奨**: SSE-KMS（AWS KMS管理キー）を使用し、キーローテーションを有効化
+- **バケットポリシー**: 暗号化されていないオブジェクトのアップロードを拒否
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::mlops-bucket/*",
+      "Condition": {
+        "StringNotEquals": {
+          "s3:x-amz-server-side-encryption": "aws:kms"
+        }
+      }
+    }
+  ]
+}
+```
+
+**SageMaker Model Registry暗号化**:
+- モデルアーティファクトはKMS暗号化されたS3に保存
+- モデルメタデータは自動的にAWS管理キーで暗号化
+
+#### 通信時の暗号化（Encryption in Transit）
+
+**stdio通信**:
+- ローカルプロセス間通信のため、TLSは不要
+- ただし、Lambda/ECS Agent ↔ AWS SDK通信はHTTPS
+
+**SSE/HTTP通信**:
+- **必須**: TLS 1.2以上を使用
+- Application Load Balancer（ALB）でTLS終端
+- ALB → ECS TaskはVPC内HTTPSまたはHTTP（VPC内のため許容）
+
+**AWS SDK通信**:
+- すべてのAWS API呼び出しはHTTPS（TLS 1.2+）
+
+### 9.3 シークレット管理
+
+#### AWS Secrets Managerの使用
+
+すべての機密情報はAWS Secrets Managerに保存:
+
+**保存するシークレット**:
+- `mlops/github-token`: GitHub Personal Access Token（Capaiblity 4用）
+- `mlops/slack-webhook-url`: Slack Webhook URL（Capability 6用）
+- `mlops/email-smtp-password`: Email SMTP認証情報（Capability 6用）
+- `mlops/teams-webhook-url`: Microsoft Teams Webhook URL（Capability 6用）
+- `mlops/discord-webhook-url`: Discord Webhook URL（Capability 6用）
+
+**シークレット取得のベストプラクティス**:
+```python
+import boto3
+import json
+from functools import lru_cache
+
+@lru_cache(maxsize=10)
+def get_secret(secret_name: str) -> dict:
+    """AWS Secrets Managerからシークレットを取得（キャッシュあり）"""
+    client = boto3.client('secretsmanager')
+    response = client.get_secret_value(SecretId=secret_name)
+    return json.loads(response['SecretString'])
+
+# 使用例
+github_token = get_secret('mlops/github-token')['token']
+```
+
+**シークレットローテーション**:
+- 推奨: 90日ごとにシークレットをローテーション
+- Lambda関数を使用した自動ローテーション設定
+
+### 9.4 ネットワークセキュリティ
+
+#### VPC設計
+
+**統合MCPサーバー（ECS Fargate）**:
+- **配置**: プライベートサブネット
+- **アウトバウンド**: NAT Gatewayまたはインターフェースエンドポイント経由
+- **インバウンド**: Lambda/ECS Agentからのみアクセス可能（Security Group制限）
+
+**Lambda Agent**:
+- **配置**: VPC内プライベートサブネット（VPC Lambda）
+- **アウトバウンド**: NAT Gatewayまたはインターフェースエンドポイント経由
+
+**Security Group設定**:
+
+```yaml
+# MCP Server Security Group
+MCPServerSG:
+  Inbound:
+    - Port: 8080 (SSEモードの場合のみ)
+      Source: LambdaAgentSG
+      Protocol: TCP
+  Outbound:
+    - Port: 443
+      Destination: 0.0.0.0/0  # AWS APIs, GitHub API, Slack API等
+      Protocol: TCP
+
+# Lambda Agent Security Group
+LambdaAgentSG:
+  Outbound:
+    - Port: 8080 (SSEモードの場合のみ)
+      Destination: MCPServerSG
+      Protocol: TCP
+    - Port: 443
+      Destination: 0.0.0.0/0  # AWS APIs
+      Protocol: TCP
+```
+
+#### VPCエンドポイント
+
+コスト削減とセキュリティ向上のため、以下のVPCエンドポイントを作成:
+- **com.amazonaws.region.s3**: S3アクセス（Gateway Endpoint、無料）
+- **com.amazonaws.region.secretsmanager**: Secrets Managerアクセス
+- **com.amazonaws.region.sagemaker.api**: SageMaker APIアクセス
+- **com.amazonaws.region.logs**: CloudWatch Logsアクセス
+
+### 9.5 監査ログ
+
+#### CloudTrailによる操作ログ記録
+
+すべてのAWS API呼び出しをCloudTrailで記録:
+- **対象**: S3、SageMaker、Secrets Manager、ECS等のAPI呼び出し
+- **保存先**: S3バケット（KMS暗号化、90日保持）
+- **ログ検証**: ログファイルの整合性検証を有効化
+
+#### MCPツール呼び出しログ
+
+すべてのMCPツール呼び出しをCloudWatch Logsに記録:
+
+**ログフォーマット（JSON）**:
+```json
+{
+  "timestamp": "2025-12-27T10:30:00.123Z",
+  "level": "INFO",
+  "capability": "ml_training",
+  "tool_name": "train_supervised_classifier",
+  "agent_id": "training-agent-001",
+  "request_id": "req-abc123",
+  "arguments": {
+    "algorithm": "random_forest",
+    "training_job_name": "train-20251227-001"
+  },
+  "duration_ms": 1234,
+  "status": "success",
+  "result_summary": "Training job started successfully"
+}
+```
+
+**ログ保持期間**: 90日（NFR-006）
+
+**機密情報のマスキング**:
+- GitHub Token、Slack Webhook URL等の機密情報はログ出力時にマスキング
+- 例: `"github_token": "ghp_***masked***"`
+
+### 9.6 脆弱性管理
+
+#### 依存ライブラリのスキャン
+
+**CI/CDパイプラインでの自動スキャン**:
+- **ツール**: Snyk、Dependabot、AWS Inspector
+- **頻度**: プルリクエストごと、および毎日定期スキャン
+- **対応**: Critical/High脆弱性は24時間以内に修正
+
+**Dockerイメージスキャン**:
+- **ツール**: Amazon ECR Image Scanning、Trivy
+- **対象**: 統合MCPサーバーのDockerイメージ
+- **頻度**: イメージプッシュ時、および毎日定期スキャン
+
+#### セキュリティパッチ適用
+
+**定期更新スケジュール**:
+- **依存ライブラリ**: 月次で最新バージョンに更新
+- **ベースイメージ**: 月次でセキュリティパッチ適用
+- **緊急パッチ**: Critical脆弱性発見時は即座に対応
+
+### 9.7 セキュリティチェックリスト
+
+実装前・デプロイ前のチェックリスト:
+
+**実装前**:
+- [ ] IAMロールの最小権限原則（Least Privilege）を適用
+- [ ] すべてのシークレットをAWS Secrets Managerに保存
+- [ ] VPC内にリソースを配置（プライベートサブネット）
+- [ ] Security Groupで必要最小限のポートのみ開放
+
+**デプロイ前**:
+- [ ] S3バケット暗号化（SSE-KMS）が有効
+- [ ] CloudTrailが有効化されている
+- [ ] VPCエンドポイントが設定されている
+- [ ] 依存ライブラリの脆弱性スキャンに合格
+- [ ] Dockerイメージの脆弱性スキャンに合格
+
+**運用中**:
+- [ ] CloudWatch Logsでツール呼び出しログを記録
+- [ ] 定期的な脆弱性スキャン（日次）
+- [ ] シークレットローテーション（90日ごと）
+- [ ] セキュリティパッチ適用（月次）
+
+---
+
+## 10. 代替案との比較
+
+### 10.1 Option A: 現状維持（Lambda/ECS直接実装）
 
 **メリット**: 開発コスト低、シンプル
 **デメリット**: 拡張性・保守性が低い
 **推奨度**: ❌
 
-### 9.2 Option B: 6個の独立MCPサーバー
+### 10.2 Option B: 6個の独立MCPサーバー
 
 **メリット**: 障害の隔離、個別スケーリング、開発の独立性
 **デメリット**: 運用・デプロイの複雑化、リソースオーバーヘッド、6つのMCP接続が必要
 **推奨度**: △（大規模チーム・高可用性要件がある場合）
 
-### 9.3 Option C: 統合MCPサーバー（本提案）⭐
+### 10.3 Option C: 統合MCPサーバー（本提案）⭐
 
 **メリット**: 運用の簡素化、デプロイの簡素化、リソース効率、1つのMCP接続のみ
 **デメリット**: 単一障害点、初期開発コスト高
 **推奨度**: ✅（推奨）
 
-### 9.4 Option D: SageMaker Pipelines利用
+### 10.4 Option D: SageMaker Pipelines利用
 
 **メリット**: AWSネイティブ、GUI管理可能
 **デメリット**: ベンダーロックイン、柔軟性が低い
 **推奨度**: △（AWS縛りOKなら選択肢）
 
-### 9.5 Option E: Kubeflow Pipelines
+### 10.5 Option E: Kubeflow Pipelines
 
 **メリット**: ML特化、豊富な機能
 **デメリット**: インフラ複雑、運用コスト高
@@ -997,9 +1297,9 @@ MLOps/
 
 ---
 
-## 10. 成功指標（KPI）
+## 11. 成功指標（KPI）
 
-### 10.1 技術指標
+### 11.1 技術指標
 
 | 指標 | 目標値 | 測定方法 |
 |------|--------|---------|
@@ -1008,7 +1308,7 @@ MLOps/
 | **新アルゴリズム追加時間** | 4時間以内 | 実測 |
 | **ローカルテスト成功率** | 95%以上 | CI/CD統計 |
 
-### 10.2 ビジネス指標
+### 11.2 ビジネス指標
 
 | 指標 | 目標値 | 測定方法 |
 |------|--------|---------|
@@ -1018,9 +1318,9 @@ MLOps/
 
 ---
 
-## 11. リスク管理
+## 12. リスク管理
 
-### 11.1 リスク一覧
+### 12.1 リスク一覧
 
 | リスク | 影響度 | 発生確率 | 対策 |
 |--------|--------|---------|------|
@@ -1031,23 +1331,24 @@ MLOps/
 
 ---
 
-## 12. 次のステップ
+## 13. 次のステップ
 
-### 12.1 即座に実施すべきこと
+### 13.1 即座に実施すべきこと
+
 1. **POC実施**: Data Preparation MCPサーバーの小規模実装
 2. **パフォーマンステスト**: レイテンシ・スループット測定
 3. **コスト見積もり**: ECS Fargateのコスト試算
 
-### 12.2 承認後のアクション
+### 13.2 承認後のアクション
 1. 詳細実装計画の策定
 2. チーム体制の確立
 3. Phase 1の実装開始
 
 ---
 
-## 13. まとめ
+## 14. まとめ
 
-### 13.1 統合MCPサーバーの設計概要
+### 14.1 統合MCPサーバーの設計概要
 
 **1つの統合MLOps MCPサーバー** として実装し、**6つのCapability**を提供します (合計14週間):
 
@@ -1066,7 +1367,7 @@ MLOps/
 
 この統合MCPサーバーで、**システムの約90%の機能をMCP化**します。
 
-### 13.2 期待される効果
+### 14.2 期待される効果
 
 **従来の6個独立サーバーと比較した追加メリット**:
 - ✅ **運用コスト削減**: 6プロセス→1プロセスにより、運用負荷が大幅に削減
@@ -1082,7 +1383,7 @@ MLOps/
 - ✅ **標準化**: MCPという業界標準プロトコルに準拠
 - ✅ **ベンダーニュートラル**: クラウドプロバイダーに非依存
 
-### 13.3 追加で検討可能なCapability (Phase 3以降)
+### 14.3 追加で検討可能なCapability (Phase 3以降)
 
 将来的に統合MCPサーバーに追加可能:
 
@@ -1093,7 +1394,7 @@ MLOps/
 
 ---
 
-## 14. 変更履歴
+## 15. 変更履歴
 
 | バージョン | 日付 | 変更内容 | 作成者 |
 | --- | --- | --- | --- |
