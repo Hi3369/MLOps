@@ -11,6 +11,7 @@
 **目的**: データの取得、クリーニング、特徴量エンジニアリング、バージョニング
 
 **実装**:
+
 - さまざまなデータソース（S3、RDS、DynamoDB、外部API等）からデータを取得
 - データクリーニング（欠損値処理、異常値除去、重複削除）
 - 特徴量エンジニアリング（特徴量生成、選択、変換、正規化・標準化）
@@ -20,6 +21,7 @@
 - データ系譜（Data Lineage）の記録
 
 **成果物**:
+
 - バージョン管理されたデータセット（train/validation/test）
 - データ品質レポート
 - 特徴量定義ドキュメント
@@ -29,6 +31,7 @@
 **目的**: モデルの設計、学習、ハイパーパラメータ調整、実験管理
 
 **実装**:
+
 - モデルアーキテクチャの設計と実装
 - ハイパーパラメータ最適化：
   - Grid Search（全探索）
@@ -42,6 +45,7 @@
 - GPU/CPU リソースの動的割り当て
 
 **学習方式のサポート**:
+
 1. **教師あり学習（Supervised Learning）**
    - 分類（Classification）: Random Forest, XGBoost, Neural Network
    - 回帰（Regression）: Linear Regression, XGBoost, Neural Network
@@ -56,6 +60,7 @@
    - A3C (Asynchronous Advantage Actor-Critic)
 
 **成果物**:
+
 - 複数の学習済みモデル候補
 - 実験ログ（パラメータ、メトリクス、成果物）
 - 最適モデルの選定結果
@@ -65,6 +70,7 @@
 **目的**: モデルの精度評価、バイアスチェック、ドリフト検知準備、自動テスト
 
 **実装**:
+
 - 精度評価（学習方式別）：
   - 分類: Accuracy, Precision, Recall, F1-Score, AUC-ROC
   - 回帰: RMSE, MAE, R², MAPE
@@ -81,6 +87,7 @@
 - モデル説明可能性（SHAP、LIME）
 
 **成果物**:
+
 - 評価レポート（メトリクス、混同行列、ROC曲線等）
 - バイアスチェック結果
 - テストレポート（全テストの合格/不合格）
@@ -91,6 +98,7 @@
 **目的**: モデルをデプロイ可能な形式にパッケージ化、環境差異の排除
 
 **実装**:
+
 - モデルAPI化（REST API、gRPC（オプション））
 - API仕様書の自動生成（OpenAPI/Swagger）
 - コンテナ化（Docker、SageMaker Inference Container対応）
@@ -103,6 +111,7 @@
 - 環境差異を排除（開発環境と本番環境で同じコンテナイメージを使用）
 
 **成果物**:
+
 - Dockerイメージ（モデル + 推論コード + 依存関係）
 - モデルレジストリへの登録エントリ
 - API仕様書
@@ -113,6 +122,7 @@
 **目的**: 本番環境へのモデルデプロイ、段階的リリース、自動化
 
 **実装**:
+
 - 本番環境へモデルをデプロイ：
   - SageMaker Endpoint
   - ECS Fargate / Lambda（オプション）
@@ -130,6 +140,7 @@
   - ロールバック履歴の記録
 
 **成果物**:
+
 - 本番環境で稼働するモデルエンドポイント
 - デプロイメントログ
 - ロールバックプラン
@@ -139,6 +150,7 @@
 **目的**: 推論性能の監視、モデル精度の劣化検知、アラート
 
 **実装**:
+
 - **システムメトリクス監視**:
   - レスポンスタイム（P50、P95、P99）
   - エラー率（4xx、5xx）
@@ -162,6 +174,7 @@
   - Grafana統合（オプション）
 
 **成果物**:
+
 - モニタリングダッシュボード
 - アラートルール定義
 - 運用ログ
@@ -171,6 +184,7 @@
 **目的**: 新しいデータでの再学習、モデルバージョン管理、パイプライン自動化
 
 **実装**:
+
 - **自動再トレーニングトリガー**:
   - **データ変更トリガー**: 新しいデータがS3に追加された時
   - **コード変更トリガー**: モデルコードがGitにプッシュされた時
@@ -187,6 +201,7 @@
 - フィードバックループ（本番推論データを次回学習データに活用）
 
 **成果物**:
+
 - 新バージョンのモデル
 - 再学習ログ
 - パフォーマンス比較レポート（旧モデル vs 新モデル）
@@ -239,7 +254,6 @@ graph TB
     style Trigger fill:#fff3cd,stroke:#856404,stroke-width:2px,stroke-dasharray: 5 5
 ```
 
-
 ### 1.3 GitHub Issue駆動型との統合
 
 本システムでは、上記の7段階のワークフローを**GitHub Issue**を起点として駆動します。
@@ -283,6 +297,7 @@ retrain_triggers:
 ```
 
 **ワークフローの自動化範囲**:
+
 - **フェーズ1-5**: GitHub Issue作成により自動実行
 - **フェーズ6**: デプロイ後、継続的に実行
 - **フェーズ7**: モニタリングで検知されたイベント（ドリフト、精度劣化等）により自動実行
@@ -388,7 +403,7 @@ graph TB
 **エージェント一覧（11個）**:
 
 | エージェント名 | 責務 | MCP化 |
-|---|---|---|
+| --- | --- | --- |
 | 1. Issue Detector Agent | GitHub Issueの検知とパース | ✅ MCP |
 | 2. Workflow Optimizer Agent | モデル特性検出と最適化提案 | ✅ MCP |
 | 3. Data Preparation Agent | 学習データの準備と前処理 | ✅ MCP |
@@ -413,6 +428,7 @@ graph TB
 **責務**: モデル特性の自動検出と最適化提案
 
 **実装方式**:
+
 - AWS Lambda (Python)
 - 統合MLOps MCPサーバー経由でGitHub/S3にアクセス
 
@@ -433,6 +449,7 @@ graph TB
 ```
 
 **モデル特性検出項目**:
+
 1. **学習方式**: supervised/unsupervised/reinforcement
 2. **タスク種別**: classification/regression/clustering等
 3. **アルゴリズム**: Random Forest, XGBoost, Neural Network, PPO等
@@ -443,6 +460,7 @@ graph TB
 5. **過去の学習履歴パターン**
 
 **最適化提案内容**:
+
 - **フェーズ1最適化**: クラス不均衡対応（SMOTE等）、データ拡張
 - **フェーズ2最適化**: HPO戦略（Grid Search/Bayesian）、リソース選択（GPU/CPU）
 - **フェーズ3最適化**: 評価指標の優先順位
@@ -452,12 +470,14 @@ graph TB
 - **フェーズ7最適化**: 再学習頻度
 
 **パフォーマンスプロファイル**:
+
 - **速度優先モード**: 学習時間短縮（HPO簡略化、軽量前処理）
 - **精度優先モード**: 精度向上（HPO徹底、データ拡張、アンサンブル）
 - **コスト優先モード**: コスト削減（Spot Instance、CPUインスタンス）
 - **バランスモード**: 速度・精度・コストのバランス（デフォルト）
 
 **入力**:
+
 ```json
 {
   "issue_number": 123,
@@ -471,6 +491,7 @@ graph TB
 ```
 
 **出力**:
+
 ```json
 {
   "detected_characteristics": {
@@ -573,12 +594,14 @@ graph TB
 **責務**: GitHub Issueの検知とパース
 
 **実装方式**:
+
 - AWS Lambda (Python)
 - API Gateway + Webhook（GitHub Webhookを受信）
 - または EventBridge Scheduler（定期ポーリング）
 - 統合MLOps MCPサーバー経由でGitHub APIにアクセス
 
 **処理フロー**:
+
 1. GitHub WebhookまたはGitHub APIでIssue作成イベントを検知
 2. ラベルが`mlops:train`であることを確認
 3. Issue本文からYAML/JSONパラメータを抽出
@@ -587,6 +610,7 @@ graph TB
 6. パラメータをワークフローに渡す
 
 **入力**:
+
 ```json
 {
   "issue_number": 123,
@@ -597,6 +621,7 @@ graph TB
 ```
 
 **出力**:
+
 ```json
 {
   "training_config": {
@@ -624,7 +649,7 @@ graph TB
 
 ### 4.2 Workflow Optimizer Agent
 
-**詳細は「2. ワークフロー最適化アーキテクチャ」を参照**
+詳細は「3. ワークフロー最適化アーキテクチャ」を参照してください。
 
 ---
 
@@ -633,11 +658,13 @@ graph TB
 **責務**: 学習データの取得、前処理、SageMaker用フォーマット変換
 
 **実装方式**:
+
 - AWS Lambda (軽量処理)
 - ECS Fargate (大規模データ処理)
 - 統合MLOps MCPサーバー経由でS3にアクセス
 
 **処理フロー**:
+
 1. S3から指定されたdataset_idのデータを取得
 2. データのバリデーション（欠損値チェック、型チェック等）
 3. **最適化適用**: Workflow Optimizerの提案に基づく前処理
@@ -650,6 +677,7 @@ graph TB
 7. データのメタデータ（行数、カラム数、統計情報）を返す
 
 **入力**:
+
 ```json
 {
   "dataset_id": "dataset-20250110-001",
@@ -668,6 +696,7 @@ graph TB
 ```
 
 **出力**:
+
 ```json
 {
   "training_data_s3": "s3://bucket/processed/train/...",
@@ -696,11 +725,13 @@ graph TB
 **責務**: SageMaker Training Jobの起動と監視
 
 **実装方式**:
+
 - AWS Lambda (SageMaker APIコール)
 - Step Functionsの`.sync`統合（ジョブ完了まで待機）
 - 統合MLOps MCPサーバー経由でSageMaker APIにアクセス
 
 **処理フロー**:
+
 1. **最適化適用**: Workflow Optimizerの提案に基づくリソース選択
    - GPU/CPU選択
    - インスタンスタイプ選択
@@ -717,6 +748,7 @@ graph TB
 **学習方式別の実装**:
 
 #### 教師あり学習 (Supervised)
+
 - **分類 (Classification)**:
   - Random Forest (scikit-learn)
   - XGBoost (SageMaker built-in)
@@ -727,6 +759,7 @@ graph TB
   - Neural Network (TensorFlow/PyTorch)
 
 #### 教師なし学習 (Unsupervised)
+
 - **クラスタリング (Clustering)**:
   - K-Means (SageMaker built-in)
   - DBSCAN (scikit-learn)
@@ -735,12 +768,14 @@ graph TB
   - t-SNE (scikit-learn)
 
 #### 強化学習 (Reinforcement)
+
 - **アルゴリズム**:
   - PPO (Ray RLlib)
   - DQN (Ray RLlib)
   - A3C (Ray RLlib)
 
 **入力**:
+
 ```json
 {
   "training_data_s3": "s3://...",
@@ -766,6 +801,7 @@ graph TB
 ```
 
 **出力**:
+
 ```json
 {
   "training_job_name": "train-20250110-123456",
@@ -790,11 +826,13 @@ graph TB
 **責務**: 学習済みモデルの評価
 
 **実装方式**:
+
 - AWS Lambda (軽量モデル)
 - SageMaker Processing Job (大規模評価)
 - 統合MLOps MCPサーバー経由でS3/SageMakerにアクセス
 
 **処理フロー**:
+
 1. S3から学習済みモデルをロード
 2. 評価用データセットをロード
 3. **最適化適用**: Workflow Optimizerの提案に基づく評価
@@ -808,12 +846,14 @@ graph TB
 8. 評価結果をS3に保存
 
 **評価指標（学習方式別）**:
+
 - **教師あり学習（分類）**: Accuracy, Precision, Recall, F1-Score, AUC-ROC, Confusion Matrix
 - **教師あり学習（回帰）**: RMSE, MAE, R², MAPE
 - **教師なし学習（クラスタリング）**: Silhouette Score, Davies-Bouldin Index
 - **強化学習**: Average Reward, Episode Length, Success Rate
 
 **入力**:
+
 ```json
 {
   "model_s3": "s3://bucket/models/.../model.tar.gz",
@@ -829,6 +869,7 @@ graph TB
 ```
 
 **出力**:
+
 ```json
 {
   "evaluation_results": {
@@ -867,10 +908,12 @@ graph TB
 **責務**: 評価結果の判定と次アクション決定
 
 **実装方式**:
+
 - AWS Lambda (ビジネスロジック)
 - **MCP化していない**: ビジネスロジックのため既存Lambda実装を継続
 
 **処理フロー**:
+
 1. 評価結果を取得
 2. 設定された閾値と比較
 3. 判定結果に基づいて次アクションを決定:
@@ -880,6 +923,7 @@ graph TB
 4. 判定結果を返す
 
 **入力**:
+
 ```json
 {
   "evaluation_results": {
@@ -895,6 +939,7 @@ graph TB
 ```
 
 **出力**:
+
 ```json
 {
   "decision": "pass",
@@ -910,11 +955,13 @@ graph TB
 **責務**: モデルのコンテナ化とレジストリ登録
 
 **実装方式**:
+
 - AWS Lambda (軽量処理)
 - ECS Fargate (コンテナビルド)
 - 統合MLOps MCPサーバー経由でECR/Model Registryにアクセス
 
 **処理フロー**:
+
 1. S3から学習済みモデルをダウンロード
 2. 推論コードと依存関係を準備
 3. **最適化適用**: Workflow Optimizerの提案に基づくコンテナ最適化
@@ -929,6 +976,7 @@ graph TB
 10. モデル系譜（Model Lineage）の記録
 
 **入力**:
+
 ```json
 {
   "model_s3": "s3://bucket/models/.../model.tar.gz",
@@ -943,6 +991,7 @@ graph TB
 ```
 
 **出力**:
+
 ```json
 {
   "docker_image_uri": "123456789012.dkr.ecr.us-east-1.amazonaws.com/mlops-models:v1.2.0",
@@ -964,10 +1013,12 @@ graph TB
 **責務**: モデルのデプロイとロールバック
 
 **実装方式**:
+
 - AWS Lambda
 - 統合MLOps MCPサーバー経由でSageMaker Endpointにアクセス
 
 **処理フロー**:
+
 1. **最適化適用**: Workflow Optimizerの提案に基づくデプロイ戦略選択
    - カナリアリリース（10%→50%→100%）
    - A/Bテスト
@@ -978,12 +1029,14 @@ graph TB
 5. デプロイメントログの記録
 
 **ロールバック機能**:
+
 1. SageMaker Model Registryから前バージョンのモデルを取得
 2. 現在のモデルのステータスを`Archived`に変更
 3. 前バージョンのモデルを`Approved`に変更
 4. ロールバック履歴を記録
 
 **入力**:
+
 ```json
 {
   "model_package_arn": "arn:aws:sagemaker:...",
@@ -1002,6 +1055,7 @@ graph TB
 ```
 
 **出力**:
+
 ```json
 {
   "endpoint_name": "mlops-model-001-staging",
@@ -1022,11 +1076,13 @@ graph TB
 **責務**: モデルとシステムのモニタリング
 
 **実装方式**:
+
 - AWS Lambda (定期実行)
 - EventBridge Scheduler
 - 統合MLOps MCPサーバー経由でCloudWatch/SageMaker Model Monitorにアクセス
 
 **処理フロー**:
+
 1. **最適化適用**: Workflow Optimizerの提案に基づくモニタリング設定
    - モニタリング強度（high/medium/low）
    - ドリフト検知頻度（hourly/daily/weekly）
@@ -1039,6 +1095,7 @@ graph TB
 7. 異常検知時にNotification Agentに通知
 
 **入力**:
+
 ```json
 {
   "endpoint_name": "mlops-model-001-staging",
@@ -1059,6 +1116,7 @@ graph TB
 ```
 
 **出力**:
+
 ```json
 {
   "system_metrics": {
@@ -1085,12 +1143,14 @@ graph TB
 **責務**: 自動再学習トリガー管理
 
 **実装方式**:
+
 - AWS Lambda (トリガー監視)
 - EventBridge Rules
 - S3 Event Notifications
 - 統合MLOps MCPサーバー経由でStep Functionsを起動
 
 **処理フロー**:
+
 1. **最適化適用**: Workflow Optimizerの提案に基づく再学習頻度設定
 2. 再学習トリガーの監視：
    - データ変更（S3イベント）
@@ -1103,6 +1163,7 @@ graph TB
 5. 改善が認められた場合のみ自動デプロイ
 
 **入力**:
+
 ```json
 {
   "retrain_config": {
@@ -1118,6 +1179,7 @@ graph TB
 ```
 
 **出力**:
+
 ```json
 {
   "retrain_triggered": true,
@@ -1134,10 +1196,12 @@ graph TB
 **責務**: オペレータへの通知
 
 **実装方式**:
+
 - AWS Lambda
 - 統合MLOps MCPサーバー経由でSlack/Email/GitHubにアクセス
 
 **処理フロー**:
+
 1. 通知内容を受け取る
 2. 通知先（Slack/Email/GitHub）に応じたメッセージフォーマット
 3. 通知テンプレート適用
@@ -1145,6 +1209,7 @@ graph TB
 5. Slack/Emailに通知
 
 **通知種別**:
+
 - `optimization_proposal`: 最適化提案
 - `retrain_required`: 再学習必要
 - `training_success`: 学習成功
@@ -1155,6 +1220,7 @@ graph TB
 - `metric_degradation`: 精度劣化
 
 **入力**:
+
 ```json
 {
   "notification_type": "training_success",
@@ -1169,6 +1235,7 @@ graph TB
 ```
 
 **出力**:
+
 ```json
 {
   "notification_status": "success",
@@ -1185,10 +1252,12 @@ graph TB
 **責務**: 学習履歴のGitHub保存
 
 **実装方式**:
+
 - AWS Lambda
 - 統合MLOps MCPサーバー経由でGitHub APIにアクセス
 
 **処理フロー**:
+
 1. 学習結果をMarkdown形式に整形
 2. ワークフロー最適化の適用結果を含める
 3. GitHub APIでリポジトリの`training_history/`ディレクトリにコミット
@@ -1248,6 +1317,7 @@ graph TB
 ```
 
 **入力**:
+
 ```json
 {
   "training_job_name": "train-20250110-123456",
@@ -1260,6 +1330,7 @@ graph TB
 ```
 
 **出力**:
+
 ```json
 {
   "commit_sha": "abc123...",
@@ -1335,7 +1406,7 @@ graph LR
 
 ### 5.2 S3バケット構造
 
-```
+```text
 s3://mlops-bucket/
 ├── datasets/
 │   ├── {dataset_id}/
@@ -1440,7 +1511,8 @@ stateDiagram-v2
 
 **Task Token パターン**:
 
-`WaitForOptimizationApproval`と`WaitForOperatorInput`ステートでは、Task Tokenパターンを使用してユーザー入力を待機します。ユーザーがGitHub Issueにリアクションまたはコメントすると、Lambda関数がTask Tokenを使ってワークフローを再開します。
+`WaitForOptimizationApproval`と`WaitForOperatorInput`ステートでは、Task Tokenパターンを使用してユーザー入力を待機します。
+ユーザーがGitHub Issueにリアクションまたはコメントすると、Lambda関数がTask Tokenを使ってワークフローを再開します。
 
 ---
 
@@ -1450,7 +1522,7 @@ stateDiagram-v2
 
 **1つの統合MLOps MCPサーバー**として実装し、**6つのCapability（機能群）**を提供します。
 
-```
+```text
 統合MLOps MCPサーバー (ECS Fargate or Lambda)
 ├─ Capability 1: Data Preparation
 │  ├─ load_dataset
@@ -1731,7 +1803,7 @@ AWS Secrets Managerで以下のシークレットを管理:
 
 **AWS CDK (Python)** を使用してインフラをコード化
 
-```
+```text
 project/
 ├── cdk/
 │   ├── app.py
@@ -1802,7 +1874,7 @@ project/
 ### 12.1 AWSサービス
 
 | サービス | 用途 |
-|---|---|
+| --- | --- |
 | AWS Lambda | エージェント実装（軽量処理） |
 | Amazon ECS Fargate | 統合MCPサーバー、エージェント実装（大規模処理） |
 | AWS Step Functions | ワークフローオーケストレーション |
@@ -1835,5 +1907,5 @@ project/
 ## 14. 変更履歴
 
 | バージョン | 日付 | 変更内容 | 作成者 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 0.1 | 2025-01-29 | 初版作成（7段階MLOpsライフサイクル、ワークフロー最適化機能、統合MCP対応） | - |
