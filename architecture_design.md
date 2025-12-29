@@ -1,10 +1,10 @@
 # アーキテクチャ設計書: GitHub Issue駆動型MLOpsシステム
 
-## 0. MLOpsワークフロー要件
+## 1. MLOpsワークフロー要件
 
 本システムは、以下の7段階のMLOpsワークフローを実現します。
 
-### 0.1 ワークフローの7段階
+### 1.1 ワークフローの7段階
 
 #### 1. 📥 データ収集・前処理
 
@@ -191,7 +191,7 @@
 - 再学習ログ
 - パフォーマンス比較レポート（旧モデル vs 新モデル）
 
-### 0.2 ワークフロー全体図
+### 1.2 ワークフロー全体図
 
 ```mermaid
 graph TB
@@ -240,7 +240,7 @@ graph TB
 ```
 
 
-### 0.3 GitHub Issue駆動型との統合
+### 1.3 GitHub Issue駆動型との統合
 
 本システムでは、上記の7段階のワークフローを**GitHub Issue**を起点として駆動します。
 
@@ -289,9 +289,9 @@ retrain_triggers:
 
 ---
 
-## 1. アーキテクチャ概要
+## 2. アーキテクチャ概要
 
-### 1.1 システムアーキテクチャ図
+### 2.1 システムアーキテクチャ図
 
 ```mermaid
 graph TB
@@ -381,7 +381,7 @@ graph TB
     HistoryAgent --> Issue
 ```
 
-### 1.2 エージェントベースアーキテクチャ
+### 2.2 エージェントベースアーキテクチャ
 
 本システムは、各処理を独立したエージェント（Agent）として実装し、統合MLOps MCPサーバーを介してAWSサービスや外部サービスと連携します。
 
@@ -406,9 +406,9 @@ graph TB
 
 ---
 
-## 2. ワークフロー最適化アーキテクチャ
+## 3. ワークフロー最適化アーキテクチャ
 
-### 2.1 Workflow Optimizer Agentの設計
+### 3.1 Workflow Optimizer Agentの設計
 
 **責務**: モデル特性の自動検出と最適化提案
 
@@ -518,7 +518,7 @@ graph TB
 }
 ```
 
-### 2.2 最適化提案のフォーマット
+### 3.2 最適化提案のフォーマット
 
 **GitHub Issueコメント形式**:
 
@@ -566,9 +566,9 @@ graph TB
 
 ---
 
-## 3. コンポーネント設計
+## 4. コンポーネント設計
 
-### 3.1 Issue Detector Agent
+### 4.1 Issue Detector Agent
 
 **責務**: GitHub Issueの検知とパース
 
@@ -622,13 +622,13 @@ graph TB
 
 ---
 
-### 3.2 Workflow Optimizer Agent
+### 4.2 Workflow Optimizer Agent
 
 **詳細は「2. ワークフロー最適化アーキテクチャ」を参照**
 
 ---
 
-### 3.3 Data Preparation Agent
+### 4.3 Data Preparation Agent
 
 **責務**: 学習データの取得、前処理、SageMaker用フォーマット変換
 
@@ -691,7 +691,7 @@ graph TB
 
 ---
 
-### 3.4 Training Agent
+### 4.4 Training Agent
 
 **責務**: SageMaker Training Jobの起動と監視
 
@@ -785,7 +785,7 @@ graph TB
 
 ---
 
-### 3.5 Evaluation Agent
+### 4.5 Evaluation Agent
 
 **責務**: 学習済みモデルの評価
 
@@ -862,7 +862,7 @@ graph TB
 
 ---
 
-### 3.6 Judge Agent
+### 4.6 Judge Agent
 
 **責務**: 評価結果の判定と次アクション決定
 
@@ -905,7 +905,7 @@ graph TB
 
 ---
 
-### 3.7 Packaging Agent
+### 4.7 Packaging Agent
 
 **責務**: モデルのコンテナ化とレジストリ登録
 
@@ -959,7 +959,7 @@ graph TB
 
 ---
 
-### 3.8 Deployment Agent
+### 4.8 Deployment Agent
 
 **責務**: モデルのデプロイとロールバック
 
@@ -1017,7 +1017,7 @@ graph TB
 
 ---
 
-### 3.9 Monitor Agent
+### 4.9 Monitor Agent
 
 **責務**: モデルとシステムのモニタリング
 
@@ -1080,7 +1080,7 @@ graph TB
 
 ---
 
-### 3.10 Retrain Agent
+### 4.10 Retrain Agent
 
 **責務**: 自動再学習トリガー管理
 
@@ -1129,7 +1129,7 @@ graph TB
 
 ---
 
-### 3.11 Notification Agent
+### 4.11 Notification Agent
 
 **責務**: オペレータへの通知
 
@@ -1180,7 +1180,7 @@ graph TB
 
 ---
 
-### 3.12 History Writer Agent
+### 4.12 History Writer Agent
 
 **責務**: 学習履歴のGitHub保存
 
@@ -1270,7 +1270,7 @@ graph TB
 
 ---
 
-## 4. データフロー設計
+## 5. データフロー設計
 
 ### 4.1 エンドツーエンドデータフロー
 
@@ -1333,7 +1333,7 @@ graph LR
     Monitor --> CloudWatch
 ```
 
-### 4.2 S3バケット構造
+### 5.2 S3バケット構造
 
 ```
 s3://mlops-bucket/
@@ -1381,9 +1381,9 @@ s3://mlops-bucket/
 
 ---
 
-## 5. ワークフロー設計 (Step Functions)
+## 6. ワークフロー設計 (Step Functions)
 
-### 5.1 Step Functions State Machine定義
+### 6.1 Step Functions State Machine定義
 
 **ワークフローの主要ステート**:
 
@@ -1444,7 +1444,7 @@ stateDiagram-v2
 
 ---
 
-## 6. 統合MLOps MCPサーバー設計
+## 7. 統合MLOps MCPサーバー設計
 
 ### 6.1 統合アーキテクチャ
 
@@ -1542,7 +1542,7 @@ stateDiagram-v2
 
 ---
 
-## 7. セキュリティ設計
+## 8. セキュリティ設計
 
 ### 7.1 IAMロール設計
 
@@ -1652,7 +1652,7 @@ AWS Secrets Managerで以下のシークレットを管理:
 - **Email SMTP Credentials**: `mlops/email-smtp`
 - **API Keys**: `mlops/api-keys`
 
-### 7.3 ネットワークセキュリティ
+### 8.3 ネットワークセキュリティ
 
 - **Lambda/ECS**: VPC内で実行（プライベートサブネット）
 - **SageMaker**: VPC Modeで実行
@@ -1674,7 +1674,7 @@ AWS Secrets Managerで以下のシークレットを管理:
 
 ---
 
-## 8. スケーラビリティ設計
+## 9. スケーラビリティ設計
 
 ### 8.1 並列実行制御
 
@@ -1692,7 +1692,7 @@ AWS Secrets Managerで以下のシークレットを管理:
 
 ---
 
-## 9. モニタリング・ロギング設計
+## 10. モニタリング・ロギング設計
 
 ### 9.1 CloudWatch Metrics
 
@@ -1725,7 +1725,7 @@ AWS Secrets Managerで以下のシークレットを管理:
 
 ---
 
-## 10. デプロイメント戦略
+## 11. デプロイメント戦略
 
 ### 10.1 Infrastructure as Code (IaC)
 
@@ -1777,7 +1777,7 @@ project/
 
 ---
 
-## 11. 拡張性の考慮事項
+## 12. 拡張性の考慮事項
 
 ### 11.1 将来的な拡張
 
@@ -1797,7 +1797,7 @@ project/
 
 ---
 
-## 12. 技術スタック
+## 13. 技術スタック
 
 ### 12.1 AWSサービス
 
@@ -1832,7 +1832,7 @@ project/
 
 ---
 
-## 13. 変更履歴
+## 14. 変更履歴
 
 | バージョン | 日付 | 変更内容 | 作成者 |
 |---|---|---|---|
