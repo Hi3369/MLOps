@@ -13,12 +13,14 @@
 ### 1.1 実装範囲
 
 **Phase 1（Week 1-6）**: コアMLOps Capability実装
+
 - 統合サーバーの基盤構築
 - Capability 1: Data Preparation
 - Capability 2: ML Training
 - Capability 3: ML Evaluation
 
 **Phase 2（Week 7-12）**: 統合Capability実装
+
 - Capability 4: GitHub Integration
 - Capability 5: Model Registry
 - Capability 6: Notification
@@ -27,30 +29,30 @@
 
 ### 1.2 技術スタック
 
-| カテゴリ | 技術 | バージョン |
-|---------|------|-----------|
-| **言語** | Python | 3.11+ |
-| **MCPフレームワーク** | mcp | 1.0.0+ |
-| **AWS SDK** | boto3 | 1.34.0+ |
-| **機械学習** | scikit-learn | 1.4.0+ |
-| | xgboost | 2.0.0+ |
-| | tensorflow | 2.15.0+ |
-| | pytorch | 2.1.0+ |
-| **強化学習** | ray[rllib] | 2.9.0+ |
-| **GitHub API** | PyGithub | 2.1.1+ |
-| **通知** | slack-sdk | 3.26.0+ |
-| **テスト** | pytest | 8.0.0+ |
-| | pytest-asyncio | 0.23.0+ |
-| | pytest-cov | 4.1.0+ |
-| **リンター** | ruff | 0.1.0+ |
-| | mypy | 1.8.0+ |
-| **コンテナ** | Docker | 24.0+ |
+| カテゴリ               | 技術            | バージョン |
+| ---------------------- | --------------- | ---------- |
+| **言語**               | Python          | 3.11+      |
+| **MCPフレームワーク**  | mcp             | 1.0.0+     |
+| **AWS SDK**            | boto3           | 1.34.0+    |
+| **機械学習**           | scikit-learn    | 1.4.0+     |
+|                        | xgboost         | 2.0.0+     |
+|                        | tensorflow      | 2.15.0+    |
+|                        | pytorch         | 2.1.0+     |
+| **強化学習**           | ray[rllib]      | 2.9.0+     |
+| **GitHub API**         | PyGithub        | 2.1.1+     |
+| **通知**               | slack-sdk       | 3.26.0+    |
+| **テスト**             | pytest          | 8.0.0+     |
+|                        | pytest-asyncio  | 0.23.0+    |
+|                        | pytest-cov      | 4.1.0+     |
+| **リンター**           | ruff            | 0.1.0+     |
+|                        | mypy            | 1.8.0+     |
+| **コンテナ**           | Docker          | 24.0+      |
 
 ---
 
 ## 2. ディレクトリ構造詳細
 
-```
+```text
 mcp_server/
 ├── __init__.py                         # パッケージ初期化
 ├── __main__.py                         # エントリーポイント
@@ -1037,6 +1039,6 @@ task_role = iam.Role(
 
 ## 8. 変更履歴
 
-| バージョン | 日付 | 変更内容 | 作成者 |
-| --- | --- | --- | --- |
-| 0.1 | 2025-12-27 | 初版発行 | - |
+| バージョン | 日付       | 変更内容 | 作成者 |
+| ---------- | ---------- | -------- | ------ |
+| 0.1        | 2025-12-27 | 初版発行 | -      |
