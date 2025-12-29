@@ -1520,53 +1520,92 @@ stateDiagram-v2
 
 ### 7.1 統合アーキテクチャ
 
-**1つの統合MLOps MCPサーバー**として実装し、**6つのCapability（機能群）**を提供します。
+**1つの統合MLOps MCPサーバー**として実装し、**11個のCapability（機能群）**を提供します。
+各CapabilityはMCP化された各エージェントに対応します（1対1マッピング）。
 
 ```text
 統合MLOps MCPサーバー (ECS Fargate or Lambda)
-├─ Capability 1: Data Preparation
+├─ Capability 1: GitHub Integration (Issue Detector Agent)
+│  ├─ detect_mlops_issue
+│  ├─ parse_issue_config
+│  ├─ validate_training_params
+│  └─ start_workflow
+│
+├─ Capability 2: Workflow Optimization (Workflow Optimizer Agent)
+│  ├─ analyze_model_characteristics
+│  ├─ generate_optimization_proposal
+│  ├─ retrieve_similar_model_history
+│  ├─ apply_optimizations
+│  └─ track_optimization_history
+│
+├─ Capability 3: Data Preparation (Data Preparation Agent)
 │  ├─ load_dataset
 │  ├─ validate_data
 │  ├─ preprocess_supervised/unsupervised/reinforcement
 │  ├─ feature_engineering
 │  ├─ split_dataset
-│  └─ apply_class_imbalance_handling (NEW)
+│  └─ apply_class_imbalance_handling
 │
-├─ Capability 2: ML Training
+├─ Capability 4: Model Training (Training Agent)
+│  ├─ create_training_job
 │  ├─ train_supervised_classifier/regressor
 │  ├─ train_unsupervised_clustering/dimensionality_reduction
 │  ├─ train_reinforcement (PPO/DQN/A3C)
 │  ├─ hyperparameter_optimization (Grid/Random/Bayesian)
-│  └─ select_optimal_resources (NEW)
+│  ├─ monitor_training_progress
+│  └─ get_training_results
 │
-├─ Capability 3: ML Evaluation
+├─ Capability 5: Model Evaluation (Evaluation Agent)
 │  ├─ evaluate_classifier/regressor/clustering/reinforcement
 │  ├─ generate_confusion_matrix/roc_curve
 │  ├─ calculate_shap_values
 │  ├─ bias_check (SageMaker Clarify)
-│  └─ compare_models
+│  ├─ compare_models
+│  └─ create_evaluation_report
 │
-├─ Capability 4: GitHub Integration
-│  ├─ detect_issue
-│  ├─ parse_issue_config
-│  ├─ create_issue_comment
-│  ├─ commit_training_history
-│  └─ create_optimization_proposal (NEW)
+├─ Capability 6: Model Packaging (Packaging Agent)
+│  ├─ build_docker_image
+│  ├─ push_to_ecr
+│  ├─ create_model_package
+│  ├─ generate_api_spec
+│  └─ optimize_container (マルチステージビルド、ONNX変換等)
 │
-├─ Capability 5: Model Registry
-│  ├─ register_model
-│  ├─ get_model_version
-│  ├─ rollback_model
-│  └─ track_model_lineage
+├─ Capability 7: Model Deployment (Deployment Agent)
+│  ├─ deploy_model_to_endpoint
+│  ├─ update_endpoint_traffic
+│  ├─ configure_auto_scaling
+│  ├─ health_check_endpoint
+│  └─ rollback_deployment
 │
-└─ Capability 6: Notification
-   ├─ send_slack_notification
-   ├─ send_email_notification
-   ├─ send_github_notification
-   └─ apply_notification_template
+├─ Capability 8: Model Monitoring (Monitor Agent)
+│  ├─ collect_system_metrics
+│  ├─ collect_model_metrics
+│  ├─ detect_data_drift
+│  ├─ detect_concept_drift
+│  ├─ trigger_cloudwatch_alarms
+│  └─ update_dashboard
+│
+├─ Capability 9: Retrain Management (Retrain Agent)
+│  ├─ check_retrain_triggers
+│  ├─ evaluate_trigger_conditions
+│  ├─ create_retrain_issue
+│  ├─ start_retrain_workflow
+│  └─ schedule_periodic_retrain
+│
+├─ Capability 10: Notification (Notification Agent)
+│  ├─ send_slack_notification
+│  ├─ send_email_notification
+│  ├─ send_github_notification
+│  └─ apply_notification_template
+│
+└─ Capability 11: History Management (History Writer Agent)
+   ├─ format_training_history
+   ├─ commit_to_github
+   ├─ post_issue_comment
+   └─ track_version_history
 ```
 
-### 7.2 Capability 4拡張: Workflow Optimization
+### 7.2 Capability 2詳細: Workflow Optimization
 
 **新規ツール**:
 
@@ -1598,7 +1637,16 @@ stateDiagram-v2
    - 入力: `optimization_proposal`, `actual_results`
    - 出力: `history_entry_id`
 
-### 7.3 統合MCPサーバーの主要メリット
+### 7.3 Capability構成の設計方針
+
+**11個のCapabilityに分割した理由**:
+
+1. **責務の明確化**: 各Capabilityは単一の明確な責務を持つ（単一責任の原則）
+2. **エージェントとの1対1対応**: MCP化された各エージェントに対応（Issue Detector Agent → Capability 1等）
+3. **独立性**: 各Capabilityは独立してテスト・デプロイ・スケール可能
+4. **保守性**: 機能追加・変更が該当Capabilityのみで完結
+
+**統合MCPサーバーの主要メリット**:
 
 - 🎯 **運用の簡素化**: 1つのサーバープロセス/コンテナのみ管理
 - 🎯 **デプロイの簡素化**: 1つのデプロイパイプラインで完結

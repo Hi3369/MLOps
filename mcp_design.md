@@ -40,199 +40,187 @@ Model Context Protocol (MCP) として専門機能を実装することで:
 - ✅ **一貫性の向上**: バージョン管理・依存関係が統一
 - ✅ **開発効率**: 共通ユーティリティ・設定の再利用
 
-### 2.2 提供Capability（6つの機能群）
+### 2.2 提供Capability（11個の機能群）
 
-統合MCPサーバーは、以下の**6つのcapability**を提供します:
+統合MCPサーバーは、以下の**11個のcapability**を提供します（各MCPエージェントと1対1対応）:
 
-#### Capability 1: Data Preparation
+#### Capability 1: GitHub Integration
+
+**対応エージェント**: Issue Detector Agent
+
+**責務**: GitHub Issue検知・パース・ワークフロー起動
+
+**提供ツール**:
+- `detect_mlops_issue`: MLOps用Issueの検知
+- `parse_issue_config`: Issue本文のYAML/JSON設定パース
+- `validate_training_params`: 学習パラメータのバリデーション
+- `start_workflow`: Step Functionsワークフローの起動
+
+#### Capability 2: Workflow Optimization
+
+**対応エージェント**: Workflow Optimizer Agent
+
+**責務**: モデル特性分析・最適化提案・履歴ベース最適化
+
+**提供ツール**:
+- `analyze_model_characteristics`: モデル特性分析（データサイズ、アルゴリズム等）
+- `generate_optimization_proposal`: 最適化提案生成
+- `retrieve_similar_model_history`: 類似モデルの履歴取得
+- `apply_optimizations`: 最適化の適用
+- `track_optimization_history`: 最適化履歴の記録
+
+#### Capability 3: Data Preparation
+
+**対応エージェント**: Data Preparation Agent
 
 **責務**: データ前処理・特徴量エンジニアリング
 
 **提供ツール**:
-- `load_dataset`: S3からデータセットを読み込む
-- `validate_data`: データのバリデーション（欠損値、型チェック等）
-- `preprocess_supervised`: 教師あり学習用の前処理（正規化、エンコーディング等）
-- `preprocess_unsupervised`: 教師なし学習用の前処理
-- `preprocess_reinforcement`: 強化学習用の前処理
-- `split_dataset`: データセットの分割（train/validation/test）
+- `load_dataset`: S3からデータセット読み込み
+- `validate_data`: データバリデーション（欠損値、型チェック等）
+- `preprocess_supervised`: 教師あり学習用前処理
+- `preprocess_unsupervised`: 教師なし学習用前処理
+- `preprocess_reinforcement`: 強化学習用前処理
 - `feature_engineering`: 特徴量エンジニアリング
-- `save_processed_data`: 処理済みデータをS3に保存
+- `split_dataset`: データセット分割（train/validation/test）
+- `apply_class_imbalance_handling`: クラス不均衡対策
 
-#### Capability 2: ML Training
+#### Capability 4: Model Training
 
-**責務**: 機械学習モデルの学習
+**対応エージェント**: Training Agent
+
+**責務**: 機械学習モデルの学習・ハイパーパラメータ最適化
 
 **提供ツール**:
+- `create_training_job`: SageMaker学習ジョブ作成
 - `train_supervised_classifier`: 教師あり学習（分類）
-  - `random_forest_classifier`
-  - `xgboost_classifier`
-  - `neural_network_classifier`
 - `train_supervised_regressor`: 教師あり学習（回帰）
-  - `linear_regression`
-  - `xgboost_regressor`
-  - `neural_network_regressor`
 - `train_unsupervised_clustering`: 教師なし学習（クラスタリング）
-  - `kmeans_clustering`
-  - `dbscan_clustering`
-  - `autoencoder_clustering`
-- `train_unsupervised_dimension_reduction`: 教師なし学習（次元削減）
-  - `pca_reduction`
-  - `tsne_reduction`
-- `train_reinforcement`: 強化学習
-  - `ppo_training`
-  - `dqn_training`
-  - `a3c_training`
-- `get_training_metrics`: 学習中のメトリクスを取得
-- `save_model`: 学習済みモデルをS3に保存
+- `train_unsupervised_dimensionality_reduction`: 次元削減
+- `train_reinforcement`: 強化学習（PPO/DQN/A3C）
+- `hyperparameter_optimization`: ハイパーパラメータ最適化（Grid/Random/Bayesian）
+- `monitor_training_progress`: 学習進捗モニタリング
+- `get_training_results`: 学習結果取得
 
-#### Capability 3: ML Evaluation
+#### Capability 5: Model Evaluation
 
-**責務**: モデルの評価・可視化
+**対応エージェント**: Evaluation Agent
+
+**責務**: モデル評価・メトリクス計算・可視化・バイアス検出
 
 **提供ツール**:
-- `load_model`: S3からモデルをロード
-- `evaluate_classifier`: 分類モデルの評価
-  - メトリクス: Accuracy, Precision, Recall, F1-Score, AUC-ROC
-  - 出力: Confusion Matrix, ROC Curve
-- `evaluate_regressor`: 回帰モデルの評価
-  - メトリクス: RMSE, MAE, R², MAPE
-  - 出力: Residual Plot, Prediction vs Actual Plot
-- `evaluate_clustering`: クラスタリングモデルの評価
-  - メトリクス: Silhouette Score, Davies-Bouldin Index, Inertia
-  - 出力: Cluster Visualization
-- `evaluate_reinforcement`: 強化学習モデルの評価
-  - メトリクス: Episode Reward, Success Rate, Average Steps
-  - 出力: Reward Curve, Episode Length Distribution
-- `compare_models`: 複数モデルの比較
-- `generate_evaluation_report`: 評価レポートの生成（Markdown/JSON）
-- `save_evaluation_results`: 評価結果をS3に保存
+- `evaluate_classifier`: 分類モデル評価（Accuracy, Precision, Recall, F1, AUC-ROC）
+- `evaluate_regressor`: 回帰モデル評価（RMSE, MAE, R², MAPE）
+- `evaluate_clustering`: クラスタリング評価（Silhouette Score, Davies-Bouldin Index）
+- `evaluate_reinforcement`: 強化学習評価（Episode Reward, Success Rate）
+- `generate_confusion_matrix`: 混同行列生成
+- `generate_roc_curve`: ROC曲線生成
+- `calculate_shap_values`: SHAP値計算（モデル解釈性）
+- `bias_check`: バイアス検出（SageMaker Clarify）
+- `compare_models`: 複数モデル比較
+- `create_evaluation_report`: 評価レポート生成
 
-#### Capability 4: GitHub Integration
+#### Capability 6: Model Packaging
 
-**責務**: GitHub連携機能の統合（Issue/PR/リポジトリ操作、GitHub通知）
+**対応エージェント**: Packaging Agent
+
+**責務**: モデルコンテナ化・ECR登録・最適化
 
 **提供ツール**:
+- `build_docker_image`: Dockerイメージビルド
+- `push_to_ecr`: ECRへのプッシュ
+- `create_model_package`: SageMakerモデルパッケージ作成
+- `generate_api_spec`: 推論APIスペック生成
+- `optimize_container`: コンテナ最適化（マルチステージビルド、ONNX変換等）
 
-**Issue管理**:
+#### Capability 7: Model Deployment
 
-- `get_issue`: Issueの取得
-- `create_issue`: Issueの作成
-- `update_issue`: Issueの更新
-- `add_issue_comment`: Issueにコメント追加
-- `get_issue_comments`: Issueのコメント一覧取得
-- `parse_issue_body`: Issue本文のYAML/JSONパース
-- `update_issue_status`: Issueのステータス更新（ラベル変更、クローズ等）
+**対応エージェント**: Deployment Agent
 
-**ラベル管理**:
-
-- `get_issue_labels`: Issueのラベル取得
-- `add_label`: ラベル追加
-- `remove_label`: ラベル削除
-
-**リポジトリ操作**:
-
-- `create_file`: ファイル作成（履歴保存用）
-- `update_file`: ファイル更新
-- `commit_changes`: 変更のコミット
-- `create_pull_request`: プルリクエスト作成
-
-**Webhook**:
-
-- `validate_webhook_signature`: Webhook署名の検証
-- `parse_webhook_payload`: Webhookペイロードのパース
-
-**影響を受けるエージェント**:
-
-- Issue Detector Agent → MCPクライアント化
-- Notification Agent → MCPクライアント化（GitHub通知部分）
-- History Writer Agent → MCPクライアント化
-
-#### Capability 5: Model Registry
-
-**責務**: モデルバージョン管理・レジストリ操作
+**責務**: モデルデプロイ・エンドポイント管理・トラフィック制御
 
 **提供ツール**:
+- `deploy_model_to_endpoint`: SageMakerエンドポイントへデプロイ
+- `update_endpoint_traffic`: トラフィック配分更新（カナリアデプロイ）
+- `configure_auto_scaling`: オートスケーリング設定
+- `health_check_endpoint`: エンドポイントヘルスチェック
+- `rollback_deployment`: デプロイメントロールバック
 
-**モデル登録**:
+#### Capability 8: Model Monitoring
 
-- `register_model`: モデルの登録
-- `update_model_metadata`: モデルメタデータの更新
-- `delete_model`: モデルの削除
+**対応エージェント**: Monitor Agent
 
-**モデルバージョン管理**:
-
-- `list_model_versions`: モデルバージョン一覧取得
-- `get_model_version`: 特定バージョンの取得
-- `promote_model_version`: モデルバージョンの昇格（Staging → Production）
-- `archive_model_version`: モデルバージョンのアーカイブ
-
-**モデルステータス管理**:
-
-- `approve_model`: モデルの承認
-- `reject_model`: モデルの却下
-- `get_model_status`: モデルステータスの取得
-
-**ロールバック**:
-
-- `rollback_model`: 前バージョンへのロールバック
-- `get_rollback_history`: ロールバック履歴の取得
-
-**モデル検索**:
-
-- `search_models`: モデル検索
-- `filter_models_by_metrics`: メトリクスでフィルタリング
-- `get_best_model`: 最良モデルの取得
-
-**影響を受けるエージェント**:
-
-- Training Agent → MCPクライアント化（モデル登録部分）
-- Rollback Agent → MCPクライアント化
-
-#### Capability 6: Notification
-
-**責務**: 外部通知チャネルの統合管理（Slack/Email/Teams/Discord）
-
-**注**: GitHub通知はCapability 4（GitHub Integration）で提供されます。
+**責務**: モデルパフォーマンス監視・ドリフト検出・アラート
 
 **提供ツール**:
+- `collect_system_metrics`: システムメトリクス収集（CPU/Memory/Latency）
+- `collect_model_metrics`: モデルメトリクス収集（精度、予測分布等）
+- `detect_data_drift`: データドリフト検出
+- `detect_concept_drift`: コンセプトドリフト検出
+- `trigger_cloudwatch_alarms`: CloudWatchアラーム発火
+- `update_dashboard`: ダッシュボード更新
 
-**Slack通知**:
+#### Capability 9: Retrain Management
 
-- `send_slack_message`: Slackメッセージ送信
-- `send_slack_thread_reply`: スレッド返信
-- `send_slack_dm`: DM送信
+**対応エージェント**: Retrain Agent
 
-**Email通知**:
+**責務**: 再学習トリガー判定・再学習ワークフロー起動
 
-- `send_email`: Email送信
-- `send_email_with_attachment`: 添付ファイル付きEmail送信
+**提供ツール**:
+- `check_retrain_triggers`: 再学習トリガー確認
+- `evaluate_trigger_conditions`: トリガー条件評価（ドリフト閾値、スケジュール等）
+- `create_retrain_issue`: 再学習Issue作成
+- `start_retrain_workflow`: 再学習ワークフロー起動
+- `schedule_periodic_retrain`: 定期再学習スケジュール設定
 
-**Microsoft Teams通知**:
+#### Capability 10: Notification
 
-- `send_teams_message`: Teamsメッセージ送信
+**対応エージェント**: Notification Agent
 
-**Discord通知**:
+**責務**: 外部通知チャネル統合（Slack/Email/GitHub）
 
-- `send_discord_message`: Discordメッセージ送信
+**提供ツール**:
+- `send_slack_notification`: Slack通知送信
+- `send_email_notification`: Email通知送信
+- `send_github_notification`: GitHub Issue/PR通知
+- `apply_notification_template`: 通知テンプレート適用
 
-**通知テンプレート**:
+#### Capability 11: History Management
 
-- `render_notification_template`: テンプレートレンダリング
-- `get_notification_templates`: テンプレート一覧取得
+**対応エージェント**: History Writer Agent
 
-**影響を受けるエージェント**:
+**責務**: 学習履歴記録・GitHub履歴管理・バージョン追跡
 
-- Notification Agent → MCPクライアント化（通知チャネル部分）
+**提供ツール**:
+- `format_training_history`: 学習履歴フォーマット
+- `commit_to_github`: GitHubリポジトリへコミット
+- `post_issue_comment`: Issue進捗コメント投稿
+- `track_version_history`: バージョン履歴追跡
 
-### 2.3 将来の拡張候補
+### 2.3 Capability構成の設計方針
+
+**11個のCapabilityに分割した理由**:
+
+1. **責務の明確化**: 各Capabilityは単一の明確な責務を持つ（単一責任の原則）
+2. **エージェントとの1対1対応**: MCP化された各エージェントに対応
+3. **独立性**: 各Capabilityは独立してテスト・デプロイ・スケール可能
+4. **保守性**: 機能追加・変更が該当Capabilityのみで完結
+
+**統合MCPサーバーの主要メリット**:
+- 🎯 **運用の簡素化**: 1つのサーバープロセス/コンテナのみ管理
+- 🎯 **デプロイの簡素化**: 1つのデプロイパイプラインで完結
+- 🎯 **リソース効率**: メモリ・CPUを共有、オーバーヘッド削減
+- 🎯 **MCP接続の最小化**: 1つのMCP接続で全ツールにアクセス
+
+### 2.4 将来の拡張候補
 
 統合MCPサーバーには、将来的に以下のcapabilityを追加可能です:
 
-**Capability 7: Experiment Tracking** 💡
+**Capability 12: Experiment Tracking** 💡
 - MLflow、Weights & Biases等の実験追跡ツール統合
 - ハイパーパラメータチューニング履歴管理
 
-**Capability 8: Data Versioning** 💡
+**Capability 13: Data Versioning** 💡
 - DVC、Delta Lake等のデータバージョニングツール統合
 - データ系譜追跡、データ品質モニタリング
 
@@ -279,13 +267,18 @@ graph TB
         subgraph "Unified MLOps MCP Server"
             MCP_SERVER[統合MLOps MCP Server<br/>ECS Fargate / Lambda]
 
-            subgraph "6 Capabilities"
-                CAP_DATA[1. Data Preparation]
-                CAP_TRAIN[2. ML Training]
-                CAP_EVAL[3. ML Evaluation]
-                CAP_GITHUB[4. GitHub Integration]
-                CAP_REGISTRY[5. Model Registry]
-                CAP_NOTIFY[6. Notification]
+            subgraph "11 Capabilities"
+                CAP1[1. GitHub Integration]
+                CAP2[2. Workflow Optimization]
+                CAP3[3. Data Preparation]
+                CAP4[4. Model Training]
+                CAP5[5. Model Evaluation]
+                CAP6[6. Model Packaging]
+                CAP7[7. Model Deployment]
+                CAP8[8. Model Monitoring]
+                CAP9[9. Retrain Management]
+                CAP10[10. Notification]
+                CAP11[11. History Management]
             end
         end
 
@@ -314,13 +307,13 @@ graph TB
     ROLLBACK -->|MCP| MCP_SERVER
     HISTORY -->|MCP| MCP_SERVER
 
-    MCP_SERVER -->|Capability 1-3| S3
-    MCP_SERVER -->|Capability 5| SAGEMAKER_REGISTRY
-    MCP_SERVER -->|Capability 4| GH_ISSUE
-    MCP_SERVER -->|Capability 6| SLACK
-    MCP_SERVER -->|Capability 6| EMAIL
-    MCP_SERVER -->|Capability 6| TEAMS
-    MCP_SERVER -->|Capability 6| DISCORD
+    MCP_SERVER -->|Capability 3,4| S3
+    MCP_SERVER -->|Capability 4,5| SAGEMAKER_REGISTRY
+    MCP_SERVER -->|Capability 1,11| GH_ISSUE
+    MCP_SERVER -->|Capability 10| SLACK
+    MCP_SERVER -->|Capability 10| EMAIL
+    MCP_SERVER -->|Capability 10| TEAMS
+    MCP_SERVER -->|Capability 10| DISCORD
 ```
 
 ### 3.2 エージェント・統合MCPサーバー連携フロー
@@ -711,7 +704,7 @@ MLOps/
 │   ├── server.py                         # メインサーバー・ツールルーティング
 │   ├── __main__.py                       # エントリーポイント
 │   │
-│   ├── capabilities/                      # 6つのCapability実装
+│   ├── capabilities/                      # 11個のCapability実装
 │   │   ├── __init__.py
 │   │   │
 │   │   ├── data_preparation/             # Capability 1: Data Preparation
@@ -1350,14 +1343,19 @@ LambdaAgentSG:
 
 ### 14.1 統合MCPサーバーの設計概要
 
-**1つの統合MLOps MCPサーバー** として実装し、**6つのCapability**を提供します (合計14週間):
+**1つの統合MLOps MCPサーバー** として実装し、**11個のCapability**を提供します（各MCPエージェントと1対1対応）:
 
-1. **Data Preparation Capability** - データ前処理・特徴量エンジニアリング
-2. **ML Training Capability** - 機械学習モデルの学習
-3. **ML Evaluation Capability** - モデルの評価・可視化
-4. **GitHub Integration Capability** - GitHub連携機能の統合
-5. **Model Registry Capability** - モデルバージョン管理・レジストリ操作
-6. **Notification Capability** - 通知チャネルの統合管理
+1. **GitHub Integration** - Issue検知・パース・ワークフロー起動
+2. **Workflow Optimization** - モデル特性分析・最適化提案
+3. **Data Preparation** - データ前処理・特徴量エンジニアリング
+4. **Model Training** - 機械学習モデルの学習
+5. **Model Evaluation** - モデル評価・可視化・バイアス検出
+6. **Model Packaging** - モデルコンテナ化・ECR登録
+7. **Model Deployment** - モデルデプロイ・エンドポイント管理
+8. **Model Monitoring** - パフォーマンス監視・ドリフト検出
+9. **Retrain Management** - 再学習トリガー判定・ワークフロー起動
+10. **Notification** - 外部通知チャネル統合
+11. **History Management** - 学習履歴記録・GitHub履歴管理
 
 **統合アプローチの主要メリット**:
 - 🎯 **運用の簡素化**: 1つのサーバープロセス/コンテナのみ管理
@@ -1369,9 +1367,9 @@ LambdaAgentSG:
 
 ### 14.2 期待される効果
 
-**従来の6個独立サーバーと比較した追加メリット**:
-- ✅ **運用コスト削減**: 6プロセス→1プロセスにより、運用負荷が大幅に削減
-- ✅ **デプロイ時間短縮**: 6デプロイ→1デプロイにより、リリースサイクル高速化
+**従来の11個独立サーバーと比較した追加メリット**:
+- ✅ **運用コスト削減**: 11プロセス→1プロセスにより、運用負荷が大幅に削減
+- ✅ **デプロイ時間短縮**: 11デプロイ→1デプロイにより、リリースサイクル高速化
 - ✅ **インフラコスト削減**: リソース共有により、メモリ・CPU使用量を最適化
 - ✅ **Agent実装の簡素化**: 1つのMCP接続のみで全機能にアクセス可能
 

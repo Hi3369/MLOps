@@ -2,7 +2,7 @@
 
 **バージョン**: 0.1
 **作成日**: 2025-12-27
-**対象**: 統合MLOps MCPサーバー（6つのCapability）
+**対象**: 統合MLOps MCPサーバー（11個のCapability）
 
 ---
 
@@ -58,7 +58,7 @@ mcp_server/
 ├── config.py                           # 設定管理
 ├── router.py                           # ツールルーティング
 │
-├── capabilities/                       # 6つのCapability実装
+├── capabilities/                       # 11個のCapability実装
 │   ├── __init__.py
 │   ├── base.py                        # 基底Capabilityクラス
 │   │

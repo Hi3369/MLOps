@@ -199,7 +199,7 @@ mcp_server/                                # 統合MLOps MCP Server（単数形�
 ├── server.py                             # メインサーバー・ツールルーティング
 ├── __main__.py                           # エントリーポイント
 │
-├── capabilities/                          # 6つのCapability実装
+├── capabilities/                          # 11個のCapability実装
 │   ├── __init__.py
 │   │
 │   ├── data_preparation/                 # Capability 1: Data Preparation
