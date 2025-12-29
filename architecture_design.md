@@ -1343,7 +1343,7 @@ graph TB
 
 ## 5. データフロー設計
 
-### 4.1 エンドツーエンドデータフロー
+### 5.1 エンドツーエンドデータフロー
 
 ```mermaid
 graph LR
@@ -1518,7 +1518,7 @@ stateDiagram-v2
 
 ## 7. 統合MLOps MCPサーバー設計
 
-### 6.1 統合アーキテクチャ
+### 7.1 統合アーキテクチャ
 
 **1つの統合MLOps MCPサーバー**として実装し、**6つのCapability（機能群）**を提供します。
 
@@ -1566,7 +1566,7 @@ stateDiagram-v2
    └─ apply_notification_template
 ```
 
-### 6.2 Capability 4拡張: Workflow Optimization
+### 7.2 Capability 4拡張: Workflow Optimization
 
 **新規ツール**:
 
@@ -1598,7 +1598,7 @@ stateDiagram-v2
    - 入力: `optimization_proposal`, `actual_results`
    - 出力: `history_entry_id`
 
-### 6.3 統合MCPサーバーの主要メリット
+### 7.3 統合MCPサーバーの主要メリット
 
 - 🎯 **運用の簡素化**: 1つのサーバープロセス/コンテナのみ管理
 - 🎯 **デプロイの簡素化**: 1つのデプロイパイプラインで完結
@@ -1616,7 +1616,7 @@ stateDiagram-v2
 
 ## 8. セキュリティ設計
 
-### 7.1 IAMロール設計
+### 8.1 IAMロール設計
 
 #### Lambda Execution Role（エージェント用）
 
@@ -1715,7 +1715,7 @@ stateDiagram-v2
 }
 ```
 
-### 7.2 シークレット管理
+### 8.2 シークレット管理
 
 AWS Secrets Managerで以下のシークレットを管理:
 
@@ -1732,13 +1732,13 @@ AWS Secrets Managerで以下のシークレットを管理:
 - **Secrets Manager**: VPCエンドポイント経由でアクセス
 - **Security Group**: 最小限のインバウンド/アウトバウンドルール
 
-### 7.4 データ暗号化
+### 8.4 データ暗号化
 
 - **S3バケット**: SSE-KMS暗号化
 - **通信**: TLS 1.2以上
 - **SageMaker**: モデルとデータの暗号化
 
-### 7.5 監査ログ
+### 8.5 監査ログ
 
 - **CloudTrail**: 全API操作の記録
 - **CloudWatch Logs**: エージェント実行ログ
@@ -1748,14 +1748,14 @@ AWS Secrets Managerで以下のシークレットを管理:
 
 ## 9. スケーラビリティ設計
 
-### 8.1 並列実行制御
+### 9.1 並列実行制御
 
 - **Step Functions**: 同時実行制限（10並列）
 - **SageMaker Training**: アカウントクォータ内で並列実行
 - **Lambda**: 同時実行数制限（Reserved Concurrency）
 - **統合MCPサーバー**: ECS Fargateで水平スケール（Auto Scaling）
 
-### 8.2 コスト最適化
+### 9.2 コスト最適化
 
 - **Spot Instances**: SageMaker Training JobでSpot Instancesを使用（最大70%削減）
 - **S3 Lifecycle Policy**: 古いデータを自動的にGlacierに移行
@@ -1766,7 +1766,7 @@ AWS Secrets Managerで以下のシークレットを管理:
 
 ## 10. モニタリング・ロギング設計
 
-### 9.1 CloudWatch Metrics
+### 10.1 CloudWatch Metrics
 
 - **Step Functions**: 実行回数、成功率、実行時間
 - **SageMaker**: 学習ジョブの成功率、実行時間、コスト
@@ -1774,20 +1774,20 @@ AWS Secrets Managerで以下のシークレットを管理:
 - **統合MCPサーバー**: リクエスト数、レスポンスタイム、エラー率
 - **ワークフロー最適化**: 最適化提案承認率、改善効果実績
 
-### 9.2 CloudWatch Logs
+### 10.2 CloudWatch Logs
 
 - すべてのLambda関数のログ
 - SageMaker Training Jobのログ
 - Step Functions実行履歴
 - 統合MCPサーバーのアプリケーションログ
 
-### 9.3 CloudWatch Dashboard
+### 10.3 CloudWatch Dashboard
 
 - システム全体のメトリクス可視化
 - ワークフロー最適化の効果可視化
 - モデルパフォーマンス推移
 
-### 9.4 アラート設定
+### 10.4 アラート設定
 
 - 学習ジョブ失敗時
 - Lambda関数エラー率が閾値超過時
@@ -1799,7 +1799,7 @@ AWS Secrets Managerで以下のシークレットを管理:
 
 ## 11. デプロイメント戦略
 
-### 10.1 Infrastructure as Code (IaC)
+### 11.1 Infrastructure as Code (IaC)
 
 **AWS CDK (Python)** を使用してインフラをコード化
 
@@ -1841,7 +1841,7 @@ project/
     └── history_writer/
 ```
 
-### 10.2 CI/CD Pipeline
+### 11.2 CI/CD Pipeline
 
 - **GitHub Actions**: コードプッシュ時の自動テスト・デプロイ
 - **AWS CodePipeline**: CDKスタックのデプロイ
@@ -1851,7 +1851,7 @@ project/
 
 ## 12. 拡張性の考慮事項
 
-### 11.1 将来的な拡張
+### 12.1 将来的な拡張
 
 - **マルチリージョン対応**: 複数のAWSリージョンでの実行
 - **ハイブリッドクラウド**: オンプレミスとクラウドの連携
@@ -1860,7 +1860,7 @@ project/
 - **追加学習方式**: 半教師あり学習、メタ学習等
 - **高度な最適化**: ニューラルアーキテクチャサーチ（NAS）統合
 
-### 11.2 プラグイン機構
+### 12.2 プラグイン機構
 
 - カスタムエージェントの追加
 - カスタム評価指標の追加
@@ -1871,7 +1871,7 @@ project/
 
 ## 13. 技術スタック
 
-### 12.1 AWSサービス
+### 13.1 AWSサービス
 
 | サービス | 用途 |
 | --- | --- |
@@ -1889,7 +1889,7 @@ project/
 | Amazon EventBridge | イベント駆動処理 |
 | Amazon ECR | Dockerイメージレジストリ |
 
-### 12.2 プログラミング言語・フレームワーク
+### 13.2 プログラミング言語・フレームワーク
 
 - **Python 3.11+**: Lambda/エージェント実装、統合MCPサーバー
 - **Boto3**: AWS SDK
