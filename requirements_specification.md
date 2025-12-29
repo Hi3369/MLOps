@@ -3,12 +3,15 @@
 ## 1. プロジェクト概要
 
 ### 1.1 目的
+
 GitHub Issueをトリガーとして、AWS Step FunctionsとAmazon SageMakerを活用したエージェントベースのMLOpsパイプラインを構築する。
 
 ### 1.2 システム名
+
 GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 
 ### 1.3 対象ユーザー
+
 - データサイエンティスト
 - MLエンジニア
 - DevOpsエンジニア
@@ -22,17 +25,20 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 ### 2.1 📥 フェーズ1: データ収集・前処理
 
 **FR-001: データソース統合**
+
 - S3、RDS、DynamoDB、外部API等の複数データソースからのデータ取得
 - データカタログ（AWS Glue Data Catalog）によるメタデータ管理
 - データ取得ジョブのスケジュール実行
 
 **FR-002: データクリーニング**
+
 - 欠損値処理（削除、平均値補完、中央値補完、モード補完）
 - 異常値検出と除去（IQR法、Z-score法）
 - 重複データの検出と削除
 - データ品質レポートの生成
 
 **FR-003: 特徴量エンジニアリング**
+
 - 特徴量生成（集約、結合、変換）
 - 特徴量選択（相関分析、重要度ベース選択）
 - カテゴリカル変数のエンコーディング（One-Hot、Label、Target）
@@ -40,6 +46,7 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 - 特徴量定義ドキュメントの自動生成
 
 **FR-004: データバージョニング**
+
 - S3バージョニングによるデータ履歴管理
 - DVC（Data Version Control）統合（オプション）
 - データセット分割（train/validation/test）のバージョン管理
@@ -48,12 +55,14 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 ### 2.2 🧪 フェーズ2: モデル開発（実験）
 
 **FR-005: 実験管理**
+
 - MLflow Tracking / SageMaker Experiments統合
 - 実験パラメータの記録（ハイパーパラメータ、データセットバージョン、コードバージョン）
 - 実験メトリクスの記録（精度、損失、学習時間等）
 - 実験成果物の管理（モデル、ログ、可視化結果）
 
 **FR-006: ハイパーパラメータ最適化**
+
 - Grid Search（全探索）
 - Random Search（ランダム探索）
 - Bayesian Optimization（ベイズ最適化）
@@ -77,6 +86,7 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
    - A3C (Asynchronous Advantage Actor-Critic)
 
 **FR-008: SageMaker学習ジョブ実行**
+
 - SageMaker Training Jobの起動と監視
 - 分散学習のサポート
 - 学習進捗のリアルタイム監視
@@ -86,6 +96,7 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 ### 2.3 🧹 フェーズ3: モデル検証・テスト
 
 **FR-009: モデル精度評価**
+
 - 評価指標の算出：
   - 分類: Accuracy, Precision, Recall, F1-Score, AUC-ROC
   - 回帰: RMSE, MAE, R², MAPE
@@ -95,17 +106,20 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 - 評価レポートの自動生成
 
 **FR-010: バイアスチェック**
+
 - 公平性評価（Fairness Indicators）
 - グループ間の精度差分析
 - バイアス検出レポートの生成
 - SageMaker Clarify統合
 
 **FR-011: データドリフト検知準備**
+
 - ベースライン統計の記録（平均、分散、分布等）
 - 特徴量分布の保存
 - ドリフト検知用メタデータの生成
 
 **FR-012: CI/CD自動テスト**
+
 - ユニットテスト（モデル関数、前処理関数）
 - 統合テスト（パイプライン全体）
 - モデル性能テスト（最低精度保証）
@@ -113,6 +127,7 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 - テストレポートの生成
 
 **FR-013: モデル説明可能性**
+
 - SHAP（SHapley Additive exPlanations）による特徴量重要度分析
 - LIME（Local Interpretable Model-agnostic Explanations）
 - モデル説明レポートの生成
@@ -120,18 +135,21 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 ### 2.4 📦 フェーズ4: モデルパッケージング
 
 **FR-014: モデルAPI化**
+
 - REST API エンドポイントの生成
 - gRPC サポート（オプション）
 - API仕様書の自動生成（OpenAPI/Swagger）
 - 推論レスポンスタイムの最適化
 
 **FR-015: モデルコンテナ化**
+
 - Dockerイメージの自動生成
 - SageMaker Inference Container対応
 - マルチステージビルドによるイメージサイズ最適化
 - 依存関係の明確化（requirements.txt、Dockerfile）
 
 **FR-016: モデルレジストリ管理**
+
 - SageMaker Model Registry / MLflow Model Registry統合
 - モデルメタデータの記録（精度、パラメータ、学習日時等）
 - セマンティックバージョニング（v1.0.0、v1.1.0等）
@@ -141,24 +159,28 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 ### 2.5 🚀 フェーズ5: デプロイ（リリース）
 
 **FR-017: デプロイ戦略**
+
 - **A/Bテスト**: 新旧モデルを並行稼働し効果を比較
 - **カナリアリリース**: 一部トラフィック（10%→50%→100%）で段階的展開
 - **ブルー/グリーンデプロイメント**: 新環境構築後に切り替え
 - デプロイ戦略の選択はGitHub Issueで指定可能
 
 **FR-018: 本番環境デプロイ**
+
 - SageMaker Endpoint へのデプロイ
 - ECS Fargate / Lambda へのデプロイ（オプション）
 - Auto Scaling設定（負荷に応じた自動スケール）
 - ヘルスチェックの実装
 
 **FR-019: CI/CD パイプライン**
+
 - GitHub Actions / AWS CodePipeline統合
 - Infrastructure as Code（CloudFormation、CDK、Terraform）
 - 自動デプロイメント（承認後）
 - デプロイメントログの記録
 
 **FR-020: ロールバック機能**
+
 - ワンクリックロールバック
 - 自動ロールバック（エラー率が閾値を超えた場合）
 - ロールバック履歴の記録
@@ -166,6 +188,7 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 ### 2.6 🔍 フェーズ6: モニタリング（運用）
 
 **FR-021: システムメトリクス監視**
+
 - レスポンスタイム（P50、P95、P99）の監視
 - エラー率（4xx、5xx）の監視
 - スループット（RPS: Requests Per Second）の監視
@@ -173,6 +196,7 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 - CloudWatch Dashboard による可視化
 
 **FR-022: モデルメトリクス監視**
+
 - 推論精度の劣化検知
 - データドリフト検知（入力データ分布の変化）
 - コンセプトドリフト検知（入力と出力の関係の変化）
@@ -180,12 +204,14 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 - SageMaker Model Monitor統合
 
 **FR-023: アラート設定**
+
 - CloudWatch Alarms設定
 - Slack / Email / PagerDuty への通知
 - GitHub Issueの自動作成（重大な問題発生時）
 - アラート閾値のカスタマイズ
 
 **FR-024: ダッシュボード**
+
 - リアルタイムメトリクス可視化
 - 過去データとの比較グラフ
 - Grafana統合（オプション）
@@ -193,6 +219,7 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 ### 2.7 🔄 フェーズ7: 継続的改善（再トレーニング）
 
 **FR-025: 自動再トレーニングトリガー**
+
 - **データ変更トリガー**: 新しいデータがS3に追加された時
 - **コード変更トリガー**: モデルコードがGitにプッシュされた時
 - **スケジュールトリガー**: 週次、月次等の定期実行
@@ -200,17 +227,20 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 - **ドリフト検知トリガー**: データドリフトが検出された時
 
 **FR-026: 自動再学習パイプライン**
+
 - Step Functions / Apache Airflow によるパイプライン自動実行
 - 新データでの自動学習
 - 新旧モデルの自動比較
 - 改善が認められた場合のみ自動デプロイ
 
 **FR-027: モデルバージョン管理**
+
 - セマンティックバージョニング（v1.0.0 → v1.1.0 → v2.0.0）
 - バージョン間の差分レポート
 - パフォーマンス比較レポート（旧モデル vs 新モデル）
 
 **FR-028: フィードバックループ**
+
 - 本番推論データの収集
 - ラベル付けされたデータの学習データへの追加
 - 継続的なモデル改善
@@ -218,6 +248,7 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 ### 2.8 トリガー機能
 
 **FR-029: GitHub Issue検知**
+
 - GitHubリポジトリに特定のラベル（例: `mlops:train`）が付いたIssueが作成されたら自動的にMLパイプラインを起動
 - Issue内に学習パラメータ（モデル種類、学習方法、ハイパーパラメータ、デプロイ戦略等）を記載
 - Webhookまたはポーリングによる検知
@@ -225,6 +256,7 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 ### 2.9 ワークフロー最適化機能
 
 **FR-034: モデル特性自動検出**
+
 - Issue内の学習方式（supervised/unsupervised/reinforcement）とタスク種別（classification/regression/clustering等）を解析
 - モデルアルゴリズム（Random Forest, XGBoost, Neural Network, PPO等）の特性を識別
 - データセットサイズ、特徴量数、クラス分布等のメタデータを分析
@@ -280,6 +312,7 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
    - **季節性データ**: 季節ごとのスケジュール再学習
 
 **FR-036: リソース最適化**
+
 - **GPU要求モデル（Neural Network, DQN）**: 自動的にGPUインスタンス（ml.p3.2xlarge等）を割り当て
 - **CPU最適モデル（Random Forest, XGBoost）**: CPUインスタンス（ml.m5.xlarge等）でコスト削減
 - **大規模データ処理**: 分散学習（SageMaker Distributed Training）を自動提案
@@ -309,6 +342,7 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
   - 用途: 通常の本番運用（デフォルト）
 
 **FR-038: 最適化提案機能**
+
 - ワークフロー実行前に、検出されたモデル特性に基づく最適化提案をGitHub Issueコメントで通知
 - 提案内容: 推奨フェーズ構成、リソース設定、評価指標、デプロイ戦略
 - ユーザーは提案を承認、または手動で設定を上書き可能
@@ -317,24 +351,28 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 ### 2.10 オーケストレーション機能
 
 **FR-030: Step Functions統合**
+
 - AWS Step Functionsによる7段階ワークフローの制御
 - ステート管理（データ収集→実験→検証→パッケージング→デプロイ→モニタリング→再学習）
 - エラーハンドリングとリトライロジック
 - 各フェーズ間のデータ受け渡し
 
 **FR-031: Agentベースアーキテクチャ**
+
 - 各処理を独立したエージェント（Lambda/Container）として実装
 - エージェント間の疎結合な連携
 - スケーラビリティの確保
 - MCP（Model Context Protocol）による標準化された通信
 
 **FR-032: 対話型調整機能**
+
 - 適合率が閾値未満の場合、オペレータに通知（Slack/Email/GitHub Comment）
 - オペレータがGitHub Issueコメントで学習設定を調整
 - 調整内容を元に自動再学習を実行
 - 最大再学習回数の設定（デフォルト: 3回）
 
 **FR-033: 学習履歴のGitHub保存**
+
 - 学習結果（精度、パラメータ、実行時間等）をMarkdown形式で生成
 - GitHubリポジトリの`training_history/`ディレクトリにコミット
 - 元のIssueへのコメントとして結果を投稿
@@ -634,6 +672,7 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 
 2. **最適化提案の生成**
    - システムが最適化提案をGitHub Issueコメントで投稿:
+
      ```markdown
      ## ワークフロー最適化提案
 
@@ -676,20 +715,24 @@ GitHub-Driven MLOps Pipeline with Agent-based Orchestration
 ## 6. データ仕様
 
 ### 6.1 学習データ
+
 - **形式**: CSV, Parquet, TFRecord
 - **保存先**: `s3://<bucket>/datasets/<dataset_id>/train/`
 - **バージョン管理**: S3バージョニング有効化
 
 ### 6.2 評価データ
+
 - **形式**: CSV, Parquet, TFRecord
 - **保存先**: `s3://<bucket>/datasets/<dataset_id>/test/`
 
 ### 6.3 モデル
+
 - **形式**: TensorFlow SavedModel, PyTorch .pth, scikit-learn .pkl
 - **保存先**: `s3://<bucket>/models/<model_id>/<version>/`
 - **メタデータ**: model_metadata.json
 
 ### 6.4 学習履歴
+
 - **形式**: Markdown
 - **保存先**: GitHubリポジトリ `training_history/<training_id>.md`
 
@@ -828,6 +871,7 @@ tags:
 ```
 
 ### 7.2 学習結果形式
+
 ```markdown
 # 学習結果レポート
 
@@ -882,6 +926,7 @@ tags:
 ## 8. 承認基準
 
 ### 8.1 機能テスト
+
 - [ ] 全機能要件（FR-001〜FR-038）が実装され、動作確認済み
 - [ ] 3種類の学習方式（教師あり、教師なし、強化学習）の動作確認済み
 - [ ] ワークフロー最適化機能（FR-034〜FR-038）の動作確認済み
@@ -892,6 +937,7 @@ tags:
   - [ ] 最適化提案機能がGitHub Issueコメントで正常に動作
 
 ### 8.2 非機能テスト
+
 - [ ] 非機能要件（NFR-001〜NFR-020）が満たされている
 - [ ] 負荷テスト実施済み
 - [ ] ワークフロー最適化によるパフォーマンス改善の確認
@@ -900,10 +946,12 @@ tags:
   - [ ] 精度優先モードで評価指標が向上することを確認
 
 ### 8.3 セキュリティテスト
+
 - [ ] 脆弱性スキャン実施済み
 - [ ] IAMポリシー最小権限の原則適用済み
 
 ### 8.4 ワークフロー最適化テスト
+
 - [ ] 各モデルタイプでの最適化動作確認
   - [ ] 分類モデル（Random Forest, XGBoost）での最適化
   - [ ] 回帰モデルでの最適化
@@ -922,7 +970,7 @@ tags:
 ## 9. 変更履歴
 
 | バージョン | 日付 | 変更内容 | 作成者 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 0.1 | 2025-01-29 | 初版作成（7段階MLOpsライフサイクル、ワークフロー最適化機能含む） | - |
 
 ---
@@ -930,6 +978,7 @@ tags:
 ## 10. 付録
 
 ### 10.1 用語集
+
 - **MLOps**: Machine Learning Operations（機械学習運用）
 - **SageMaker**: Amazon SageMaker（AWSの機械学習プラットフォーム）
 - **Step Functions**: AWS Step Functions（サーバーレスワークフローサービス）
@@ -943,6 +992,7 @@ tags:
 - **カナリアリリース**: 一部トラフィックで新バージョンを段階的に展開するデプロイ戦略
 
 ### 10.2 参考資料
+
 - [Amazon SageMaker Documentation](https://docs.aws.amazon.com/sagemaker/)
 - [AWS Step Functions Documentation](https://docs.aws.amazon.com/step-functions/)
 - [MLOps Best Practices](https://ml-ops.org/)
