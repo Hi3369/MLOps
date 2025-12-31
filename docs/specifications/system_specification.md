@@ -990,7 +990,155 @@ s3://mlops-datasets/kitti/
 - **データ匿名化**: GPS座標の粗視化（例: 100m単位）
 - **GDPR/CCPA準拠**: EU・カリフォルニア州のプライバシー法規制対応
 
-### 6.4 YOLOX + KITTI ワークフロー例
+### 6.4 自動運転向けデータセット一覧
+
+本システムでサポートする自動運転向けベンチマークデータセット:
+
+#### 6.4.1 KITTI Vision Benchmark Suite
+
+**概要**: カールスルーエ工科大学とトヨタ・シカゴ技術研究所が公開する自動運転向けデータセット
+
+**タスク**:
+
+- 3D Object Detection（3D物体検出）
+- 2D Object Detection（2D物体検出）
+- Object Tracking（物体追跡）
+- Depth Estimation（深度推定）
+- Optical Flow（オプティカルフロー）
+- Visual Odometry（ビジュアルオドメトリ）
+
+**データ規模**:
+
+- 学習用: 7,481枚
+- 検証用: 7,518枚
+- センサー: カメラ（ステレオ）、Velodyne HDL-64E LiDAR、GPS/IMU
+
+**アノテーション**: 3D Bounding Box（8クラス: Car、Pedestrian、Cyclist、Van、Truck、Person_sitting、Tram、Misc）
+
+**S3パス**: `s3://mlops-datasets/kitti/`
+
+**公式サイト**: [https://www.cvlibs.net/datasets/kitti/](https://www.cvlibs.net/datasets/kitti/)
+
+#### 6.4.2 BDD100K (Berkeley DeepDrive)
+
+**概要**: UC Berkeleyが公開する大規模自動運転データセット
+
+**タスク**:
+
+- Object Detection（物体検出）
+- Lane Detection（車線検出）
+- Drivable Area Segmentation（走行可能領域セグメンテーション）
+- Instance Segmentation（インスタンスセグメンテーション）
+- Multi-Object Tracking（多物体追跡）
+
+**データ規模**:
+
+- 100,000動画（1,100時間以上）
+- 地理的多様性: ニューヨーク、サンフランシスコ、ロサンゼルスなど米国各地
+- 天候: 晴天、雨天、曇天
+- 時間帯: 昼間、夜間
+
+**アノテーション**: 2D Bounding Box、Lane、Drivable Area、Instance Mask
+
+**S3パス**: `s3://mlops-datasets/bdd100k/`
+
+**公式サイト**: [https://www.bdd100k.com/](https://www.bdd100k.com/)
+
+#### 6.4.3 Waymo Open Dataset
+
+**概要**: Waymo（Google系自動運転企業）が公開する大規模自動運転データセット
+
+**タスク**:
+
+- 3D Object Detection（3D物体検出）
+- 2D Object Detection（2D物体検出）
+- Object Tracking（物体追跡）
+- Motion Prediction（動き予測）
+
+**データ規模**:
+
+- 1,000シーン（各シーン約20秒）
+- 200,000フレーム
+- センサー: カメラ×5、LiDAR×5（360度カバレッジ）
+
+**アノテーション**: 3D Bounding Box（4クラス: Vehicle、Pedestrian、Cyclist、Sign）
+
+**特徴**:
+
+- 高品質なマルチLiDARデータ
+- 長距離検出（最大75m）
+- 豊富なシナリオ（都市部、郊外、高速道路）
+
+**S3パス**: `s3://mlops-datasets/waymo_open/`
+
+**公式サイト**: [https://waymo.com/open/](https://waymo.com/open/)
+
+#### 6.4.4 nuScenes
+
+**概要**: nuTonomy（Aptiv系）が公開する全方位自動運転データセット
+
+**タスク**:
+
+- 3D Object Detection（3D物体検出）
+- Object Tracking（物体追跡）
+- Prediction（軌道予測）
+- Planning（経路計画）
+
+**データ規模**:
+
+- 1,000シーン（各シーン20秒）
+- 1.4M カメラ画像、400k LiDARスキャン
+- センサー: カメラ×6（360度）、LiDAR×1、RADAR×5、GPS/IMU
+
+**アノテーション**: 3D Bounding Box（23クラス）、Visibility、Attribute（歩行者の状態など）
+
+**特徴**:
+
+- 360度フルサラウンド
+- RADAR統合（悪天候対応）
+- 詳細な属性アノテーション
+
+**S3パス**: `s3://mlops-datasets/nuscenes/`
+
+**公式サイト**: [https://www.nuscenes.org/](https://www.nuscenes.org/)
+
+#### 6.4.5 CARLA Synthetic Dataset
+
+**概要**: CARLAシミュレータで生成された合成データセット
+
+**タスク**:
+
+- 全般的なコンピュータビジョンタスク（シミュレータで任意のセンサー配置・天候・シナリオを生成可能）
+
+**データ規模**:
+
+- 無制限（シミュレータで自動生成）
+- Town01～Town10の多様なマップ
+- 天候: 快晴、曇天、雨天、霧、夜間など
+
+**アノテーション**: Ground Truth（完全な3D情報、Semantic Segmentation、Depth）
+
+**特徴**:
+
+- Sim-to-Real Transfer Learningの実験に最適
+- コスト0でデータ生成可能
+- 危険シナリオ（衝突直前など）のデータ収集
+
+**S3パス**: `s3://mlops-datasets/carla_synthetic/`
+
+**公式サイト**: [https://carla.org/](https://carla.org/)
+
+#### 6.4.6 データセット比較表
+
+| データセット     | タスク                      | 規模         | センサー                   | 特徴                              | ライセンス   |
+| ---------------- | --------------------------- | ------------ | -------------------------- | --------------------------------- | ------------ |
+| KITTI            | 3D/2D検出、追跡、深度       | 15k画像      | カメラ、LiDAR              | 自動運転データセットの定番        | CC BY-NC-SA  |
+| BDD100K          | 2D検出、車線、セグメンテ    | 100k動画     | カメラ                     | 大規模、地理的多様性              | BSD          |
+| Waymo Open       | 3D/2D検出、追跡、予測       | 200kフレーム | カメラ×5、LiDAR×5          | 高品質、長距離検出                | Custom       |
+| nuScenes         | 3D検出、追跡、予測、計画    | 400k LiDAR   | カメラ×6、LiDAR、RADAR     | 360度、RADAR統合                  | CC BY-NC-SA  |
+| CARLA Synthetic  | 全般                        | 無制限       | 任意                       | Sim-to-Real、コスト0              | MIT          |
+
+### 6.5 YOLOX + KITTI ワークフロー例
 
 以下、GitHub IssueからYOLOX学習→KITTI評価までの具体的なワークフローを示します。
 
@@ -1167,7 +1315,7 @@ https://runtime.sagemaker.us-east-1.amazonaws.com/endpoints/yolox-kitti-001/invo
 - Latency > 50ms が5分継続 → Slack通知
 - データドリフト検出 → 再学習トリガー
 
-### 6.5 VAD強化学習ワークフロー例
+### 6.6 VAD強化学習ワークフロー例
 
 #### Step 1: VAD用GitHub Issue作成
 
@@ -1270,7 +1418,7 @@ s3://mlops-bucket/evaluations/vad-ppo-carla-001/
     └── ...
 ```
 
-### 6.6 自動運転MLOpsの課題と対策
+### 6.7 自動運転MLOpsの課題と対策
 
 #### 課題1: 大容量データの管理
 
@@ -1302,14 +1450,81 @@ s3://mlops-bucket/evaluations/vad-ppo-carla-001/
 - **Domain Adaptation**: Simulatorデータと実データでAdversarial Training
 - **Transfer Learning**: Simulatorで事前学習 → 実データでFine-tuning
 
+#### 課題4: ラベリングコスト
+
+**問題**: 自動運転データのアノテーションは高コスト・高難易度
+
+**コスト例**:
+
+- 3D Bounding Box: 1画像あたり約30分～1時間（熟練アノテーター）
+- 時給3,000円と仮定すると、1画像あたり1,500～3,000円
+- KITTI規模（7,481画像）で約1,100万円～2,200万円
+
+**対策**:
+
+**1. Semi-Supervised Learning（半教師あり学習）**:
+
+- 少量のラベル付きデータ（例: 10%）で初期モデルを学習
+- 残りの90%は疑似ラベル（Pseudo-Label）を自動生成
+- 高信頼度の疑似ラベルのみを追加学習に使用
+- **期待効果**: ラベリングコストを10%に削減（約110万円～220万円）
+
+**2. Active Learning（アクティブラーニング）**:
+
+- モデルの不確実性が高いサンプルのみを優先的にラベリング
+- 不確実性の指標: Entropy、BALD（Bayesian Active Learning by Disagreement）、Monte Carlo Dropout
+- **実装**: [Capability 15: Online Learning & Active Learning](../designs/mcp_design.md#capability-15-online-learning--active-learning-🎯-自動運転向け)を参照
+- **期待効果**: 全データの20～30%のラベリングで、全データラベリング時の90%以上の精度を達成
+
+**3. Weak Supervision & Crowdsourcing**:
+
+- **Weak Supervision**: ルールベースや既存モデルで粗いラベルを自動生成 → 人間が修正
+- **Crowdsourcing**: Amazon Mechanical Turk、Label Studioで大規模アノテーション
+- **品質管理**: 複数アノテーターの合意形成（Inter-Annotator Agreement）
+- **期待効果**: 時間を50%削減、コストを30～40%削減
+
+**4. Self-Supervised Learning（自己教師あり学習）**:
+
+- ラベルなしデータから表現学習（Contrastive Learning、Masked Autoencoder）
+- 事前学習モデルを少量のラベル付きデータでFine-tuning
+- **手法例**: SimCLR、MoCo、MAE（Masked Autoencoder）
+- **期待効果**: ラベル付きデータを5～10%に削減可能
+
+**5. シミュレータデータの活用**:
+
+- CARLAシミュレータで無制限のGround Truthデータを生成（コスト0）
+- Sim-to-Real Transfer LearningでDomain Gapを緩和
+- **期待効果**: 実データのラベリング量を50%削減
+
+**コスト削減効果のシミュレーション**:
+
+| 手法                          | ラベリング必要量 | 推定コスト       | コスト削減率 |
+| ----------------------------- | ---------------- | ---------------- | ------------ |
+| 全データラベリング（ベースライン） | 100%             | 1,100万～2,200万円 | 0%           |
+| Semi-Supervised Learning      | 10%              | 110万～220万円   | 90%          |
+| Active Learning               | 20～30%          | 220万～660万円   | 70～80%      |
+| Weak Supervision              | 60～70%          | 660万～1,540万円 | 30～40%      |
+| Self-Supervised Learning      | 5～10%           | 55万～220万円    | 90～95%      |
+| シミュレータ + Transfer       | 50%              | 550万～1,100万円 | 50%          |
+
+**推奨アプローチ（ハイブリッド戦略）**:
+
+1. **Self-Supervised Learning**: ラベルなしKITTIデータで事前学習（コスト0）
+2. **Active Learning**: 不確実性の高い500画像のみラベリング（約75万円～150万円）
+3. **Semi-Supervised Learning**: 疑似ラベルで残りのデータを活用
+4. **CARLA Simulator**: 追加でシミュレータデータ10,000画像を生成（コスト0）
+
+**期待総コスト**: 約75万～150万円（**93～96%削減**）
+
 ---
 
 ## 7. 変更履歴
 
-| バージョン | 日付       | 変更内容                                       | 作成者 |
-| ---------- | ---------- | ---------------------------------------------- | ------ |
-| 1.0        | 2025-12-30 | 要件仕様書とアーキテクチャ設計書を統合         | -      |
-| 1.1        | 2025-12-31 | 自動運転向けユースケースを追加（YOLOX、KITTI、VAD） | -      |
+| バージョン | 日付       | 変更内容                                                                 | 作成者 |
+| ---------- | ---------- | ------------------------------------------------------------------------ | ------ |
+| 1.0        | 2025-12-30 | 要件仕様書とアーキテクチャ設計書を統合                                   | -      |
+| 1.1        | 2025-12-31 | 自動運転向けユースケースを追加（YOLOX、KITTI、VAD）                      | -      |
+| 1.2        | 2025-12-31 | 自動運転データセット一覧、課題4（ラベリングコスト）を追加                | -      |
 
 ---
 
