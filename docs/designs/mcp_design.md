@@ -1,5 +1,9 @@
 # MCP化設計書: MLOps専門機能のModel Context Protocol対応
 
+**注**: 本ドキュメントで使用される技術用語・略語の定義は[用語集](../others/glossary.md)を参照してください。
+
+---
+
 ## 1. MCP化の目的
 
 ### 1.1 現状の課題
