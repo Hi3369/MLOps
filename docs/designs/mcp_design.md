@@ -655,9 +655,31 @@ class UnifiedMLOpsMCPServer:
 
 ### 5.2 MCP通信プロトコル
 
-#### stdio通信（推奨）
+**推奨通信方式**: SSE (Server-Sent Events) モード
+
+ECS Fargate/Lambda環境では、MCPサーバーをHTTP/SSEモードで運用することを推奨します。
+stdio モードはローカルプロセス起動が前提であり、クラウド環境での常時稼働サーバーには適していません。
+
+#### SSE通信（推奨: ECS/Lambda環境）
+
+統合MCPサーバーをECS Service（常時起動）として運用し、HTTP/SSEで通信:
+
+- Lambda AgentがHTTPリクエストでMCPサーバーにアクセス
+- サーバー側はFastAPI等でHTTPエンドポイントを提供
+- 複数のAgentから同時にアクセス可能
+- スケーラブルで可用性が高い
+
+**メリット**:
+- ✅ ECS Fargateでの常時稼働に適している
+- ✅ 複数のLambda Agentから同時アクセス可能
+- ✅ Auto Scalingによる負荷分散が可能
+- ✅ ヘルスチェック・モニタリングが容易
+
+#### stdio通信（参考: ローカル開発・テスト環境）
 
 Lambda/ECS AgentがMCPサーバーを子プロセスとして起動:
+
+**注**: stdio モードはローカル開発・テスト環境でのみ推奨。本番環境ではSSEモードを使用してください。
 
 ```python
 # Lambda Agent側（MCP Client）
@@ -1660,7 +1682,491 @@ tools:
 
 ---
 
-## 16. 変更履歴
+## 16. ユースケース: 自動運転向けコンピュータビジョン対応
+
+本セクションでは、仕様書（[system_specification.md](../specifications/system_specification.md) セクション6）で定義された自動運転向けユースケースに対する、統合MCPサーバーの実装方針を示します。
+
+### 16.1 対象ユースケース概要
+
+自動運転領域では、以下3つの主要ユースケースをサポートします:
+
+1. **YOLOX物体検出**: リアルタイム物体検出（2D Bounding Box）
+2. **KITTI 3D物体検出**: 3D Bounding Boxを用いた高精度物体検出
+3. **VAD (Vision-based Autonomous Driving)**: End-to-End自動運転制御
+
+これらは既存の11 Capabilityで対応可能であり、新たなCapabilityの追加は不要です。
+
+### 16.2 YOLOX対応設計
+
+#### 16.2.1 使用するCapability
+
+**Capability 3: Data Preparation**
+
+YOLOXは独自のデータフォーマット（COCO JSON形式）を要求するため、KITTIフォーマットからの変換が必要です。
+
+**ツール実装**: `preprocess_supervised`の拡張
+
+```python
+# mcp_server/capabilities/data_preparation/tools/preprocess_supervised.py
+
+async def preprocess_supervised(
+    dataset_s3_uri: str,
+    target_column: str = None,
+    task_type: str = "classification",
+    algorithm: str = None,  # 新規パラメータ: アルゴリズム指定
+    **kwargs
+) -> dict:
+    """
+    教師あり学習用前処理
+
+    algorithm="yolox"の場合:
+    - KITTI形式のアノテーションをCOCO JSON形式に変換
+    - クラスマッピング: KITTI 8クラス → COCO category_id
+    - バウンディングボックス座標変換: KITTI (x1,y1,x2,y2) → COCO (x,y,w,h)
+    """
+    if algorithm == "yolox":
+        # KITTI→YOLOX(COCO JSON)変換ロジック
+        return await _kitti_to_yolox_format(dataset_s3_uri, **kwargs)
+    else:
+        # 既存の汎用的な前処理
+        return await _generic_supervised_preprocessing(dataset_s3_uri, target_column, task_type)
+```
+
+**KITTIフォーマット変換詳細**:
+
+```python
+async def _kitti_to_yolox_format(dataset_s3_uri: str, **kwargs) -> dict:
+    """
+    KITTI Object Detection形式をYOLOX (COCO JSON)形式に変換
+
+    KITTI形式:
+    <class> <truncated> <occluded> <alpha> <x1> <y1> <x2> <y2> <h> <w> <l> <x> <y> <z> <ry>
+
+    YOLOX (COCO JSON)形式:
+    {
+      "images": [{"id": 1, "file_name": "000000.png", "width": 1242, "height": 375}],
+      "annotations": [{"image_id": 1, "category_id": 1, "bbox": [x, y, w, h]}],
+      "categories": [{"id": 1, "name": "Car"}]
+    }
+    """
+    # 実装省略
+    pass
+```
+
+**Capability 2: ML Training**
+
+YOLOXモデル学習をSageMakerで実行します。
+
+**ツール実装**: `train_supervised`の拡張
+
+```python
+# mcp_server/capabilities/ml_training/tools/supervised/yolox.py
+
+async def train_yolox(
+    variant: str,  # yolox-nano/tiny/s/m/l/x
+    dataset_s3_uri: str,
+    hyperparameters: dict,
+    **kwargs
+) -> dict:
+    """
+    YOLOXモデルの学習
+
+    SageMaker Training Job設定:
+    - Container: YOLOX公式Dockerイメージ + 本システム拡張
+    - Instance: ml.p3.2xlarge（GPU必須）
+    - Framework: PyTorch 2.0+
+    """
+    # SageMaker Training Job起動
+    training_job_name = f"yolox-{variant}-{timestamp}"
+
+    estimator = PyTorch(
+        entry_point="train_yolox.py",
+        source_dir="s3://mlops-code/yolox/",
+        image_uri=f"public.ecr.aws/yolox/{variant}:latest",
+        instance_type="ml.p3.2xlarge",
+        instance_count=1,
+        hyperparameters={
+            "variant": variant,
+            "num_epochs": hyperparameters.get("num_epochs", 300),
+            "batch_size": hyperparameters.get("batch_size", 64),
+            "lr": hyperparameters.get("learning_rate", 0.001),
+            "mosaic_prob": hyperparameters.get("mosaic_prob", 1.0),
+        }
+    )
+
+    estimator.fit({"train": dataset_s3_uri})
+
+    return {
+        "training_job_name": training_job_name,
+        "model_s3_uri": estimator.model_data
+    }
+```
+
+**Capability 3: ML Evaluation**
+
+KITTI Validation Setでの評価を実行します。
+
+**ツール実装**: `evaluate_supervised`の拡張（KITTI AP計算対応）
+
+```python
+# mcp_server/capabilities/ml_evaluation/tools/supervised/object_detection.py
+
+async def evaluate_object_detection(
+    model_s3_uri: str,
+    test_dataset_s3_uri: str,
+    dataset_format: str = "coco",  # 新規: "coco", "kitti", "pascal_voc"
+    **kwargs
+) -> dict:
+    """
+    物体検出モデルの評価
+
+    dataset_format="kitti"の場合:
+    - KITTI公式評価基準に準拠
+    - AP（Average Precision）を計算（Easy/Moderate/Hard別）
+    - IoU閾値: 0.7（Car）、0.5（Pedestrian/Cyclist）
+    """
+    if dataset_format == "kitti":
+        return await _evaluate_kitti_ap(model_s3_uri, test_dataset_s3_uri)
+    else:
+        return await _evaluate_coco_map(model_s3_uri, test_dataset_s3_uri)
+```
+
+#### 16.2.2 YOLOXワークフロー例
+
+GitHub Issueから学習・評価までの流れ:
+
+```yaml
+# GitHub Issue本文
+learning_type: supervised
+algorithm: yolox
+variant: yolox-m
+dataset:
+  name: kitti_object_detection
+  s3_uri: s3://mlops-datasets/kitti/object/
+hyperparameters:
+  num_epochs: 300
+  batch_size: 64
+  learning_rate: 0.001
+evaluation_threshold: 0.5  # AP (Moderate) 閾値
+```
+
+**Step Functions実行フロー**:
+
+1. **Data Preparation Agent** → MCPツール `preprocess_supervised(algorithm="yolox")` 呼び出し
+   - KITTI形式 → COCO JSON形式に変換
+   - 出力: `s3://mlops-bucket/processed/yolox-kitti-001/train.json`
+
+2. **Training Agent** → MCPツール `train_yolox(variant="yolox-m")` 呼び出し
+   - SageMaker Training Jobでモデル学習
+   - 出力: `s3://mlops-bucket/models/yolox-kitti-001/yolox_m_kitti.pth`
+
+3. **Evaluation Agent** → MCPツール `evaluate_object_detection(dataset_format="kitti")` 呼び出し
+   - KITTI Validation Setで評価
+   - 出力: AP (Easy/Moderate/Hard)
+
+4. **Judge Agent** → 評価結果を閾値判定
+   - AP (Moderate) >= 0.5 → 合格 → Model Registry登録
+   - AP (Moderate) < 0.5 → 不合格 → 再学習提案
+
+### 16.3 KITTI 3D物体検出対応設計
+
+#### 16.3.1 使用するCapability
+
+**Capability 3: Data Preparation**
+
+KITTI 3D Object Detectionは、2D画像に加えてLiDAR点群データ（.bin形式）を使用します。
+
+**ツール拡張**: `preprocess_supervised`にLiDAR処理を追加
+
+```python
+async def preprocess_supervised(
+    dataset_s3_uri: str,
+    task_type: str = "classification",
+    algorithm: str = None,
+    use_lidar: bool = False,  # 新規パラメータ
+    **kwargs
+) -> dict:
+    """
+    use_lidar=Trueの場合:
+    - LiDARバイナリファイル(.bin)の読み込み
+    - カメラ-LiDAR座標系のキャリブレーション
+    - 3D Bounding Boxのアノテーション抽出
+    """
+    if use_lidar:
+        return await _preprocess_3d_object_detection(dataset_s3_uri, **kwargs)
+    else:
+        # 既存の2D処理
+        return await _preprocess_supervised_2d(dataset_s3_uri, task_type, algorithm)
+```
+
+**データ構造**:
+
+```text
+s3://mlops-datasets/kitti/3d_object/
+├── image_2/           # カメラ画像
+│   └── 000000.png
+├── velodyne/          # LiDAR点群データ
+│   └── 000000.bin
+├── label_2/           # 3Dアノテーション
+│   └── 000000.txt
+└── calib/             # キャリブレーション
+    └── 000000.txt
+```
+
+**Capability 2: ML Training**
+
+3D物体検出アルゴリズム（PointPillars、SECOND等）の学習をサポート。
+
+**ツール実装**: `train_3d_object_detection`
+
+```python
+# mcp_server/capabilities/ml_training/tools/supervised/point_pillars.py
+
+async def train_3d_object_detection(
+    algorithm: str,  # "pointpillars", "second", "pv-rcnn"
+    dataset_s3_uri: str,
+    hyperparameters: dict,
+    **kwargs
+) -> dict:
+    """
+    3D物体検出モデルの学習
+
+    対応アルゴリズム:
+    - PointPillars: 高速（30Hz）、やや低精度
+    - SECOND: バランス型
+    - PV-RCNN: 高精度、やや低速
+    """
+    # 実装省略
+    pass
+```
+
+#### 16.3.2 評価指標
+
+KITTI 3D Object Detection Benchmarkの公式評価基準:
+
+- **AP (Average Precision)**: 3D IoU閾値0.7（Car）、0.5（Pedestrian/Cyclist）
+- **難易度別評価**: Easy / Moderate / Hard（遮蔽度・切れ具合・高さに基づく）
+- **BEV AP (Bird's Eye View)**: 俯瞰視点でのAP
+
+### 16.4 VAD (Vision-based Autonomous Driving)対応設計
+
+#### 16.4.1 強化学習ワークフロー
+
+VADはEnd-to-Endの自動運転制御であり、画像入力から車両制御出力（ステアリング角・加速度）を直接学習します。
+
+**使用するCapability**:
+
+**Capability 3: Data Preparation (強化学習用)**
+
+**ツール実装**: `preprocess_reinforcement`の拡張
+
+```python
+# mcp_server/capabilities/data_preparation/tools/preprocess_reinforcement.py
+
+async def preprocess_reinforcement(
+    environment: str,  # "carla-v1", "airsim-v1"
+    task: str = "lane_keeping",  # "lane_keeping", "obstacle_avoidance", "end_to_end"
+    **kwargs
+) -> dict:
+    """
+    強化学習用環境セットアップ
+
+    environment="carla-v1"の場合:
+    - CARLA Simulatorの起動（ECS Task）
+    - シナリオ設定（天候、交通量、コース）
+    - 観測空間設定（カメラ画像、車速、ステアリング角）
+    - 行動空間設定（ステアリング角、スロットル、ブレーキ）
+    - 報酬関数設定（車線中央維持、衝突回避、速度維持）
+    """
+    if environment.startswith("carla"):
+        return await _setup_carla_environment(task, **kwargs)
+    elif environment.startswith("airsim"):
+        return await _setup_airsim_environment(task, **kwargs)
+    else:
+        raise ValueError(f"Unsupported environment: {environment}")
+```
+
+**Capability 2: ML Training (強化学習用)**
+
+**ツール実装**: `train_reinforcement`の拡張（VAD対応）
+
+```python
+# mcp_server/capabilities/ml_training/tools/reinforcement/ppo.py
+
+async def train_vad_with_ppo(
+    environment: str,
+    hyperparameters: dict,
+    **kwargs
+) -> dict:
+    """
+    VAD用PPO（Proximal Policy Optimization）学習
+
+    SageMaker RL設定:
+    - Container: RLライブラリ（Ray RLlib、Stable Baselines3）
+    - Instance: ml.p3.2xlarge（GPU推奨）
+    - Simulator: CARLA/AirSim（ECS別タスクとして起動）
+    """
+    # PPO学習ロジック
+    training_job_name = f"vad-ppo-{environment}-{timestamp}"
+
+    estimator = RLEstimator(
+        entry_point="train_vad_ppo.py",
+        source_dir="s3://mlops-code/vad/",
+        toolkit=RLToolkit.RAY,
+        framework=RLFramework.TENSORFLOW,
+        instance_type="ml.p3.2xlarge",
+        instance_count=1,
+        hyperparameters={
+            "rl.training.num_workers": hyperparameters.get("num_workers", 4),
+            "rl.training.train_batch_size": hyperparameters.get("train_batch_size", 4000),
+            "rl.training.gamma": hyperparameters.get("gamma", 0.99),
+            "rl.training.lr": hyperparameters.get("learning_rate", 0.0003),
+        },
+        metric_definitions=[
+            {"Name": "episode_reward_mean", "Regex": "episode_reward_mean: ([0-9\\.]+)"},
+            {"Name": "success_rate", "Regex": "success_rate: ([0-9\\.]+)"},
+        ]
+    )
+
+    estimator.fit()
+
+    return {
+        "training_job_name": training_job_name,
+        "model_s3_uri": estimator.model_data,
+        "final_episode_reward": "...",
+        "success_rate": "..."
+    }
+```
+
+**Capability 3: ML Evaluation (強化学習用)**
+
+**ツール実装**: `evaluate_reinforcement`の拡張（VAD評価指標）
+
+```python
+# mcp_server/capabilities/ml_evaluation/tools/reinforcement/vad_evaluation.py
+
+async def evaluate_vad_policy(
+    model_s3_uri: str,
+    environment: str,
+    num_episodes: int = 100,
+    **kwargs
+) -> dict:
+    """
+    VADポリシーの評価
+
+    評価指標:
+    - Average Reward: エピソードごとの平均報酬
+    - Success Rate: ゴール到達率
+    - Collision Rate: 衝突発生率
+    - Average Speed: 平均速度
+    - Lane Keeping Accuracy: 車線中央維持精度
+    - Smoothness: 操舵・加速度の滑らかさ
+    """
+    # シミュレータでポリシー評価
+    results = await _run_vad_evaluation_episodes(
+        model_s3_uri=model_s3_uri,
+        environment=environment,
+        num_episodes=num_episodes
+    )
+
+    return {
+        "average_reward": results["rewards"].mean(),
+        "success_rate": results["successes"].sum() / num_episodes,
+        "collision_rate": results["collisions"].sum() / num_episodes,
+        "average_speed": results["speeds"].mean(),
+        "lane_keeping_accuracy": results["lane_deviations"].mean(),
+        "smoothness_steering": results["steering_smoothness"],
+        "smoothness_acceleration": results["acceleration_smoothness"],
+    }
+```
+
+#### 16.4.2 VADワークフロー例
+
+```yaml
+# GitHub Issue本文（VAD学習）
+learning_type: reinforcement
+algorithm: ppo
+environment: carla-v1
+task: end_to_end_control
+hyperparameters:
+  gamma: 0.99
+  learning_rate: 0.0003
+  num_episodes: 1000
+  train_batch_size: 4000
+evaluation_threshold: 0.8  # Success Rate閾値
+max_retry: 3
+```
+
+**Step Functions実行フロー**:
+
+1. **Data Preparation Agent** → `preprocess_reinforcement(environment="carla-v1")`
+   - CARLA Simulatorセットアップ（ECS Task起動）
+   - 観測空間・行動空間・報酬関数設定
+
+2. **Training Agent** → `train_vad_with_ppo(algorithm="ppo")`
+   - SageMaker RL Training Jobでポリシー学習
+   - シミュレータと連携しながら1000エピソード学習
+
+3. **Evaluation Agent** → `evaluate_vad_policy(num_episodes=100)`
+   - 100エピソードで評価
+   - Success Rate、Collision Rate等を計算
+
+4. **Judge Agent** → Success Rate >= 0.8 で合格判定
+
+### 16.5 自動運転向けデータセット対応一覧
+
+統合MCPサーバーがサポートする自動運転向けデータセット:
+
+| データセット         | タスク                         | Capability        | 特記事項                                 |
+| -------------------- | ------------------------------ | ----------------- | ---------------------------------------- |
+| KITTI 2D Object      | 2D物体検出                     | Data Prep, Train  | COCO JSON変換対応                        |
+| KITTI 3D Object      | 3D物体検出                     | Data Prep, Train  | LiDAR点群処理対応                        |
+| BDD100K              | 2D物体検出、車線検出           | Data Prep, Train  | 多様な天候・時間帯データ                 |
+| Waymo Open Dataset   | 3D物体検出、追跡               | Data Prep, Train  | 大規模データセット（1TB+）               |
+| nuScenes             | 3D物体検出、追跡、セグメンテー | Data Prep, Train  | 全方位カメラ・LiDAR対応                  |
+| CARLA Simulator      | 強化学習（VAD）                | Data Prep, RL     | シミュレータ連携（ECS Task起動）         |
+| AirSim               | 強化学習（VAD）                | Data Prep, RL     | Unreal Engine/Unity対応                  |
+
+### 16.6 自動運転向け機能要件のMCP実装マッピング
+
+仕様書のFR-034～FR-039を、既存11 Capabilityでどう実現するかを示します:
+
+| 機能要件ID | 要件名                           | 実装Capability          | 実装ツール                                   |
+| ---------- | -------------------------------- | ----------------------- | -------------------------------------------- |
+| FR-034     | KITTI データ前処理サポート       | Capability 3            | `preprocess_supervised(algorithm="yolox")`   |
+| FR-035     | 時系列フレーム処理サポート       | Capability 3            | `preprocess_reinforcement` - 時系列入力対応  |
+| FR-036     | 3D Bounding Box評価              | Capability 3 (Eval)     | `evaluate_object_detection(format="kitti")`  |
+| FR-037     | 推論速度モニタリング             | Capability 6 (Monitor)  | `monitor_inference_latency`                  |
+| FR-038     | LiDAR点群データ処理              | Capability 3 (Data)     | `preprocess_supervised(use_lidar=True)`      |
+| FR-039     | シミュレータ環境連携（CARLA等）  | Capability 3 (Data)     | `preprocess_reinforcement(environment=...)`  |
+
+**重要**: 既存の11 Capabilityで全要件を実現可能。新規Capabilityの追加は不要です。
+
+### 16.7 将来的な拡張候補（自動運転向け）
+
+仕様書のセクション15で提案された追加Capabilityは、Phase 4（将来検討）として位置づけます:
+
+#### Phase 4: オプション機能
+
+**Simulator Integration Capability**:
+
+- **目的**: CARLA/AirSimの高度な制御
+- **提供ツール**: `spawn_vehicle`、`set_weather`、`record_trajectory`等
+- **工数**: 3週間
+- **優先度**: 🟢 自動運転向け推奨
+
+**Online Learning & Active Learning Capability**:
+
+- **目的**: 実運用でのモデル継続改善、ラベリングコスト削減
+- **提供ツール**: `calculate_uncertainty`、`select_samples_for_labeling`等
+- **工数**: 3週間
+- **優先度**: 🟢 自動運転向け推奨（ラベリングコスト削減に効果的）
+
+これらは現状の11 Capabilityに含まれておらず、必要に応じて追加検討します。
+
+---
+
+## 17. 変更履歴
 
 | バージョン | 日付       | 変更内容                   | 作成者 |
 | ---------- | ---------- | -------------------------- | ------ |
