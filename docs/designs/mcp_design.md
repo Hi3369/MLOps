@@ -1447,7 +1447,7 @@ LambdaAgentSG:
 - **Experiment Tracking Capability** - 実験追跡ツール統合（MLflow、W&B等）
 - **Data Versioning Capability** - データバージョニングツール統合（DVC、Delta Lake等）
 
-詳細は [mcp_extended_design.md](mcp_extended_design.md) を参照。
+詳細は本ドキュメントのセクション15を参照。
 
 ---
 
