@@ -16,9 +16,6 @@
 ```
 MLOps/
 ├── README.md                              # プロジェクト概要・使い方
-├── requirements_specification.md          # 要件仕様書
-├── architecture_design.md                 # アーキテクチャ設計書
-├── test_design.md                         # テスト設計書
 ├── PROJECT_STRUCTURE.md                   # このファイル
 ├── .gitignore                             # Git除外設定
 ├── requirements.txt                       # Python依存関係
@@ -33,71 +30,90 @@ MLOps/
 │   ├── learning_types.mmd                # 学習方式図
 │   └── directory_structure.mmd           # ディレクトリ構造図
 │
-├── agents/                                # エージェント実装
-│   ├── __init__.py
+├── docs/                                  # ドキュメント
+│   ├── specifications/                   # 仕様書
+│   │   └── system_specification.md      # システム仕様書（機能要件、非機能要件、アーキテクチャ）
+│   │
+│   ├── designs/                          # 設計書
+│   │   ├── mcp_design.md                # MCP設計書（統合MCPサーバー設計、セキュリティ）
+│   │   └── implementation_guide.md      # 実装ガイド（実装設計、ワークフロー、開発・運用）
+│   │
+│   ├── reviews/                          # レビュー記録
+│   │   ├── aeccac7f80a7f090dd9c49b91aded0ace072c42a/
+│   │   │   └── REVIEW.md               # ドキュメント統合レビュー
+│   │   ├── 67f469b273e25bba3454858a6f2de40d0202979e/
+│   │   │   └── REVIEW.md               # 用語集レビュー
+│   │   ├── 16273bde26a95b2a7e3cf515655599f252000354/
+│   │   │   └── REVIEW.md               # 自動運転ユースケース追加レビュー
+│   │   └── eaa0ad0a53d5d24678b8dba91642038400ccd4f0/
+│   │       └── REVIEW.md               # 統合MCPサーバー設計レビュー
+│   │
+│   └── others/                           # その他ドキュメント
+│       ├── glossary.md                  # 用語集（MLOps技術用語・略語・概念）
+│       └── risk_management.md           # リスク管理マトリクス
+│
+├── mcp_server/                            # 統合MCPサーバー実装
+│   ├── README.md                         # MCPサーバー説明・使い方
+│   ├── server.py                         # MCPサーバーメイン
+│   │
 │   ├── common/                           # 共通モジュール
 │   │   ├── __init__.py
 │   │   ├── aws_client.py                # AWS SDK ラッパー
-│   │   ├── github_client.py             # GitHub API ラッパー
 │   │   ├── logger.py                    # ロギング設定
 │   │   └── exceptions.py                # カスタム例外
 │   │
-│   ├── issue_detector/                   # Issue検知エージェント
-│   │   ├── __init__.py
-│   │   ├── handler.py                   # Lambda ハンドラー
-│   │   ├── parser.py                    # YAML/JSON パーサー
-│   │   └── validator.py                 # 入力バリデーション
-│   │
-│   ├── data_preparation/                 # データ準備エージェント
-│   │   ├── __init__.py
-│   │   ├── handler.py
-│   │   ├── loader.py                    # データ読み込み
-│   │   ├── preprocessor.py              # 前処理
-│   │   └── validator.py                 # データバリデーション
-│   │
-│   ├── training/                         # 学習エージェント
-│   │   ├── __init__.py
-│   │   ├── handler.py
-│   │   ├── supervised/                  # 教師あり学習
-│   │   │   ├── __init__.py
-│   │   │   ├── classifier.py
-│   │   │   └── regressor.py
-│   │   ├── unsupervised/                # 教師なし学習
-│   │   │   ├── __init__.py
-│   │   │   ├── clustering.py
-│   │   │   └── dimensionality_reduction.py
-│   │   └── reinforcement/               # 強化学習
-│   │       ├── __init__.py
-│   │       └── rl_trainer.py
-│   │
-│   ├── evaluation/                       # 評価エージェント
-│   │   ├── __init__.py
-│   │   ├── handler.py
-│   │   ├── metrics.py                   # 評価指標計算
-│   │   └── visualizer.py                # 可視化
-│   │
-│   ├── judge/                            # 判定エージェント
-│   │   ├── __init__.py
-│   │   ├── handler.py
-│   │   └── decision.py                  # 判定ロジック
-│   │
-│   ├── notification/                     # 通知エージェント
-│   │   ├── __init__.py
-│   │   ├── handler.py
-│   │   ├── github_notifier.py           # GitHub通知
-│   │   ├── slack_notifier.py            # Slack通知
-│   │   └── email_notifier.py            # Email通知
-│   │
-│   ├── rollback/                         # ロールバックエージェント
-│   │   ├── __init__.py
-│   │   ├── handler.py
-│   │   └── model_version_manager.py     # モデルバージョン管理
-│   │
-│   └── history_writer/                   # 履歴保存エージェント
-│       ├── __init__.py
-│       ├── handler.py
-│       ├── formatter.py                 # Markdown フォーマッター
-│       └── github_writer.py             # GitHub書き込み
+│   └── capabilities/                     # 11 Capabilities
+│       ├── data_preparation/            # Capability 1: データ準備
+│       │   ├── __init__.py
+│       │   └── tools/                   # MCPツール実装
+│       │       ├── load_dataset.py
+│       │       ├── preprocess_data.py
+│       │       └── validate_data.py
+│       │
+│       ├── ml_training/                 # Capability 2: ML学習
+│       │   ├── __init__.py
+│       │   └── tools/
+│       │       ├── supervised/          # 教師あり学習
+│       │       │   ├── train_classifier.py
+│       │       │   └── train_regressor.py
+│       │       ├── unsupervised/        # 教師なし学習
+│       │       │   ├── train_clustering.py
+│       │       │   └── train_dimensionality_reduction.py
+│       │       └── reinforcement/       # 強化学習
+│       │           └── train_rl.py
+│       │
+│       ├── ml_evaluation/               # Capability 3: ML評価
+│       │   ├── __init__.py
+│       │   └── tools/
+│       │       ├── evaluate_model.py
+│       │       └── calculate_metrics.py
+│       │
+│       ├── github_integration/          # Capability 4: GitHub統合
+│       │   ├── __init__.py
+│       │   └── tools/
+│       │       ├── create_comment.py
+│       │       └── update_issue.py
+│       │
+│       ├── model_registry/              # Capability 5: モデルレジストリ
+│       │   ├── __init__.py
+│       │   └── tools/
+│       │       ├── register_model.py
+│       │       └── get_model_version.py
+│       │
+│       └── notification/                # Capability 6: 通知
+│           ├── __init__.py
+│           └── tools/
+│               ├── send_slack.py
+│               └── send_email.py
+│
+├── mcp_servers_legacy/                    # 旧MCPサーバー（非推奨・参考用）
+│   ├── README.md                         # レガシーMCPサーバー説明
+│   ├── data_preparation/
+│   ├── ml_training/
+│   ├── ml_evaluation/
+│   ├── github_integration/
+│   ├── model_registry/
+│   └── notification/
 │
 ├── cdk/                                  # AWS CDK (IaC)
 │   ├── app.py                           # CDKアプリケーション
@@ -120,17 +136,13 @@ MLOps/
 │   │   └── sample_datasets/
 │   │
 │   ├── unit/                            # 単体テスト
-│   │   ├── test_issue_detector.py
 │   │   ├── test_data_preparation.py
-│   │   ├── test_training.py
-│   │   ├── test_evaluation.py
-│   │   ├── test_judge.py
-│   │   ├── test_notification.py
-│   │   ├── test_rollback.py
-│   │   └── test_history_writer.py
+│   │   ├── test_ml_training.py
+│   │   ├── test_ml_evaluation.py
+│   │   └── test_mcp_server.py
 │   │
 │   ├── integration/                     # 統合テスト
-│   │   ├── test_agent_integration.py
+│   │   ├── test_capability_integration.py
 │   │   └── test_step_functions.py
 │   │
 │   └── system/                          # システムテスト
@@ -142,12 +154,6 @@ MLOps/
 │   ├── dev_config.yaml                 # 開発環境
 │   ├── test_config.yaml                # テスト環境
 │   └── prod_config.yaml                # 本番環境
-│
-├── docs/                                 # ドキュメント
-│   ├── getting_started.md              # 入門ガイド
-│   ├── api_reference.md                # API リファレンス
-│   ├── deployment_guide.md             # デプロイガイド
-│   └── troubleshooting.md              # トラブルシューティング
 │
 ├── training_history/                     # 学習履歴（自動生成）
 │   ├── train-20250110-001.md
@@ -170,28 +176,62 @@ MLOps/
 | ファイル | 説明 |
 |---------|------|
 | [README.md](README.md) | プロジェクトの概要、セットアップ手順、使い方 |
-| [requirements_specification.md](requirements_specification.md) | 機能要件・非機能要件の詳細 |
-| [architecture_design.md](architecture_design.md) | システムアーキテクチャ、各コンポーネント設計 |
-| [test_design.md](test_design.md) | テスト戦略、テストケース、テスト計画 |
+| [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | プロジェクト構造の説明（このファイル） |
 | requirements.txt | Python依存ライブラリ一覧 |
 | .gitignore | Git管理対象外ファイル設定 |
 
-### agents/ - エージェント実装
+### docs/ - ドキュメント
 
-各エージェントは独立したディレクトリで管理され、以下の構造を持ちます:
+#### 仕様書 (docs/specifications/)
 
-- **handler.py**: Lambda関数のエントリーポイント
-- **ビジネスロジック**: エージェント固有の処理
-- **__init__.py**: モジュール初期化
+| ファイル | 説明 |
+|---------|------|
+| [system_specification.md](docs/specifications/system_specification.md) | システム仕様書（機能要件、非機能要件、システムアーキテクチャ、自動運転ユースケース） |
 
-#### 共通モジュール (agents/common/)
+#### 設計書 (docs/designs/)
 
-全エージェントで共有するユーティリティ:
+| ファイル | 説明 |
+|---------|------|
+| [mcp_design.md](docs/designs/mcp_design.md) | MCP設計書（統合MLOps MCPサーバー設計、11 Capabilities、セキュリティ設計） |
+| [implementation_guide.md](docs/designs/implementation_guide.md) | 実装ガイド（実装設計、MLOpsワークフロー、開発・運用ガイド、自動運転実装例） |
 
-- **aws_client.py**: S3, SageMaker, SNS等のAWS APIクライアント
-- **github_client.py**: PyGitHubを使ったGitHub API操作
-- **logger.py**: CloudWatch Logsへのログ出力設定
-- **exceptions.py**: カスタム例外クラス
+#### レビュー記録 (docs/reviews/)
+
+各コミットに対する設計レビュー記録:
+
+| ディレクトリ | 内容 |
+|------------|------|
+| aeccac7f/REVIEW.md | ドキュメント統合レビュー（8→4ファイルに統合） |
+| 67f469b2/REVIEW.md | 用語集追加レビュー |
+| 16273bde/REVIEW.md | 自動運転ユースケース追加レビュー |
+| eaa0ad0a/REVIEW.md | 統合MCPサーバー設計レビュー |
+
+#### その他 (docs/others/)
+
+| ファイル | 説明 |
+|---------|------|
+| [glossary.md](docs/others/glossary.md) | MLOps技術用語・略語・概念の定義（100+用語、自動運転用語26語含む） |
+| [risk_management.md](docs/others/risk_management.md) | リスク管理マトリクス（技術・セキュリティ・運用・ビジネスリスク） |
+
+### mcp_server/ - 統合MCPサーバー
+
+統合MLOps MCPサーバーの実装:
+
+- **server.py**: MCPサーバーのメインエントリーポイント
+- **common/**: AWS SDK、ロギング、例外処理などの共通モジュール
+- **capabilities/**: 11個のCapabilityグループ
+  - Capability 1: Data Preparation
+  - Capability 2: ML Training（教師あり・教師なし・強化学習）
+  - Capability 3: ML Evaluation
+  - Capability 4: GitHub Integration
+  - Capability 5: Model Registry
+  - Capability 6: Notification
+
+詳細は[mcp_server/README.md](mcp_server/README.md)を参照。
+
+### mcp_servers_legacy/ - 旧MCPサーバー（非推奨）
+
+旧アーキテクチャのMCPサーバー実装。参考用として残されていますが、新規開発では**統合MCPサーバー（mcp_server/）**を使用してください。
 
 ### cdk/ - Infrastructure as Code
 
@@ -208,9 +248,9 @@ AWS CDKを使ったインフラ定義:
 
 3層のテスト構造:
 
-1. **unit/**: 各エージェントの単体テスト（モック使用）
-2. **integration/**: エージェント間連携テスト
-3. **system/**: エンドツーエンドのシステムテスト
+1. **unit/**: 各Capabilityの単体テスト（モック使用）
+2. **integration/**: Capability間連携テスト、Step Functionsテスト
+3. **system/**: エンドツーエンドのシステムテスト（教師あり・教師なし・強化学習）
 
 #### フィクスチャ (tests/fixtures/)
 
@@ -236,31 +276,31 @@ AWS CDKを使ったインフラ定義:
 
 ## 開発フロー
 
-### 1. 新しいエージェントの追加
+### 1. 新しいMCP Capabilityの追加
 
 ```bash
 # 1. ディレクトリ作成
-mkdir -p agents/new_agent
+mkdir -p mcp_server/capabilities/new_capability/tools
 
 # 2. ファイル作成
-touch agents/new_agent/__init__.py
-touch agents/new_agent/handler.py
+touch mcp_server/capabilities/new_capability/__init__.py
+touch mcp_server/capabilities/new_capability/tools/new_tool.py
 
 # 3. テスト作成
-touch tests/unit/test_new_agent.py
+touch tests/unit/test_new_capability.py
 ```
 
 ### 2. テスト実行
 
 ```bash
 # 単体テスト
-pytest tests/unit/test_new_agent.py
+pytest tests/unit/test_new_capability.py
 
 # すべてのテスト
 pytest
 
 # カバレッジ付き
-pytest --cov=agents --cov-report=html
+pytest --cov=mcp_server --cov-report=html
 ```
 
 ### 3. CDKデプロイ
@@ -282,6 +322,7 @@ cdk deploy --all
 - **PEP 8準拠**: black、flake8でフォーマット
 - **型ヒント**: mypy で型チェック
 - **ドキュメント**: docstringを必ず記載
+- **MCP仕様準拠**: [Model Context Protocol仕様](https://spec.modelcontextprotocol.io/)に従う
 
 ### テスト
 
@@ -294,14 +335,40 @@ cdk deploy --all
 - **シークレット管理**: AWS Secrets Manager使用
 - **最小権限**: IAMロールは最小権限の原則
 - **脆弱性スキャン**: pip-audit、banditで定期スキャン
+- **リスク管理**: [リスク管理マトリクス](docs/others/risk_management.md)を参照
+
+## ドキュメント体系
+
+```
+docs/
+├── specifications/          # 仕様書（What）
+│   └── system_specification.md
+│
+├── designs/                 # 設計書（How）
+│   ├── mcp_design.md       # MCP統合設計
+│   └── implementation_guide.md  # 実装ガイド
+│
+├── reviews/                 # レビュー記録（Quality Assurance）
+│   └── [commit_hash]/REVIEW.md
+│
+└── others/                  # その他
+    ├── glossary.md          # 用語集
+    └── risk_management.md   # リスク管理
+```
 
 ## 次のステップ
 
 1. [README.md](README.md)でセットアップ手順を確認
-2. [requirements_specification.md](requirements_specification.md)で要件を理解
-3. [architecture_design.md](architecture_design.md)でアーキテクチャを学習
-4. 各エージェントの実装を開始
+2. [用語集](docs/others/glossary.md)でMLOps用語を理解
+3. [システム仕様書](docs/specifications/system_specification.md)で要件を理解
+4. [MCP設計書](docs/designs/mcp_design.md)でアーキテクチャを学習
+5. [実装ガイド](docs/designs/implementation_guide.md)で実装を開始
 
 ## 問い合わせ
 
 質問や問題がある場合は、GitHub Issuesで報告してください。
+
+---
+
+**最終更新**: 2025-12-31
+**バージョン**: 2.0（統合MCPサーバー対応）
