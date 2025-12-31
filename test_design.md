@@ -838,3 +838,449 @@ MOCK_EVALUATION_RESULTS = {
     "auc_roc": 0.91
 }
 ```
+
+---
+
+## 9. 自動運転向けテストケース
+
+### 9.1 KITTI DataLoader単体テスト
+
+#### TC-UT-AV-001: KITTI LiDAR点群ロード
+
+**目的**: KITTI形式の.binファイルから正しくLiDAR点群をロードできることを確認
+
+**実装**:
+
+```python
+import numpy as np
+import pytest
+from pathlib import Path
+
+def test_load_kitti_point_cloud():
+    """KITTI LiDAR点群ロードのテスト"""
+    # Arrange
+    mock_velodyne_path = Path("tests/fixtures/kitti/velodyne/000001.bin")
+    expected_shape = (-1, 4)  # (x, y, z, intensity)
+
+    # Act
+    points = np.fromfile(str(mock_velodyne_path), dtype=np.float32).reshape(-1, 4)
+
+    # Assert
+    assert points.shape[1] == 4, "点群は4次元（x, y, z, intensity）である必要がある"
+    assert points.dtype == np.float32, "データ型はfloat32である必要がある"
+    assert points.shape[0] > 0, "点群は空でない必要がある"
+
+    # 点群の範囲チェック（KITTI想定範囲）
+    assert points[:, 0].max() <= 100, "X座標は100m以下である必要がある"
+    assert points[:, 0].min() >= -100, "X座標は-100m以上である必要がある"
+```
+
+#### TC-UT-AV-002: 点群フィルタリング
+
+**目的**: 自動運転に適した範囲で点群をフィルタリングできることを確認
+
+**実装**:
+
+```python
+def test_filter_point_cloud():
+    """点群フィルタリングのテスト"""
+    # Arrange
+    points = np.array([
+        [50.0, 0.0, 0.0, 1.0],    # 範囲内
+        [100.0, 0.0, 0.0, 1.0],   # X範囲外（超過）
+        [0.0, 50.0, 0.0, 1.0],    # 範囲外（Y超過）
+        [0.0, 0.0, -5.0, 1.0],    # 範囲外（Z下）
+        [30.0, 10.0, 0.5, 1.0],   # 範囲内
+    ], dtype=np.float32)
+
+    # 自動運転向けフィルタ: X: 0～70m, Y: -40～40m, Z: -3～1m
+    mask = (
+        (points[:, 0] >= 0) & (points[:, 0] <= 70) &
+        (points[:, 1] >= -40) & (points[:, 1] <= 40) &
+        (points[:, 2] >= -3) & (points[:, 2] <= 1)
+    )
+
+    # Act
+    filtered_points = points[mask]
+
+    # Assert
+    assert filtered_points.shape[0] == 2, "範囲内の点は2つである必要がある"
+    assert np.all(filtered_points[:, 0] >= 0), "X座標は0以上である必要がある"
+    assert np.all(filtered_points[:, 0] <= 70), "X座標は70以下である必要がある"
+```
+
+#### TC-UT-AV-003: KITTI → COCO変換
+
+**目的**: KITTIラベルをCOCO形式（YOLOX学習用）に変換できることを確認
+
+**実装**:
+
+```python
+def test_kitti_to_coco_conversion():
+    """KITTI → COCO変換のテスト"""
+    # Arrange
+    kitti_label = {
+        "type": "Car",
+        "truncated": 0.0,
+        "occluded": 0,
+        "alpha": -1.5,
+        "bbox": [712.4, 143.0, 810.73, 307.92],  # [left, top, right, bottom]
+        "dimensions": [1.85, 1.87, 3.69],  # [height, width, length]
+        "location": [1.84, 1.47, 8.41],  # [x, y, z] in camera coordinates
+        "rotation_y": -1.56
+    }
+
+    KITTI_CLASSES = {'Car': 0, 'Pedestrian': 1, 'Cyclist': 2}
+
+    # Act
+    coco_annotation = {
+        "id": 1,
+        "image_id": 1,
+        "category_id": KITTI_CLASSES[kitti_label["type"]],
+        "bbox": [
+            kitti_label["bbox"][0],  # left
+            kitti_label["bbox"][1],  # top
+            kitti_label["bbox"][2] - kitti_label["bbox"][0],  # width
+            kitti_label["bbox"][3] - kitti_label["bbox"][1]   # height
+        ],
+        "area": (kitti_label["bbox"][2] - kitti_label["bbox"][0]) *
+                (kitti_label["bbox"][3] - kitti_label["bbox"][1]),
+        "iscrowd": 0
+    }
+
+    # Assert
+    assert coco_annotation["category_id"] == 0, "Carのカテゴリは0である必要がある"
+    assert coco_annotation["bbox"][2] > 0, "幅は正の値である必要がある"
+    assert coco_annotation["bbox"][3] > 0, "高さは正の値である必要がある"
+    assert coco_annotation["area"] > 0, "面積は正の値である必要がある"
+```
+
+### 9.2 YOLOX学習スクリプト単体テスト
+
+#### TC-UT-AV-004: YOLOX Experiment初期化
+
+**目的**: YOLOX学習設定が正しく初期化されることを確認
+
+**実装**:
+
+```python
+def test_yolox_experiment_initialization():
+    """YOLOX Experimentの初期化テスト"""
+    # Arrange
+    model_variant = "yolox-m"
+    num_classes = 8  # KITTI: Car, Pedestrian, Cyclist, Van, Truck, Person_sitting, Tram, Misc
+    max_epoch = 50
+
+    # Act (擬似的なExperiment設定)
+    exp_config = {
+        "model_variant": model_variant,
+        "num_classes": num_classes,
+        "max_epoch": max_epoch,
+        "input_size": (640, 640),
+        "mosaic_prob": 1.0,
+        "mixup_prob": 1.0,
+        "hsv_prob": 1.0,
+        "flip_prob": 0.5,
+        "degrees": 10.0,
+        "translate": 0.1,
+        "scale": (0.5, 1.5),
+        "shear": 2.0,
+    }
+
+    # Assert
+    assert exp_config["num_classes"] == 8, "クラス数は8である必要がある"
+    assert exp_config["input_size"] == (640, 640), "入力サイズは640x640である必要がある"
+    assert 0.0 <= exp_config["mosaic_prob"] <= 1.0, "Mosaic確率は0～1の範囲である必要がある"
+    assert 0.0 <= exp_config["flip_prob"] <= 1.0, "Flip確率は0～1の範囲である必要がある"
+```
+
+#### TC-UT-AV-005: Mosaic Augmentation
+
+**目的**: Mosaic Augmentation（4画像を1画像に統合）が正しく動作することを確認
+
+**実装**:
+
+```python
+import cv2
+
+def test_mosaic_augmentation():
+    """Mosaic Augmentationのテスト"""
+    # Arrange
+    input_size = (640, 640)
+    images = [
+        np.random.randint(0, 255, (640, 640, 3), dtype=np.uint8),
+        np.random.randint(0, 255, (640, 640, 3), dtype=np.uint8),
+        np.random.randint(0, 255, (640, 640, 3), dtype=np.uint8),
+        np.random.randint(0, 255, (640, 640, 3), dtype=np.uint8),
+    ]
+
+    # Act (擬似的なMosaic処理)
+    mosaic_img = np.zeros((input_size[0], input_size[1], 3), dtype=np.uint8)
+    mosaic_img[0:320, 0:320] = cv2.resize(images[0], (320, 320))
+    mosaic_img[0:320, 320:640] = cv2.resize(images[1], (320, 320))
+    mosaic_img[320:640, 0:320] = cv2.resize(images[2], (320, 320))
+    mosaic_img[320:640, 320:640] = cv2.resize(images[3], (320, 320))
+
+    # Assert
+    assert mosaic_img.shape == (640, 640, 3), "Mosaic画像は640x640x3である必要がある"
+    assert mosaic_img.dtype == np.uint8, "データ型はuint8である必要がある"
+    assert mosaic_img.max() <= 255, "最大値は255以下である必要がある"
+```
+
+### 9.3 TensorRT最適化単体テスト
+
+#### TC-UT-AV-006: ONNX → TensorRT変換
+
+**目的**: ONNXモデルからTensorRTエンジンへの変換が正しく動作することを確認
+
+**実装**:
+
+```python
+def test_onnx_to_tensorrt_conversion():
+    """ONNX → TensorRT変換のテスト（モック）"""
+    # Arrange
+    onnx_model_path = "tests/fixtures/yolox_m.onnx"
+    input_shape = (1, 3, 640, 640)
+    precision = "fp16"
+    max_batch_size = 32
+
+    # Act (擬似的なTensorRT設定)
+    trt_config = {
+        "onnx_model_path": onnx_model_path,
+        "input_shape": input_shape,
+        "precision": precision,
+        "max_batch_size": max_batch_size,
+        "workspace_size": 1 << 30,  # 1GB
+        "fp16_mode": precision == "fp16",
+        "int8_mode": precision == "int8",
+    }
+
+    # Assert
+    assert trt_config["input_shape"][0] == 1, "バッチサイズ次元は1である必要がある"
+    assert trt_config["input_shape"][1] == 3, "チャネル数は3である必要がある"
+    assert trt_config["precision"] in ["fp32", "fp16", "int8"], "精度は fp32/fp16/int8 のいずれかである必要がある"
+    assert trt_config["max_batch_size"] > 0, "最大バッチサイズは正の値である必要がある"
+```
+
+#### TC-UT-AV-007: 推論レイテンシ測定
+
+**目的**: TensorRT最適化後の推論レイテンシが目標値（<100ms）を満たすことを確認
+
+**実装**:
+
+```python
+import time
+
+def test_tensorrt_inference_latency():
+    """TensorRT推論レイテンシのテスト（モック）"""
+    # Arrange
+    input_data = np.random.randn(1, 3, 640, 640).astype(np.float32)
+    target_latency_ms = 100.0
+
+    # Act (擬似的な推論)
+    start = time.time()
+    # モック推論: 実際はTensorRTエンジンで推論
+    output = np.random.randn(1, 8400, 13).astype(np.float32)  # YOLOX出力
+    latency_ms = (time.time() - start) * 1000
+
+    # Assert
+    assert latency_ms < target_latency_ms, f"推論レイテンシは{target_latency_ms}ms未満である必要がある（実測: {latency_ms:.2f}ms）"
+    assert output.shape == (1, 8400, 13), "出力形状は(1, 8400, 13)である必要がある"
+```
+
+### 9.4 BEV特徴量生成単体テスト
+
+#### TC-UT-AV-008: BEV変換
+
+**目的**: カメラ画像からBird's Eye View特徴量への変換が正しく動作することを確認
+
+**実装**:
+
+```python
+def test_bev_transformation():
+    """BEV変換のテスト（モック）"""
+    # Arrange
+    camera_features = np.random.randn(1, 256, 16, 44).astype(np.float32)  # (B, C, H, W)
+    camera_intrinsics = np.array([
+        [721.5, 0, 609.5],
+        [0, 721.5, 172.8],
+        [0, 0, 1]
+    ], dtype=np.float32)
+    camera_extrinsics = np.eye(4, dtype=np.float32)
+
+    bev_grid_size = (200, 200)  # 200x200 BEVグリッド
+    bev_range = (0, 70, -40, 40)  # (x_min, x_max, y_min, y_max) in meters
+
+    # Act (擬似的なBEV変換)
+    bev_features = np.random.randn(1, 256, bev_grid_size[0], bev_grid_size[1]).astype(np.float32)
+
+    # Assert
+    assert bev_features.shape == (1, 256, 200, 200), "BEV特徴量は(1, 256, 200, 200)である必要がある"
+    assert bev_features.dtype == np.float32, "データ型はfloat32である必要がある"
+```
+
+### 9.5 VAD強化学習単体テスト
+
+#### TC-UT-AV-009: VAD環境初期化
+
+**目的**: VAD強化学習環境が正しく初期化されることを確認
+
+**実装**:
+
+```python
+def test_vad_environment_initialization():
+    """VAD環境初期化のテスト（モック）"""
+    # Arrange
+    env_config = {
+        "simulator": "carla",
+        "map": "Town04",
+        "weather": "ClearNoon",
+        "sensors": [
+            {"type": "rgb_camera", "position": [2.0, 0, 1.5], "fov": 90},
+            {"type": "lidar", "position": [0, 0, 2.0], "channels": 64}
+        ],
+        "action_space": {
+            "type": "continuous",
+            "dimensions": 2,  # steering, throttle
+            "range": [(-1.0, 1.0), (0.0, 1.0)]
+        },
+        "observation_space": {
+            "type": "image",
+            "shape": (3, 224, 224)
+        }
+    }
+
+    # Act & Assert
+    assert env_config["simulator"] == "carla", "シミュレータはCARLAである必要がある"
+    assert env_config["action_space"]["dimensions"] == 2, "アクション次元は2である必要がある"
+    assert env_config["observation_space"]["shape"] == (3, 224, 224), "観測空間は(3, 224, 224)である必要がある"
+```
+
+#### TC-UT-AV-010: 報酬関数
+
+**目的**: VAD強化学習の報酬関数が正しく計算されることを確認
+
+**実装**:
+
+```python
+def test_vad_reward_function():
+    """VAD報酬関数のテスト"""
+    # Arrange
+    # 正常走行ケース
+    state_normal = {
+        "collision": False,
+        "lane_deviation": 0.2,  # 車線中央からのズレ（m）
+        "speed": 30.0,  # km/h
+        "target_speed": 30.0
+    }
+
+    # 衝突ケース
+    state_collision = {
+        "collision": True,
+        "lane_deviation": 1.5,
+        "speed": 25.0,
+        "target_speed": 30.0
+    }
+
+    # Act
+    def calculate_reward(state):
+        if state["collision"]:
+            return -100.0  # 衝突ペナルティ
+
+        reward = 0.0
+        reward += 1.0  # 生存報酬
+        reward -= abs(state["lane_deviation"]) * 0.5  # 車線逸脱ペナルティ
+        reward -= abs(state["speed"] - state["target_speed"]) * 0.1  # 速度差ペナルティ
+        return reward
+
+    reward_normal = calculate_reward(state_normal)
+    reward_collision = calculate_reward(state_collision)
+
+    # Assert
+    assert reward_normal > reward_collision, "正常走行の報酬は衝突時より高い必要がある"
+    assert reward_collision == -100.0, "衝突時の報酬は-100である必要がある"
+    assert reward_normal > 0, "正常走行の報酬は正の値である必要がある"
+```
+
+### 9.6 統合テスト（自動運転）
+
+#### TC-IT-AV-001: YOLOX + KITTI エンドツーエンド
+
+**目的**: KITTI DataLoader → YOLOX学習 → 評価までのエンドツーエンドテスト
+
+**実装**:
+
+```python
+def test_yolox_kitti_end_to_end():
+    """YOLOX + KITTI エンドツーエンドテスト（モック）"""
+    # Arrange
+    dataset_config = {
+        "name": "kitti_object_detection",
+        "train_size": 100,  # テスト用に縮小
+        "val_size": 50
+    }
+
+    training_config = {
+        "model": "yolox-s",
+        "epochs": 1,  # テスト用に短縮
+        "batch_size": 8,
+        "learning_rate": 0.001
+    }
+
+    # Act
+    # 1. データロード（モック）
+    train_dataset_size = dataset_config["train_size"]
+    val_dataset_size = dataset_config["val_size"]
+
+    # 2. 学習（モック）
+    training_loss = 2.5
+
+    # 3. 評価（モック）
+    evaluation_results = {
+        "mAP@0.5": 0.65,
+        "mAP@0.75": 0.45,
+        "inference_time_ms": 25.0
+    }
+
+    # Assert
+    assert train_dataset_size == 100, "学習データサイズは100である必要がある"
+    assert val_dataset_size == 50, "検証データサイズは50である必要がある"
+    assert training_loss > 0, "学習ロスは正の値である必要がある"
+    assert 0.0 <= evaluation_results["mAP@0.5"] <= 1.0, "mAPは0～1の範囲である必要がある"
+    assert evaluation_results["inference_time_ms"] < 100, "推論時間は100ms未満である必要がある"
+```
+
+---
+
+## 10. モックデータ定義（自動運転）
+
+```python
+# KITTI DataLoader用モックデータ
+MOCK_KITTI_LABEL = {
+    "type": "Car",
+    "truncated": 0.0,
+    "occluded": 0,
+    "alpha": -1.5,
+    "bbox": [712.4, 143.0, 810.73, 307.92],
+    "dimensions": [1.85, 1.87, 3.69],
+    "location": [1.84, 1.47, 8.41],
+    "rotation_y": -1.56
+}
+
+MOCK_YOLOX_CONFIG = {
+    "model_variant": "yolox-m",
+    "num_classes": 8,
+    "max_epoch": 50,
+    "input_size": (640, 640),
+    "mosaic_prob": 1.0,
+    "mixup_prob": 1.0
+}
+
+MOCK_VAD_STATE = {
+    "collision": False,
+    "lane_deviation": 0.2,
+    "speed": 30.0,
+    "target_speed": 30.0,
+    "distance_to_goal": 50.0
+}
+```
