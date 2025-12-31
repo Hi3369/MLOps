@@ -310,7 +310,10 @@ MIT License
 
 - [MCP設計書](docs/designs/mcp_design.md) - 統合MLOps MCPサーバー設計、セキュリティ設計
 - [実装ガイド](docs/designs/implementation_guide.md) - 実装設計、MLOpsワークフロー、開発・運用ガイド
-- [設計レビュー](docs/designs/REVIEW.md) - 設計判断の経緯と意思決定記録
+
+### レビュー記録
+
+- [設計レビュー (eaa0ad0a)](docs/reviews/eaa0ad0a53d5d24678b8dba91642038400ccd4f0/REVIEW.md) - 統合MCPサーバーアプローチの設計レビュー
 
 ### その他
 

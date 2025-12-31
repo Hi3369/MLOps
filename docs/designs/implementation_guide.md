@@ -1088,7 +1088,7 @@ ECS FargateまたはLambdaのメモリ設定を増やしてください:
 
 - [システム仕様書](../specifications/system_specification.md)
 - [MCP設計書](mcp_design.md)
-- [REVIEW.md](REVIEW.md) - 設計レビューと意思決定記録
+- [設計レビュー (eaa0ad0a)](../reviews/eaa0ad0a53d5d24678b8dba91642038400ccd4f0/REVIEW.md) - 統合MCPサーバーアプローチの設計レビュー
 - [Model Context Protocol 仕様](https://spec.modelcontextprotocol.io/)
 
 ---
