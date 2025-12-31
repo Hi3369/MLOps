@@ -319,6 +319,7 @@ MIT License
 
 - [テスト設計書](test_design.md)
 - [プロジェクト構造](PROJECT_STRUCTURE.md)
+- [用語集](docs/others/glossary.md) - MLOps技術用語・略語・概念の定義
 
 ### 外部リンク
 
