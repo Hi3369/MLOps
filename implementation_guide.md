@@ -1,16 +1,28 @@
-# 統合MLOps MCPサーバー 実装設計書
+# 実装ガイド: 統合MLOps MCPシステム
 
-**バージョン**: 0.1
-**作成日**: 2025-12-27
-**対象**: 統合MLOps MCPサーバー（11個のCapability）
+**バージョン**: 1.0
+**作成日**: 2025-12-30
+**対象**: 開発者向け実装・運用ガイド
 
 ---
 
-## 1. 概要
+## 目次
 
-本書は、統合MLOps MCPサーバーの詳細な実装設計を定義します。[mcp_design.md](mcp_design.md)および[architecture_design.md](architecture_design.md)で定義されたアーキテクチャを実装レベルに落とし込みます。
+1. [実装設計](#1-実装設計)
+2. [MLOpsワークフロー](#2-mlopsワークフロー)
+3. [統合MCPサーバー開発ガイド](#3-統合mcpサーバー開発ガイド)
+4. [デプロイメント](#4-デプロイメント)
+5. [運用ガイド](#5-運用ガイド)
 
-### 1.1 実装範囲
+---
+
+## 1. 実装設計
+
+### 1.1 概要
+
+本セクションは、統合MLOps MCPサーバーの詳細な実装設計を定義します。[mcp_design.md](mcp_design.md)および[system_specification.md](system_specification.md)で定義されたアーキテクチャを実装レベルに落とし込みます。
+
+### 1.2 実装範囲
 
 **Phase 1（Week 1-6）**: コアMLOps Capability実装
 
@@ -27,7 +39,7 @@
 
 **Phase 3（Week 13-14）**: E2Eテスト・最適化
 
-### 1.2 技術スタック
+### 1.3 技術スタック
 
 | カテゴリ               | 技術            | バージョン |
 | ---------------------- | --------------- | ---------- |
@@ -48,9 +60,7 @@
 |                        | mypy            | 1.8.0+     |
 | **コンテナ**           | Docker          | 24.0+      |
 
----
-
-## 2. ディレクトリ構造詳細
+### 1.4 ディレクトリ構造詳細
 
 ```text
 mcp_server/
@@ -170,11 +180,9 @@ mcp_server/
 └── pyproject.toml                    # プロジェクト設定（ruff, mypy等）
 ```
 
----
+### 1.5 コアコンポーネント実装
 
-## 3. コアコンポーネント実装
-
-### 3.1 メインサーバー（server.py）
+#### メインサーバー（server.py）
 
 ```python
 """統合MLOps MCPサーバーのメイン実装"""
@@ -288,7 +296,7 @@ class UnifiedMLOpsMCPServer:
             )
 ```
 
-### 3.2 ツールルーター（router.py）
+#### ツールルーター（router.py）
 
 ```python
 """ツールルーティング機構"""
@@ -345,7 +353,7 @@ class ToolRouter:
         return await capability.execute_tool(tool_name, arguments)
 ```
 
-### 3.3 設定管理（config.py）
+#### 設定管理（config.py）
 
 ```python
 """設定管理"""
@@ -389,7 +397,7 @@ class Config:
         )
 ```
 
-### 3.4 基底Capabilityクラス（capabilities/base.py）
+#### 基底Capabilityクラス（capabilities/base.py）
 
 ```python
 """基底Capabilityクラス"""
@@ -426,258 +434,9 @@ class BaseCapability(ABC):
         pass
 ```
 
----
+### 1.6 共通ユーティリティ実装
 
-## 4. Capability別実装詳細
-
-### 4.1 Capability 1: Data Preparation
-
-**ファイル**: `capabilities/data_preparation/capability.py`
-
-```python
-"""Data Preparation Capability実装"""
-from typing import Any
-
-from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource
-
-from ..base import BaseCapability
-from .tools import (
-    load_dataset,
-    validate_data,
-    preprocess_supervised,
-    preprocess_unsupervised,
-    preprocess_reinforcement,
-    feature_engineering,
-    split_dataset,
-    save_processed_data,
-)
-
-
-class DataPreparationCapability(BaseCapability):
-    """データ前処理・特徴量エンジニアリング"""
-
-    def list_tools(self) -> list[Tool]:
-        """提供ツール一覧"""
-        return [
-            Tool(
-                name="load_dataset",
-                description="S3からデータセットを読み込む",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "s3_uri": {"type": "string", "description": "S3 URI (s3://bucket/key)"},
-                        "file_format": {"type": "string", "enum": ["csv", "parquet", "json"], "default": "csv"},
-                    },
-                    "required": ["s3_uri"],
-                },
-            ),
-            Tool(
-                name="validate_data",
-                description="データのバリデーション（欠損値、型チェック等）",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "data_s3_uri": {"type": "string"},
-                        "schema": {"type": "object", "description": "期待されるスキーマ"},
-                    },
-                    "required": ["data_s3_uri"],
-                },
-            ),
-            Tool(
-                name="preprocess_supervised",
-                description="教師あり学習用の前処理",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "dataset_s3_uri": {"type": "string"},
-                        "target_column": {"type": "string"},
-                        "task_type": {"type": "string", "enum": ["classification", "regression"]},
-                        "preprocessing_config": {
-                            "type": "object",
-                            "properties": {
-                                "normalize": {"type": "boolean", "default": True},
-                                "handle_missing": {"type": "string", "enum": ["drop", "mean", "median", "mode"], "default": "mean"},
-                                "encode_categorical": {"type": "boolean", "default": True},
-                            },
-                        },
-                    },
-                    "required": ["dataset_s3_uri", "target_column", "task_type"],
-                },
-            ),
-            # ... 他のツール定義
-        ]
-
-    async def execute_tool(
-        self,
-        tool_name: str,
-        arguments: dict[str, Any]
-    ) -> list[TextContent | ImageContent | EmbeddedResource]:
-        """ツール実行"""
-
-        tool_map = {
-            "load_dataset": load_dataset.execute,
-            "validate_data": validate_data.execute,
-            "preprocess_supervised": preprocess_supervised.execute,
-            "preprocess_unsupervised": preprocess_unsupervised.execute,
-            "preprocess_reinforcement": preprocess_reinforcement.execute,
-            "feature_engineering": feature_engineering.execute,
-            "split_dataset": split_dataset.execute,
-            "save_processed_data": save_processed_data.execute,
-        }
-
-        tool_func = tool_map.get(tool_name)
-        if not tool_func:
-            raise ValueError(f"Unknown tool: {tool_name}")
-
-        return await tool_func(self.config, arguments)
-```
-
-**ツール実装例**: `capabilities/data_preparation/tools/preprocess_supervised.py`
-
-```python
-"""教師あり学習用の前処理ツール"""
-import pandas as pd
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from mcp.types import TextContent, EmbeddedResource
-
-from ...common.s3_utils import S3Utils
-from ...common.logger import get_logger
-
-logger = get_logger(__name__)
-
-
-async def execute(config, arguments: dict) -> list:
-    """教師あり学習用の前処理を実行"""
-
-    dataset_s3_uri = arguments["dataset_s3_uri"]
-    target_column = arguments["target_column"]
-    task_type = arguments["task_type"]
-    preprocessing_config = arguments.get("preprocessing_config", {})
-
-    logger.info(f"Starting supervised preprocessing: {dataset_s3_uri}")
-
-    # S3からデータロード
-    s3_utils = S3Utils(config)
-    df = await s3_utils.read_dataframe(dataset_s3_uri)
-
-    # ターゲットと特徴量を分離
-    X = df.drop(columns=[target_column])
-    y = df[target_column]
-
-    # 欠損値処理
-    if preprocessing_config.get("handle_missing", "mean") != "drop":
-        strategy = preprocessing_config["handle_missing"]
-        X = X.fillna(X.mean() if strategy == "mean" else X.median())
-    else:
-        X = X.dropna()
-
-    # カテゴリカル変数のエンコーディング
-    if preprocessing_config.get("encode_categorical", True):
-        for col in X.select_dtypes(include=["object"]).columns:
-            le = LabelEncoder()
-            X[col] = le.fit_transform(X[col])
-
-    # 正規化
-    if preprocessing_config.get("normalize", True):
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-        X = pd.DataFrame(X_scaled, columns=X.columns)
-
-    # 処理済みデータを結合
-    processed_df = pd.concat([X, y], axis=1)
-
-    # S3に保存
-    output_s3_uri = dataset_s3_uri.replace(".csv", "_processed.csv")
-    await s3_utils.write_dataframe(processed_df, output_s3_uri)
-
-    logger.info(f"Preprocessing completed: {output_s3_uri}")
-
-    return [
-        TextContent(
-            type="text",
-            text=f"データ前処理が完了しました。処理済みデータ: {output_s3_uri}"
-        ),
-        EmbeddedResource(
-            type="resource",
-            resource={
-                "uri": output_s3_uri,
-                "name": "処理済み学習データ",
-                "mimeType": "text/csv"
-            }
-        )
-    ]
-```
-
-### 4.2 Capability 2: ML Training
-
-**主要ツール実装**: `capabilities/ml_training/tools/supervised/random_forest.py`
-
-```python
-"""Random Forest分類器の学習ツール"""
-import joblib
-from sklearn.ensemble import RandomForestClassifier
-from mcp.types import TextContent, EmbeddedResource
-
-from ....common.s3_utils import S3Utils
-from ....common.logger import get_logger
-
-logger = get_logger(__name__)
-
-
-async def execute(config, arguments: dict) -> list:
-    """Random Forest分類モデルを学習"""
-
-    train_data_s3_uri = arguments["train_data_s3_uri"]
-    target_column = arguments.get("target_column", "target")
-    hyperparameters = arguments.get("hyperparameters", {})
-    model_output_s3_uri = arguments["model_output_s3_uri"]
-
-    logger.info(f"Training Random Forest classifier: {train_data_s3_uri}")
-
-    # データロード
-    s3_utils = S3Utils(config)
-    df = await s3_utils.read_dataframe(train_data_s3_uri)
-
-    X = df.drop(columns=[target_column])
-    y = df[target_column]
-
-    # モデル学習
-    model = RandomForestClassifier(
-        n_estimators=hyperparameters.get("n_estimators", 100),
-        max_depth=hyperparameters.get("max_depth", None),
-        random_state=42
-    )
-    model.fit(X, y)
-
-    # モデル保存
-    model_path = "/tmp/model.pkl"
-    joblib.dump(model, model_path)
-    await s3_utils.upload_file(model_path, model_output_s3_uri)
-
-    # 学習メトリクス
-    train_accuracy = model.score(X, y)
-
-    logger.info(f"Training completed. Accuracy: {train_accuracy:.4f}")
-
-    return [
-        TextContent(
-            type="text",
-            text=f"Random Forest分類モデルの学習が完了しました。Train Accuracy: {train_accuracy:.4f}"
-        ),
-        EmbeddedResource(
-            type="resource",
-            resource={
-                "uri": model_output_s3_uri,
-                "name": "学習済みモデル",
-                "mimeType": "application/octet-stream"
-            }
-        )
-    ]
-```
-
-### 4.3 共通ユーティリティ
-
-**S3操作**: `common/s3_utils.py`
+#### S3操作（common/s3_utils.py）
 
 ```python
 """S3操作ユーティリティ"""
@@ -759,99 +518,7 @@ class S3Utils:
         return bucket, key
 ```
 
-**Secrets Manager統合**: `common/secrets.py`
-
-```python
-"""AWS Secrets Manager統合"""
-import json
-from functools import lru_cache
-import boto3
-from botocore.exceptions import ClientError
-
-from .logger import get_logger
-
-logger = get_logger(__name__)
-
-
-class SecretsManager:
-    """Secrets Manager操作"""
-
-    def __init__(self, config):
-        self.config = config
-        self.client = boto3.client('secretsmanager', region_name=config.aws_region)
-
-    @lru_cache(maxsize=10)
-    def get_secret(self, secret_name: str) -> dict:
-        """シークレットを取得（キャッシュあり）"""
-        full_secret_name = f"{self.config.secrets_prefix}{secret_name}"
-
-        try:
-            response = self.client.get_secret_value(SecretId=full_secret_name)
-            secret = json.loads(response['SecretString'])
-            logger.info(f"Retrieved secret: {full_secret_name}")
-            return secret
-
-        except ClientError as e:
-            logger.error(f"Failed to retrieve secret: {full_secret_name}", exc_info=True)
-            raise
-```
-
-**構造化ロギング**: `common/logger.py`
-
-```python
-"""構造化ロギング"""
-import logging
-import json
-import sys
-from datetime import datetime
-
-
-class JSONFormatter(logging.Formatter):
-    """JSON形式のログフォーマッター"""
-
-    def format(self, record: logging.LogRecord) -> str:
-        log_data = {
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-            "level": record.levelname,
-            "logger": record.name,
-            "message": record.getMessage(),
-        }
-
-        # 追加フィールド
-        if hasattr(record, 'tool_name'):
-            log_data['tool_name'] = record.tool_name
-        if hasattr(record, 'capability'):
-            log_data['capability'] = record.capability
-        if hasattr(record, 'duration_ms'):
-            log_data['duration_ms'] = record.duration_ms
-        if hasattr(record, 'status'):
-            log_data['status'] = record.status
-
-        # エラー情報
-        if record.exc_info:
-            log_data['exception'] = self.formatException(record.exc_info)
-
-        return json.dumps(log_data)
-
-
-def get_logger(name: str) -> logging.Logger:
-    """構造化ロガーを取得"""
-    logger = logging.getLogger(name)
-
-    if not logger.handlers:
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(JSONFormatter())
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
-
-    return logger
-```
-
----
-
-## 5. エラーハンドリング
-
-**カスタム例外**: `common/exceptions.py`
+#### カスタム例外（common/exceptions.py）
 
 ```python
 """カスタム例外定義"""
@@ -889,9 +556,375 @@ class ValidationError(MCPServerError):
 
 ---
 
-## 6. デプロイメント
+## 2. MLOpsワークフロー
 
-### 6.1 Dockerfile（ECS Fargate用）
+### 2.1 ワークフロー概要
+
+本システムは、GitHub Issueをトリガーとして、機械学習モデルの学習・評価・デプロイを自動化するMLOpsパイプラインです。統合MLOps MCPサーバーを活用し、エージェントベースで処理を実行します。
+
+### 2.2 エンドツーエンドワークフロー図
+
+```mermaid
+graph TB
+    Start([オペレータ]) -->|1. GitHub Issueを作成<br/>ラベル: mlops:train| Issue[GitHub Issue]
+
+    Issue -->|2. Webhook| Detector[Issue Detector Agent]
+    Detector -->|3. Issue解析<br/>パラメータ抽出| Parse{Issue本文<br/>パース}
+
+    Parse -->|4. 有効なパラメータ| SF[Step Functions<br/>ワークフロー起動]
+    Parse -->|無効| NotifyError[エラー通知]
+
+    SF -->|5. データ準備| PrepAgent[Data Preparation Agent]
+    PrepAgent -->|MCP呼び出し| MCP1[統合MCP Server<br/>Capability:<br/>Data Preparation]
+    MCP1 -->|6. S3から<br/>データロード| S3_1[(S3: datasets/)]
+    MCP1 -->|7. 前処理実行<br/>正規化・エンコーディング| Prep[前処理]
+    Prep -->|8. 処理済みデータ保存| S3_2[(S3: processed/)]
+
+    S3_2 -->|9. 学習開始| TrainAgent[Training Agent]
+    TrainAgent -->|MCP呼び出し| MCP2[統合MCP Server<br/>Capability:<br/>ML Training]
+    MCP2 -->|10. SageMaker<br/>Training Job起動| SageMaker[Amazon SageMaker<br/>Training Job]
+    SageMaker -->|11. 学習完了<br/>モデル保存| S3_3[(S3: models/)]
+
+    S3_3 -->|12. 評価開始| EvalAgent[Evaluation Agent]
+    EvalAgent -->|MCP呼び出し| MCP3[統合MCP Server<br/>Capability:<br/>ML Evaluation]
+    MCP3 -->|13. モデル評価<br/>メトリクス計算| Eval[評価処理]
+    Eval -->|14. 評価結果保存| S3_4[(S3: evaluations/)]
+
+    S3_4 -->|15. 判定| JudgeAgent[Judge Agent]
+    JudgeAgent -->|16. 閾値比較| Decision{評価結果<br/>≥ 閾値?}
+
+    Decision -->|Yes: 合格| RegistryAgent[Model Registry操作]
+    RegistryAgent -->|MCP呼び出し| MCP5[統合MCP Server<br/>Capability:<br/>Model Registry]
+    MCP5 -->|17. モデル登録| Registry[(SageMaker<br/>Model Registry)]
+
+    Decision -->|No: 不合格| RetryCheck{再学習<br/>回数<br/>< max_retry?}
+    RetryCheck -->|Yes| NotifyRetry[Notification Agent]
+    NotifyRetry -->|MCP呼び出し| MCP6[統合MCP Server<br/>Capability:<br/>Notification]
+    MCP6 -->|19. 再学習通知| Slack1[Slack/Email]
+    Slack1 -->|20. オペレータ承認待ち| WaitApproval[承認待機]
+    WaitApproval -->|21. 承認| PrepAgent
+
+    RetryCheck -->|No: 超過| RollbackAgent[Rollback Agent]
+    RollbackAgent -->|MCP呼び出し| MCP5_2[統合MCP Server<br/>Capability:<br/>Model Registry]
+    MCP5_2 -->|22. 前バージョンに<br/>ロールバック| Registry
+
+    Registry -->|23. 履歴保存| HistoryAgent[History Writer Agent]
+    HistoryAgent -->|MCP呼び出し| MCP4[統合MCP Server<br/>Capability:<br/>GitHub Integration]
+    MCP4 -->|24. 学習結果を<br/>Markdown作成| History[training_history/<br/>train-20251227-001.md]
+    MCP4 -->|25. GitHubに<br/>コミット| GitHub[(GitHub Repository)]
+
+    style MCP1 fill:#e1f5fe
+    style MCP2 fill:#e1f5fe
+    style MCP3 fill:#e1f5fe
+    style MCP4 fill:#e1f5fe
+    style MCP5 fill:#e1f5fe
+    style MCP6 fill:#e1f5fe
+    style Decision fill:#fff9c4
+    style RetryCheck fill:#fff9c4
+```
+
+### 2.3 データフロー
+
+#### S3バケット間のデータ移動
+
+```mermaid
+graph LR
+    Raw[(S3: datasets/<br/>raw data)] -->|1. Data Prep Agent<br/>MCP: load_dataset| Prep
+    Prep[データ前処理] -->|2. MCP: preprocess_*| Processed[(S3: processed/<br/>train/val/test)]
+
+    Processed -->|3. Training Agent<br/>MCP: train_*| Train[SageMaker<br/>Training Job]
+    Train -->|4. 学習済みモデル| Models[(S3: models/<br/>model.pkl)]
+
+    Models -->|5. Evaluation Agent<br/>MCP: evaluate_*| Eval[評価処理]
+    Eval -->|6. 評価結果・可視化| EvalResults[(S3: evaluations/<br/>results.json<br/>plots.png)]
+
+    Models -->|7. Model Registry Agent<br/>MCP: register_model| Registry[(SageMaker<br/>Model Registry<br/>v1.2.0)]
+
+    EvalResults -->|8. History Writer Agent<br/>MCP: commit_history| GitHub[(GitHub:<br/>training_history/<br/>*.md)]
+
+    style Raw fill:#fff3e0
+    style Processed fill:#e8f5e9
+    style Models fill:#e3f2fd
+    style EvalResults fill:#f3e5f5
+    style Registry fill:#fce4ec
+    style GitHub fill:#e0f2f1
+```
+
+### 2.4 Step Functions ステートマシン
+
+#### メインワークフロー（状態遷移図）
+
+```mermaid
+stateDiagram-v2
+    [*] --> PrepareData: ワークフロー開始
+
+    PrepareData --> TrainModel: データ準備完了
+    TrainModel --> EvaluateModel: 学習完了
+    EvaluateModel --> JudgeResults: 評価完了
+
+    JudgeResults --> RegisterModel: 判定: 合格
+    JudgeResults --> CheckRetryLimit: 判定: 不合格
+    JudgeResults --> RollbackModel: 判定: 失敗
+
+    CheckRetryLimit --> NotifyOperator: リトライ回数 < max
+    CheckRetryLimit --> RollbackModel: リトライ回数 >= max
+
+    NotifyOperator --> WaitForOperatorInput: 通知送信完了
+    WaitForOperatorInput --> IncrementRetry: オペレータ承認
+    IncrementRetry --> PrepareData: リトライカウンタ+1
+
+    RegisterModel --> WriteHistory: モデル登録完了
+    WriteHistory --> NotifySuccess: 履歴保存完了
+    NotifySuccess --> [*]: ワークフロー成功
+
+    RollbackModel --> NotifyFailure: ロールバック完了
+    NotifyFailure --> [*]: ワークフロー失敗
+
+    PrepareData --> ErrorHandler: エラー発生
+    TrainModel --> ErrorHandler: エラー発生
+    EvaluateModel --> ErrorHandler: エラー発生
+    ErrorHandler --> NotifyFailure: エラー通知
+```
+
+#### 各ステートの詳細
+
+| ステート名                | タイプ       | 実行内容                               | タイムアウト | リトライ |
+| ------------------------- | ------------ | -------------------------------------- | ------------ | -------- |
+| **PrepareData**           | Task         | Data Preparation Agent実行             | 15分         | 3回      |
+| **TrainModel**            | Task         | Training Agent実行（.sync統合）        | 60分         | 1回      |
+| **EvaluateModel**         | Task         | Evaluation Agent実行                   | 15分         | 3回      |
+| **JudgeResults**          | Task         | Judge Agent実行                        | 5分          | なし     |
+| **CheckRetryLimit**       | Choice       | リトライ回数判定                       | -            | -        |
+| **NotifyOperator**        | Task         | Notification Agent実行                 | 5分          | 3回      |
+| **WaitForOperatorInput**  | Task (Token) | オペレータ承認待機                     | 24時間       | なし     |
+| **IncrementRetry**        | Pass         | リトライカウンタ+1                     | -            | -        |
+| **RegisterModel**         | Task         | Model Registry操作Agent実行            | 10分         | 3回      |
+| **WriteHistory**          | Task         | History Writer Agent実行               | 5分          | 3回      |
+| **NotifySuccess**         | Task         | Notification Agent実行                 | 5分          | 3回      |
+| **RollbackModel**         | Task         | Rollback Agent実行                     | 10分         | 3回      |
+| **NotifyFailure**         | Task         | Notification Agent実行                 | 5分          | 3回      |
+| **ErrorHandler**          | Catch        | エラーハンドリング                     | -            | -        |
+
+---
+
+## 3. 統合MCPサーバー開発ガイド
+
+### 3.1 統合MLOps MCP Server 概要
+
+統合MLOps MCP Serverは、MLOpsパイプラインの全専門機能を**1つのMCPサーバー**として提供します。
+
+MCPサーバーは、データ前処理・モデル学習・モデル評価などの機械学習専門機能を標準化されたプロトコルで提供します。
+
+### 3.2 提供Capability（6個の機能群）
+
+#### 1. Data Preparation
+
+**責務**: データ前処理・特徴量エンジニアリング
+
+**提供ツール**:
+
+- `load_dataset` - S3からデータセットを読み込む
+- `validate_data` - データのバリデーション
+- `preprocess_supervised` - 教師あり学習用の前処理
+- `preprocess_unsupervised` - 教師なし学習用の前処理
+- `preprocess_reinforcement` - 強化学習用の前処理
+- `split_dataset` - データセットの分割
+- `feature_engineering` - 特徴量エンジニアリング
+- `save_processed_data` - 処理済みデータをS3に保存
+
+#### 2. ML Training
+
+**責務**: 機械学習モデルの学習
+
+**提供ツール**:
+
+**教師あり学習**:
+
+- `train_supervised_classifier` - 分類モデルの学習（Random Forest, XGBoost, Neural Network）
+- `train_supervised_regressor` - 回帰モデルの学習（Linear Regression, XGBoost Regressor, Neural Network Regressor）
+
+**教師なし学習**:
+
+- `train_unsupervised_clustering` - クラスタリング（K-Means, DBSCAN, Autoencoder）
+- `train_unsupervised_dimension_reduction` - 次元削減（PCA, t-SNE）
+
+**強化学習**:
+
+- `train_reinforcement` - 強化学習モデルの学習（PPO, DQN, A3C）
+
+**共通**:
+
+- `get_training_metrics` - 学習中のメトリクスを取得
+- `save_model` - 学習済みモデルをS3に保存
+
+#### 3. ML Evaluation
+
+**責務**: モデルの評価・可視化
+
+**提供ツール**:
+
+- `load_model` - S3からモデルをロード
+- `evaluate_classifier` - 分類モデルの評価
+- `evaluate_regressor` - 回帰モデルの評価
+- `evaluate_clustering` - クラスタリングモデルの評価
+- `evaluate_reinforcement` - 強化学習モデルの評価
+- `compare_models` - 複数モデルの比較
+- `generate_evaluation_report` - 評価レポートの生成
+- `save_evaluation_results` - 評価結果をS3に保存
+
+#### 4. GitHub Integration
+
+**責務**: GitHub連携機能の統合
+
+**提供ツール**:
+
+- Issue管理、ラベル管理、リポジトリ操作、Webhook処理
+
+#### 5. Model Registry
+
+**責務**: モデルバージョン管理・レジストリ操作
+
+**提供ツール**:
+
+- モデル登録、バージョン管理、ステータス管理、ロールバック、モデル検索
+
+#### 6. Notification
+
+**責務**: 通知チャネルの統合管理
+
+**提供ツール**:
+
+- GitHub通知、Slack通知、Email通知、Teams通知、Discord通知、通知テンプレート
+
+### 3.3 ローカル開発
+
+#### 前提条件
+
+- Python 3.11以上
+- MCP SDK (`pip install mcp`)
+
+#### 統合MCPサーバーの起動
+
+```bash
+cd mcp_server && python -m mcp_server
+```
+
+または
+
+```bash
+python -m mcp_server
+```
+
+#### 統合MCPサーバーのテスト
+
+```bash
+# サーバー・ルーティングのテスト
+pytest tests/mcp_server/test_server.py
+
+# 各Capabilityのテスト
+pytest tests/mcp_server/test_data_preparation.py
+pytest tests/mcp_server/test_ml_training.py
+pytest tests/mcp_server/test_ml_evaluation.py
+pytest tests/mcp_server/test_github_integration.py
+pytest tests/mcp_server/test_model_registry.py
+pytest tests/mcp_server/test_notification.py
+
+# 統合テスト
+pytest tests/integration/test_agent_mcp_integration.py
+```
+
+### 3.4 MCPクライアント実装例
+
+```python
+# Lambda Agent側（MCP Client）
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+async def call_mcp_tool():
+    # 統合MCPサーバーを起動
+    server_params = StdioServerParameters(
+        command="python",
+        args=["-m", "mcp_server"],  # 統合サーバー
+        env={"AWS_REGION": "us-east-1"}
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Data Preparationツールを呼び出し
+            result = await session.call_tool(
+                "preprocess_supervised",
+                arguments={
+                    "dataset_s3_uri": "s3://mlops-bucket/datasets/train.csv",
+                    "target_column": "label",
+                    "task_type": "classification"
+                }
+            )
+
+            # ML Trainingツールを呼び出し（同じセッションで）
+            result2 = await session.call_tool(
+                "train_supervised_classifier",
+                arguments={
+                    "algorithm": "random_forest",
+                    "train_data_s3_uri": "s3://mlops-bucket/processed/train.csv",
+                    "training_job_name": "rf-training-001"
+                }
+            )
+
+            return result, result2
+```
+
+---
+
+## 4. デプロイメント
+
+### 4.1 ECS Fargate デプロイ（推奨）
+
+統合MCPサーバーを1つのECS Fargateタスクとしてデプロイ
+
+**推奨構成**:
+
+- CPU: 2 vCPU
+- Memory: 8GB
+- Auto Scaling: 最小1タスク、最大5タスク
+
+```bash
+# Dockerイメージのビルド
+cd mcp_server
+docker build -t mlops-unified-mcp-server .
+
+# ECRへのプッシュ
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
+docker tag mlops-unified-mcp-server:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/mlops-unified-mcp-server:latest
+docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/mlops-unified-mcp-server:latest
+
+# ECS Serviceのデプロイ（CDK経由）
+cd cdk
+cdk deploy UnifiedMCPServerStack
+```
+
+### 4.2 Lambda デプロイ（軽量処理・開発環境向け）
+
+統合MCPサーバーを1つのLambda関数としてデプロイ
+
+**推奨構成**:
+
+- Memory: 4096MB - 10240MB
+- Timeout: 15分
+- Ephemeral storage: 10GB
+
+```bash
+# Lambda関数のパッケージング
+cd mcp_server
+zip -r function.zip .
+
+# Lambdaへのデプロイ（CDK経由）
+cd cdk
+cdk deploy UnifiedMCPServerStack --context deployment-type=lambda
+```
+
+### 4.3 Dockerfile
 
 ```dockerfile
 FROM python:3.11-slim
@@ -920,7 +953,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 ENTRYPOINT ["python", "-m", "mcp_server"]
 ```
 
-### 6.2 requirements.txt
+### 4.4 requirements.txt
 
 ```txt
 # MCPフレームワーク
@@ -955,7 +988,7 @@ pydantic==2.5.0
 python-dotenv==1.0.0
 ```
 
-### 6.3 環境変数
+### 4.5 環境変数
 
 ```bash
 # AWS設定
@@ -976,69 +1009,92 @@ SAGEMAKER_ROLE_ARN=arn:aws:iam::123456789012:role/SageMakerExecutionRole
 
 ---
 
-## 7. セキュリティ実装
+## 5. 運用ガイド
 
-### 7.1 IAMロールポリシー（CDK実装例）
+### 5.1 トラブルシューティング
 
-```python
-from aws_cdk import (
-    aws_iam as iam,
-    aws_ecs as ecs,
-)
+#### サーバーが起動しない
 
-# ECS Task Role
-task_role = iam.Role(
-    self, "MCPServerTaskRole",
-    assumed_by=iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-    inline_policies={
-        "MCPServerPolicy": iam.PolicyDocument(
-            statements=[
-                # S3アクセス
-                iam.PolicyStatement(
-                    effect=iam.Effect.ALLOW,
-                    actions=[
-                        "s3:GetObject",
-                        "s3:PutObject",
-                        "s3:ListBucket"
-                    ],
-                    resources=[
-                        f"arn:aws:s3:::{bucket_name}",
-                        f"arn:aws:s3:::{bucket_name}/*"
-                    ]
-                ),
-                # Secrets Managerアクセス
-                iam.PolicyStatement(
-                    effect=iam.Effect.ALLOW,
-                    actions=["secretsmanager:GetSecretValue"],
-                    resources=[
-                        f"arn:aws:secretsmanager:*:*:secret:mlops/*"
-                    ]
-                ),
-                # SageMakerアクセス
-                iam.PolicyStatement(
-                    effect=iam.Effect.ALLOW,
-                    actions=[
-                        "sagemaker:CreateTrainingJob",
-                        "sagemaker:DescribeTrainingJob",
-                        "sagemaker:CreateModel"
-                    ],
-                    resources=["*"],
-                    conditions={
-                        "StringEquals": {
-                            "aws:RequestedRegion": "us-east-1"
-                        }
-                    }
-                ),
-            ]
-        )
-    }
-)
+```bash
+# 依存関係の確認
+pip install -r requirements.txt
+
+# Python versionの確認
+python --version  # 3.11以上が必要
 ```
+
+#### ツールが見つからない
+
+```bash
+# サーバーのツール一覧を確認
+python -m mcp_server --list-tools
+```
+
+#### メモリ不足エラー
+
+ECS FargateまたはLambdaのメモリ設定を増やしてください:
+
+- ECS: 8GB → 16GB
+- Lambda: 4096MB → 10240MB
+
+### 5.2 モニタリング
+
+#### CloudWatch Logs ロググループ構成
+
+```text
+/aws/lambda/issue-detector-agent
+/aws/lambda/data-preparation-agent
+/aws/lambda/training-agent
+/aws/lambda/evaluation-agent
+/aws/lambda/judge-agent
+/aws/lambda/notification-agent
+/aws/lambda/rollback-agent
+/aws/lambda/history-writer-agent
+/aws/ecs/unified-mcp-server
+/aws/sagemaker/TrainingJobs
+/aws/states/mlops-workflow
+```
+
+#### 統合ログフォーマット（JSON）
+
+```json
+{
+  "timestamp": "2025-12-27T10:30:00.123Z",
+  "level": "INFO",
+  "service": "training-agent",
+  "execution_id": "exec-abc123",
+  "issue_number": 123,
+  "training_job_name": "train-20251227-001",
+  "message": "Training job started successfully",
+  "duration_ms": 1234,
+  "status": "success"
+}
+```
+
+### 5.3 統合アプローチのメリット
+
+| 項目                 | 統合MCPサーバー（1個）           | 独立MCPサーバー（11個）              |
+| -------------------- | -------------------------------- | ------------------------------------ |
+| **運用の簡素さ**     | ✅ 1プロセスのみ                 | ❌ 11プロセス管理                    |
+| **デプロイの簡素さ** | ✅ 1デプロイのみ                 | ❌ 11デプロイ管理                    |
+| **リソース効率**     | ✅ 共有により効率的              | ❌ 各サーバーでオーバーヘッド        |
+| **MCP接続数**        | ✅ 1接続のみ                     | ❌ 11接続必要                        |
+| **Agent実装**        | ✅ 1つのクライアントで全機能     | ❌ 11個のクライアント必要            |
+| **インフラコスト**   | ✅ 低い（リソース共有）          | ❌ 高い（11倍のオーバーヘッド）      |
 
 ---
 
-## 8. 変更履歴
+## 6. 参考資料
 
-| バージョン | 日付       | 変更内容 | 作成者 |
-| ---------- | ---------- | -------- | ------ |
-| 0.1        | 2025-12-27 | 初版発行 | -      |
+- [システム仕様書](system_specification.md)
+- [MCP設計書](mcp_design.md)
+- [REVIEW.md](REVIEW.md) - 設計レビューと意思決定記録
+- [Model Context Protocol 仕様](https://spec.modelcontextprotocol.io/)
+
+---
+
+## 7. 変更履歴
+
+| バージョン | 日付       | 変更内容                                                               | 作成者 |
+| ---------- | ---------- | ---------------------------------------------------------------------- | ------ |
+| 1.0        | 2025-12-30 | 実装設計、ワークフロー、MCP開発ガイドを統合し実装ガイドとして発行     | -      |

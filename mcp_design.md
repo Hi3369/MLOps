@@ -241,7 +241,7 @@ Model Context Protocol (MCP) として専門機能を実装することで:
 - DVC、Delta Lake等のデータバージョニングツール統合
 - データ系譜追跡、データ品質モニタリング
 
-詳細は [mcp_extended_design.md](mcp_extended_design.md) を参照
+詳細は本ドキュメントのセクション15を参照
 
 ---
 
@@ -1451,8 +1451,80 @@ LambdaAgentSG:
 
 ---
 
-## 15. 変更履歴
+## 15. 拡張機能提案
 
-| バージョン | 日付       | 変更内容                              | 作成者 |
-| ---------- | ---------- | ------------------------------------- | ------ |
-| 0.1        | 2025-12-27 | 初版発行（統合MLOps MCPサーバー設計） | -      |
+### 15.1 将来的に追加可能なCapability
+
+統合MCPサーバーには、将来的に以下のcapabilityを追加可能です:
+
+#### Capability 12: Experiment Tracking 💡 オプション
+
+**責務**: MLflow、Weights & Biases等の実験追跡ツール統合
+
+**提供ツール**:
+
+- `create_experiment` - 実験の作成
+- `log_params` - パラメータのログ
+- `log_metrics` - メトリクスのログ
+- `log_artifacts` - アーティファクトのログ
+- `search_experiments` - 実験検索
+- `compare_experiments` - 実験比較
+- `get_best_experiment` - 最良実験の取得
+
+**メリット**:
+
+- MLflow、Weights & Biases等の実験追跡ツールを標準インターフェースで利用
+- 実験管理をMLOpsパイプラインから分離
+- 複数の実験追跡ツールを並行利用可能
+
+#### Capability 13: Data Versioning 💡 オプション
+
+**責務**: DVC、Delta Lake等のデータバージョニングツール統合
+
+**提供ツール**:
+
+- `register_dataset` - データセット登録
+- `version_dataset` - データセットのバージョン作成
+- `get_dataset_version` - 特定バージョンの取得
+- `list_dataset_versions` - バージョン一覧取得
+- `track_data_lineage` - データ系譜の記録
+- `get_data_lineage` - データ系譜の取得
+- `validate_data_quality` - データ品質検証
+- `calculate_data_statistics` - データ統計計算
+- `detect_data_drift` - データドリフト検出
+
+**メリット**:
+
+- DVC、Delta Lake等のデータバージョニングツールを統一インターフェースで利用
+- データセットの変更履歴を追跡
+- データ品質メトリクスの自動計算
+
+### 15.2 優先度付け
+
+#### Phase 4: オプション機能（将来的に検討）
+
+**Experiment Tracking Capability**:
+
+- 理由: 高度な実験管理が必要な場合
+- 工数: 2週間
+
+**Data Versioning Capability**:
+
+- 理由: データガバナンスが重要な場合
+- 工数: 2週間
+
+### 15.3 コスト・ベネフィット分析
+
+| Capability           | 開発工数 | 運用コスト増 | 再利用性 | 保守性向上 | 総合評価    |
+| -------------------- | -------- | ------------ | -------- | ---------- | ----------- |
+| Experiment Tracking  | 2週間    | 中           | ⭐⭐     | ⭐⭐       | 🔵 オプション |
+| Data Versioning      | 2週間    | 中           | ⭐⭐     | ⭐⭐       | 🔵 オプション |
+
+---
+
+## 16. 変更履歴
+
+| バージョン | 日付       | 変更内容                                                | 作成者 |
+| ---------- | ---------- | ------------------------------------------------------- | ------ |
+| 0.1        | 2025-12-27 | 初版発行（統合MLOps MCPサーバー設計）                   | -      |
+| 1.0        | 2025-12-30 | 拡張機能提案を追加（mcp_extended_design.mdの内容を統合）| -      |
