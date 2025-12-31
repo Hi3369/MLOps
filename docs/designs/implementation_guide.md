@@ -1,6 +1,6 @@
 # 実装ガイド: 統合MLOps MCPシステム
 
-**バージョン**: 1.0
+**バージョン**: 1.1
 **作成日**: 2025-12-30
 **対象**: 開発者向け実装・運用ガイド
 
@@ -1086,7 +1086,629 @@ ECS FargateまたはLambdaのメモリ設定を増やしてください:
 
 ---
 
-## 6. 参考資料
+## 6. 自動運転向け実装例
+
+本セクションでは、自動運転向けコンピュータビジョンタスク（YOLOX、KITTI、VAD）の具体的な実装例を提供します。
+
+### 6.1 KITTI データローダー実装
+
+KITTI データセットの読み込みと前処理を行うPython実装例。
+
+#### 6.1.1 KITTI 3D Object Detection データローダー
+
+```python
+"""
+KITTI 3D Object Detection データローダー
+KITTI形式のラベルを読み込み、COCO形式に変換する
+"""
+import numpy as np
+import cv2
+from pathlib import Path
+from typing import Dict, List, Tuple
+import json
+
+
+class KITTIDataLoader:
+    """KITTI 3D Object Detection データセット用ローダー"""
+
+    # KITTI クラスマッピング
+    KITTI_CLASSES = {
+        'Car': 0,
+        'Pedestrian': 1,
+        'Cyclist': 2,
+        'Van': 3,
+        'Truck': 4,
+        'Person_sitting': 5,
+        'Tram': 6,
+        'Misc': 7
+    }
+
+    def __init__(self, data_root: str):
+        """
+        Args:
+            data_root: KITTI データのルートディレクトリ
+                       (例: s3://mlops-datasets/kitti/object/)
+        """
+        self.data_root = Path(data_root)
+        self.image_dir = self.data_root / 'training' / 'image_2'
+        self.label_dir = self.data_root / 'training' / 'label_2'
+        self.calib_dir = self.data_root / 'training' / 'calib'
+        self.velodyne_dir = self.data_root / 'training' / 'velodyne'
+
+    def load_image(self, idx: int) -> np.ndarray:
+        """カメラ画像のロード"""
+        img_path = self.image_dir / f'{idx:06d}.png'
+        img = cv2.imread(str(img_path))
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        return img
+
+    def load_label(self, idx: int) -> List[Dict]:
+        """
+        KITTI形式のラベルファイルを読み込む
+
+        Returns:
+            List of dicts with keys:
+                - class_name: str
+                - truncated: float
+                - occluded: int
+                - alpha: float
+                - bbox_2d: [x1, y1, x2, y2]
+                - dimensions: [height, width, length]
+                - location: [x, y, z]
+                - rotation_y: float
+        """
+        label_path = self.label_dir / f'{idx:06d}.txt'
+        objects = []
+
+        with open(label_path, 'r') as f:
+            for line in f:
+                parts = line.strip().split(' ')
+                if len(parts) < 15:
+                    continue
+
+                obj = {
+                    'class_name': parts[0],
+                    'truncated': float(parts[1]),
+                    'occluded': int(parts[2]),
+                    'alpha': float(parts[3]),
+                    'bbox_2d': [float(x) for x in parts[4:8]],
+                    'dimensions': [float(x) for x in parts[8:11]],  # h, w, l
+                    'location': [float(x) for x in parts[11:14]],   # x, y, z
+                    'rotation_y': float(parts[14])
+                }
+                objects.append(obj)
+
+        return objects
+
+    def load_calibration(self, idx: int) -> Dict[str, np.ndarray]:
+        """キャリブレーション行列のロード"""
+        calib_path = self.calib_dir / f'{idx:06d}.txt'
+        calib = {}
+
+        with open(calib_path, 'r') as f:
+            for line in f:
+                if ':' not in line:
+                    continue
+                key, value = line.split(':', 1)
+                calib[key] = np.array([float(x) for x in value.split()])
+
+        # P2: Camera 2 (left color) projection matrix (3x4)
+        P2 = calib['P2'].reshape(3, 4)
+
+        # R0_rect: Rectification matrix (3x3)
+        R0 = np.eye(4)
+        R0[:3, :3] = calib['R0_rect'].reshape(3, 3)
+
+        # Tr_velo_to_cam: Velodyne to Camera transformation (3x4)
+        Tr_velo_cam = np.eye(4)
+        Tr_velo_cam[:3, :] = calib['Tr_velo_to_cam'].reshape(3, 4)
+
+        return {
+            'P2': P2,
+            'R0_rect': R0,
+            'Tr_velo_to_cam': Tr_velo_cam
+        }
+
+    def load_point_cloud(self, idx: int) -> np.ndarray:
+        """LiDAR点群のロード (.bin形式)"""
+        pc_path = self.velodyne_dir / f'{idx:06d}.bin'
+        points = np.fromfile(str(pc_path), dtype=np.float32).reshape(-1, 4)
+        # points: (N, 4) - x, y, z, reflectance
+        return points
+
+    def filter_point_cloud(self, points: np.ndarray) -> np.ndarray:
+        """
+        点群を自動運転に適した範囲でフィルタリング
+        X: 0～70m (前方), Y: -40～40m (左右), Z: -3～1m (地面～車高)
+        """
+        mask = (
+            (points[:, 0] >= 0) & (points[:, 0] <= 70) &
+            (points[:, 1] >= -40) & (points[:, 1] <= 40) &
+            (points[:, 2] >= -3) & (points[:, 2] <= 1)
+        )
+        return points[mask]
+
+    def kitti_to_coco(self, idx: int) -> Dict:
+        """
+        KITTI形式のラベルをCOCO形式に変換
+
+        Returns:
+            COCO annotation dict for YOLOX training
+        """
+        objects = self.load_label(idx)
+        annotations = []
+
+        for obj_id, obj in enumerate(objects):
+            if obj['class_name'] not in self.KITTI_CLASSES:
+                continue
+
+            x1, y1, x2, y2 = obj['bbox_2d']
+            width = x2 - x1
+            height = y2 - y1
+
+            # COCO形式のアノテーション
+            ann = {
+                'id': obj_id,
+                'image_id': idx,
+                'category_id': self.KITTI_CLASSES[obj['class_name']],
+                'bbox': [x1, y1, width, height],  # COCO: [x, y, w, h]
+                'area': width * height,
+                'iscrowd': 0,
+                'occluded': obj['occluded'],
+                'truncated': obj['truncated'],
+                '3d_bbox': {
+                    'dimensions': obj['dimensions'],
+                    'location': obj['location'],
+                    'rotation_y': obj['rotation_y']
+                }
+            }
+            annotations.append(ann)
+
+        return {
+            'image_id': idx,
+            'annotations': annotations
+        }
+
+
+# 使用例
+if __name__ == '__main__':
+    # S3からダウンロード済みのローカルパスを指定
+    loader = KITTIDataLoader('/data/kitti/object/')
+
+    # 画像とラベルのロード
+    idx = 0
+    image = loader.load_image(idx)
+    labels = loader.load_label(idx)
+    calib = loader.load_calibration(idx)
+    points = loader.load_point_cloud(idx)
+
+    # 点群のフィルタリング
+    filtered_points = loader.filter_point_cloud(points)
+
+    # COCO形式に変換（YOLOX学習用）
+    coco_data = loader.kitti_to_coco(idx)
+
+    print(f"Image shape: {image.shape}")
+    print(f"Number of objects: {len(labels)}")
+    print(f"Point cloud shape (raw): {points.shape}")
+    print(f"Point cloud shape (filtered): {filtered_points.shape}")
+    print(f"COCO annotations: {len(coco_data['annotations'])}")
+```
+
+### 6.2 YOLOX 学習スクリプト
+
+KITTI データセットでYOLOXモデルを学習する実装例。
+
+#### 6.2.1 YOLOX-M on KITTI 学習スクリプト
+
+```python
+"""
+YOLOX-M モデルをKITTI データセットで学習
+SageMaker Training Job用のエントリーポイントスクリプト
+"""
+import argparse
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from yolox.exp import get_exp
+from yolox.data import COCODataset, TrainTransform
+from yolox.utils import setup_logger
+import logging
+import json
+from pathlib import Path
+
+
+def parse_args():
+    """コマンドライン引数のパース"""
+    parser = argparse.ArgumentParser(description='YOLOX Training on KITTI')
+
+    # データ関連
+    parser.add_argument('--data-dir', type=str, default='/opt/ml/input/data/training',
+                        help='Training data directory (SageMaker input path)')
+    parser.add_argument('--model-dir', type=str, default='/opt/ml/model',
+                        help='Model output directory (SageMaker output path)')
+
+    # モデル関連
+    parser.add_argument('--model-variant', type=str, default='yolox-m',
+                        choices=['yolox-nano', 'yolox-tiny', 'yolox-s', 'yolox-m', 'yolox-l', 'yolox-x'],
+                        help='YOLOX model variant')
+    parser.add_argument('--num-classes', type=int, default=3,
+                        help='Number of classes (Car, Pedestrian, Cyclist)')
+
+    # ハイパーパラメータ
+    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--epochs', type=int, default=300)
+    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--warmup-epochs', type=int, default=5)
+    parser.add_argument('--weight-decay', type=float, default=0.0005)
+    parser.add_argument('--mosaic-prob', type=float, default=1.0)
+    parser.add_argument('--mixup-prob', type=float, default=1.0)
+
+    # その他
+    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--num-workers', type=int, default=4)
+
+    return parser.parse_args()
+
+
+def train(args):
+    """学習メインループ"""
+    # ロガー設定
+    logger = setup_logger("yolox", distributed_rank=0, filename="train_log.txt")
+    logger.info(f"Args: {args}")
+
+    # シード固定
+    torch.manual_seed(args.seed)
+
+    # YOLOX Experimentの取得
+    exp = get_exp(None, args.model_variant)
+    exp.num_classes = args.num_classes
+    exp.max_epoch = args.epochs
+    exp.warmup_epochs = args.warmup_epochs
+    exp.basic_lr_per_img = args.lr / (args.batch_size * 8)  # 正規化
+    exp.mosaic_prob = args.mosaic_prob
+    exp.mixup_prob = args.mixup_prob
+
+    # データセット準備
+    train_dataset = COCODataset(
+        data_dir=args.data_dir,
+        json_file='annotations/train.json',
+        img_size=exp.input_size,
+        preproc=TrainTransform(
+            max_labels=50,
+            flip_prob=0.5,
+            hsv_prob=1.0
+        )
+    )
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=args.num_workers,
+        pin_memory=True,
+        drop_last=True
+    )
+
+    # モデル初期化
+    model = exp.get_model()
+
+    # COCO事前学習済み重みのロード
+    ckpt_file = "yolox_m.pth"  # S3からダウンロード済みと仮定
+    if Path(ckpt_file).exists():
+        ckpt = torch.load(ckpt_file, map_location="cpu")
+        model.load_state_dict(ckpt["model"], strict=False)
+        logger.info(f"Loaded pretrained weights from {ckpt_file}")
+
+    model = model.cuda()
+
+    # Optimizer & Scheduler
+    optimizer = torch.optim.SGD(
+        model.parameters(),
+        lr=args.lr,
+        momentum=0.9,
+        weight_decay=args.weight_decay,
+        nesterov=True
+    )
+
+    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer,
+        T_max=args.epochs,
+        eta_min=args.lr * 0.05
+    )
+
+    # 学習ループ
+    best_map = 0.0
+    for epoch in range(args.epochs):
+        model.train()
+        total_loss = 0.0
+
+        for iter_i, (imgs, targets, _, _) in enumerate(train_loader):
+            imgs = imgs.cuda()
+            targets = targets.cuda()
+
+            # Forward
+            outputs = model(imgs, targets)
+            loss = outputs["total_loss"]
+
+            # Backward
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            total_loss += loss.item()
+
+            if (iter_i + 1) % 100 == 0:
+                logger.info(
+                    f"Epoch [{epoch+1}/{args.epochs}] "
+                    f"Iter [{iter_i+1}/{len(train_loader)}] "
+                    f"Loss: {loss.item():.4f}"
+                )
+
+        lr_scheduler.step()
+        avg_loss = total_loss / len(train_loader)
+        logger.info(f"Epoch [{epoch+1}/{args.epochs}] Avg Loss: {avg_loss:.4f}")
+
+        # チェックポイント保存 (10エポックごと)
+        if (epoch + 1) % 10 == 0:
+            save_path = Path(args.model_dir) / f"yolox_m_epoch_{epoch+1}.pth"
+            torch.save({
+                'epoch': epoch + 1,
+                'model': model.state_dict(),
+                'optimizer': optimizer.state_dict(),
+                'best_map': best_map
+            }, save_path)
+            logger.info(f"Saved checkpoint to {save_path}")
+
+    # 最終モデルの保存
+    final_model_path = Path(args.model_dir) / "yolox_m_kitti.pth"
+    torch.save(model.state_dict(), final_model_path)
+    logger.info(f"Saved final model to {final_model_path}")
+
+    # ONNXエクスポート
+    export_onnx(model, args.model_dir, exp.input_size)
+
+
+def export_onnx(model, output_dir, input_size):
+    """学習済みモデルをONNX形式にエクスポート"""
+    model.eval()
+    dummy_input = torch.randn(1, 3, *input_size).cuda()
+
+    onnx_path = Path(output_dir) / "yolox_m_kitti.onnx"
+    torch.onnx.export(
+        model,
+        dummy_input,
+        onnx_path,
+        opset_version=11,
+        input_names=['images'],
+        output_names=['output'],
+        dynamic_axes={'images': {0: 'batch'}, 'output': {0: 'batch'}}
+    )
+    print(f"Exported ONNX model to {onnx_path}")
+
+
+if __name__ == '__main__':
+    args = parse_args()
+    train(args)
+```
+
+### 6.3 TensorRT 最適化
+
+ONNXモデルをTensorRTに変換して推論を高速化する実装例。
+
+#### 6.3.1 TensorRT エンジン生成
+
+```python
+"""
+ONNX → TensorRT変換スクリプト
+推論速度を2-10倍高速化
+"""
+import tensorrt as trt
+import pycuda.driver as cuda
+import pycuda.autoinit
+import numpy as np
+from pathlib import Path
+
+
+class TensorRTOptimizer:
+    """TensorRT最適化クラス"""
+
+    def __init__(self, onnx_path: str, engine_path: str, precision: str = 'fp16'):
+        """
+        Args:
+            onnx_path: 入力ONNXモデルのパス
+            engine_path: 出力TensorRTエンジンのパス
+            precision: 精度モード ('fp32', 'fp16', 'int8')
+        """
+        self.onnx_path = onnx_path
+        self.engine_path = engine_path
+        self.precision = precision
+
+        self.logger = trt.Logger(trt.Logger.WARNING)
+        self.builder = trt.Builder(self.logger)
+        self.network = None
+        self.config = None
+        self.engine = None
+
+    def build_engine(self, max_batch_size: int = 32, workspace_size: int = 1 << 30):
+        """
+        TensorRTエンジンをビルド
+
+        Args:
+            max_batch_size: 最大バッチサイズ
+            workspace_size: ワークスペースサイズ（デフォルト1GB）
+        """
+        # ONNX パーサー
+        EXPLICIT_BATCH = 1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
+        self.network = self.builder.create_network(EXPLICIT_BATCH)
+        parser = trt.OnnxParser(self.network, self.logger)
+
+        # ONNXモデルのロード
+        print(f"Loading ONNX model from {self.onnx_path}")
+        with open(self.onnx_path, 'rb') as f:
+            if not parser.parse(f.read()):
+                for error in range(parser.num_errors):
+                    print(parser.get_error(error))
+                raise RuntimeError("Failed to parse ONNX model")
+
+        # Builder Config設定
+        self.config = self.builder.create_builder_config()
+        self.config.max_workspace_size = workspace_size
+
+        # 精度モード設定
+        if self.precision == 'fp16':
+            if self.builder.platform_has_fast_fp16:
+                self.config.set_flag(trt.BuilderFlag.FP16)
+                print("FP16 mode enabled")
+            else:
+                print("Warning: FP16 not supported on this platform, using FP32")
+        elif self.precision == 'int8':
+            if self.builder.platform_has_fast_int8:
+                self.config.set_flag(trt.BuilderFlag.INT8)
+                print("INT8 mode enabled")
+                # Note: INT8キャリブレーションが必要
+            else:
+                print("Warning: INT8 not supported on this platform, using FP32")
+
+        # Dynamic Shape設定（バッチサイズ可変）
+        profile = self.builder.create_optimization_profile()
+        input_name = self.network.get_input(0).name
+        input_shape = self.network.get_input(0).shape
+
+        # Min/Opt/Max shapes設定
+        profile.set_shape(
+            input_name,
+            min=(1, *input_shape[1:]),
+            opt=(max_batch_size // 2, *input_shape[1:]),
+            max=(max_batch_size, *input_shape[1:])
+        )
+        self.config.add_optimization_profile(profile)
+
+        # エンジンビルド
+        print(f"Building TensorRT engine (this may take a few minutes)...")
+        self.engine = self.builder.build_engine(self.network, self.config)
+
+        if self.engine is None:
+            raise RuntimeError("Failed to build TensorRT engine")
+
+        # エンジンの保存
+        with open(self.engine_path, 'wb') as f:
+            f.write(self.engine.serialize())
+
+        print(f"TensorRT engine saved to {self.engine_path}")
+        print(f"Precision: {self.precision.upper()}")
+        print(f"Max batch size: {max_batch_size}")
+
+    @staticmethod
+    def load_engine(engine_path: str):
+        """保存済みTensorRTエンジンのロード"""
+        logger = trt.Logger(trt.Logger.WARNING)
+        runtime = trt.Runtime(logger)
+
+        with open(engine_path, 'rb') as f:
+            engine = runtime.deserialize_cuda_engine(f.read())
+
+        return engine
+
+
+class TensorRTInference:
+    """TensorRTエンジンを使用した推論クラス"""
+
+    def __init__(self, engine_path: str):
+        self.logger = trt.Logger(trt.Logger.WARNING)
+        self.runtime = trt.Runtime(self.logger)
+
+        # エンジンのロード
+        with open(engine_path, 'rb') as f:
+            self.engine = self.runtime.deserialize_cuda_engine(f.read())
+
+        self.context = self.engine.create_execution_context()
+
+        # 入出力バッファの準備
+        self.input_shape = None
+        self.output_shape = None
+        self.d_input = None
+        self.d_output = None
+        self.h_output = None
+
+    def allocate_buffers(self, batch_size: int, input_shape: tuple):
+        """GPUバッファの割り当て"""
+        self.input_shape = (batch_size, *input_shape)
+
+        # 入力バッファ
+        input_size = np.prod(self.input_shape) * np.dtype(np.float32).itemsize
+        self.d_input = cuda.mem_alloc(input_size)
+
+        # 出力バッファ（サイズはモデル依存）
+        output_shape = (batch_size, 85, 8400)  # YOLOX-M typical output
+        output_size = np.prod(output_shape) * np.dtype(np.float32).itemsize
+        self.d_output = cuda.mem_alloc(output_size)
+        self.h_output = np.empty(output_shape, dtype=np.float32)
+
+        self.output_shape = output_shape
+
+    def infer(self, input_data: np.ndarray) -> np.ndarray:
+        """
+        推論実行
+
+        Args:
+            input_data: (batch, C, H, W) の numpy配列
+
+        Returns:
+            出力 numpy配列
+        """
+        batch_size = input_data.shape[0]
+
+        # バッファ未割り当ての場合、割り当て
+        if self.d_input is None:
+            self.allocate_buffers(batch_size, input_data.shape[1:])
+
+        # Dynamic Shape設定
+        self.context.set_binding_shape(0, input_data.shape)
+
+        # ホスト→デバイスコピー
+        cuda.memcpy_htod(self.d_input, input_data.ravel())
+
+        # 推論実行
+        self.context.execute_v2([int(self.d_input), int(self.d_output)])
+
+        # デバイス→ホストコピー
+        cuda.memcpy_dtoh(self.h_output, self.d_output)
+
+        return self.h_output
+
+
+# 使用例
+if __name__ == '__main__':
+    # 1. ONNX → TensorRT変換
+    optimizer = TensorRTOptimizer(
+        onnx_path='/opt/ml/model/yolox_m_kitti.onnx',
+        engine_path='/opt/ml/model/yolox_m_kitti_fp16.engine',
+        precision='fp16'
+    )
+    optimizer.build_engine(max_batch_size=32)
+
+    # 2. 推論実行
+    inference = TensorRTInference(
+        engine_path='/opt/ml/model/yolox_m_kitti_fp16.engine'
+    )
+
+    # ダミー入力（実際はカメラ画像）
+    dummy_input = np.random.randn(1, 3, 640, 640).astype(np.float32)
+
+    # 推論
+    import time
+    start = time.time()
+    output = inference.infer(dummy_input)
+    latency = (time.time() - start) * 1000
+
+    print(f"Inference latency: {latency:.2f} ms")
+    print(f"Output shape: {output.shape}")
+```
+
+---
+
+## 7. 参考資料
 
 - [システム仕様書](../specifications/system_specification.md)
 - [MCP設計書](mcp_design.md)
@@ -1097,6 +1719,7 @@ ECS FargateまたはLambdaのメモリ設定を増やしてください:
 
 ## 7. 変更履歴
 
-| バージョン | 日付       | 変更内容                                                               | 作成者 |
-| ---------- | ---------- | ---------------------------------------------------------------------- | ------ |
-| 1.0        | 2025-12-30 | 実装設計、ワークフロー、MCP開発ガイドを統合し実装ガイドとして発行     | -      |
+| バージョン | 日付       | 変更内容                                                                                       | 作成者 |
+| ---------- | ---------- | ---------------------------------------------------------------------------------------------- | ------ |
+| 1.0        | 2025-12-30 | 実装設計、ワークフロー、MCP開発ガイドを統合し実装ガイドとして発行                             | -      |
+| 1.1        | 2025-12-31 | セクション6「自動運転向け実装例」を追加（KITTI DataLoader、YOLOX学習、TensorRT最適化）        | -      |
