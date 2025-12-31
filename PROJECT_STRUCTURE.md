@@ -88,23 +88,53 @@ MLOps/
 │       │       ├── evaluate_model.py
 │       │       └── calculate_metrics.py
 │       │
-│       ├── github_integration/          # Capability 4: GitHub統合
+│       ├── model_packaging/             # Capability 4: モデルパッケージング
+│       │   ├── __init__.py
+│       │   └── tools/
+│       │       ├── export_to_onnx.py
+│       │       └── export_to_pkl.py
+│       │
+│       ├── model_deployment/            # Capability 5: モデルデプロイメント
+│       │   ├── __init__.py
+│       │   └── tools/
+│       │       ├── deploy_endpoint.py
+│       │       └── update_endpoint.py
+│       │
+│       ├── monitoring/                  # Capability 6: モニタリング
+│       │   ├── __init__.py
+│       │   └── tools/
+│       │       ├── get_endpoint_metrics.py
+│       │       └── detect_drift.py
+│       │
+│       ├── workflow_optimization/       # Capability 7: ワークフロー最適化
+│       │   ├── __init__.py
+│       │   └── tools/
+│       │       ├── analyze_execution_time.py
+│       │       └── suggest_parallelization.py
+│       │
+│       ├── github_integration/          # Capability 8: GitHub統合
 │       │   ├── __init__.py
 │       │   └── tools/
 │       │       ├── create_comment.py
 │       │       └── update_issue.py
 │       │
-│       ├── model_registry/              # Capability 5: モデルレジストリ
+│       ├── retrain_orchestration/      # Capability 9: 再学習オーケストレーション
 │       │   ├── __init__.py
 │       │   └── tools/
-│       │       ├── register_model.py
-│       │       └── get_model_version.py
+│       │       ├── check_retrain_triggers.py
+│       │       └── start_retrain_workflow.py
 │       │
-│       └── notification/                # Capability 6: 通知
+│       ├── notification/                # Capability 10: 通知
+│       │   ├── __init__.py
+│       │   └── tools/
+│       │       ├── send_slack.py
+│       │       └── send_email.py
+│       │
+│       └── history_management/          # Capability 11: 履歴管理
 │           ├── __init__.py
 │           └── tools/
-│               ├── send_slack.py
-│               └── send_email.py
+│               ├── format_training_history.py
+│               └── commit_to_github.py
 │
 ├── mcp_servers_legacy/                    # 旧MCPサーバー（非推奨・参考用）
 │   ├── README.md                         # レガシーMCPサーバー説明

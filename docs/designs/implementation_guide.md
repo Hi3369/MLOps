@@ -32,12 +32,17 @@
 - Capability 1: Data Preparation
 - Capability 2: ML Training
 - Capability 3: ML Evaluation
+- Capability 4: Model Packaging
+- Capability 5: Model Deployment
 
-**Phase 2（Week 7-12）**: 統合Capability実装
+**Phase 2（Week 7-12）**: 統合・運用Capability実装
 
-- Capability 4: GitHub Integration
-- Capability 5: Model Registry
-- Capability 6: Notification
+- Capability 6: Monitoring
+- Capability 7: Workflow Optimization
+- Capability 8: GitHub Integration
+- Capability 9: Retrain Orchestration
+- Capability 10: Notification
+- Capability 11: History Management
 
 **Phase 3（Week 13-14）**: E2Eテスト・最適化
 
@@ -131,7 +136,54 @@ mcp_server/
 │   │       ├── generate_report.py
 │   │       └── visualization.py
 │   │
-│   ├── github_integration/            # Capability 4
+│   ├── model_packaging/               # Capability 4
+│   │   ├── __init__.py
+│   │   ├── capability.py              # ModelPackagingCapability
+│   │   ├── schemas.py
+│   │   └── tools/
+│   │       ├── __init__.py
+│   │       ├── export_to_onnx.py
+│   │       ├── export_to_pmml.py
+│   │       ├── export_to_pkl.py
+│   │       ├── create_container.py
+│   │       └── validate_format.py
+│   │
+│   ├── model_deployment/              # Capability 5
+│   │   ├── __init__.py
+│   │   ├── capability.py              # ModelDeploymentCapability
+│   │   ├── schemas.py
+│   │   └── tools/
+│   │       ├── __init__.py
+│   │       ├── deploy_endpoint.py
+│   │       ├── update_endpoint.py
+│   │       ├── delete_endpoint.py
+│   │       ├── test_endpoint.py
+│   │       └── rollback_deployment.py
+│   │
+│   ├── monitoring/                    # Capability 6
+│   │   ├── __init__.py
+│   │   ├── capability.py              # MonitoringCapability
+│   │   ├── schemas.py
+│   │   └── tools/
+│   │       ├── __init__.py
+│   │       ├── get_endpoint_metrics.py
+│   │       ├── detect_drift.py
+│   │       ├── check_performance_degradation.py
+│   │       ├── create_alarm.py
+│   │       └── get_logs.py
+│   │
+│   ├── workflow_optimization/         # Capability 7
+│   │   ├── __init__.py
+│   │   ├── capability.py              # WorkflowOptimizationCapability
+│   │   ├── schemas.py
+│   │   └── tools/
+│   │       ├── __init__.py
+│   │       ├── analyze_execution_time.py
+│   │       ├── suggest_parallelization.py
+│   │       ├── optimize_resource_allocation.py
+│   │       └── reduce_cost.py
+│   │
+│   ├── github_integration/            # Capability 8
 │   │   ├── __init__.py
 │   │   ├── capability.py              # GitHubIntegrationCapability
 │   │   ├── schemas.py
@@ -143,29 +195,40 @@ mcp_server/
 │   │       ├── webhook_handler.py
 │   │       └── parser.py
 │   │
-│   ├── model_registry/                # Capability 5
+│   ├── retrain_orchestration/        # Capability 9
 │   │   ├── __init__.py
-│   │   ├── capability.py              # ModelRegistryCapability
+│   │   ├── capability.py              # RetrainOrchestrationCapability
 │   │   ├── schemas.py
 │   │   └── tools/
 │   │       ├── __init__.py
-│   │       ├── model_registration.py
-│   │       ├── version_management.py
-│   │       ├── status_management.py
-│   │       ├── rollback.py
-│   │       └── search.py
+│   │       ├── check_retrain_triggers.py
+│   │       ├── evaluate_trigger_conditions.py
+│   │       ├── create_retrain_issue.py
+│   │       ├── start_retrain_workflow.py
+│   │       └── schedule_periodic_retrain.py
 │   │
-│   └── notification/                  # Capability 6
+│   ├── notification/                  # Capability 10
+│   │   ├── __init__.py
+│   │   ├── capability.py              # NotificationCapability
+│   │   ├── schemas.py
+│   │   └── tools/
+│   │       ├── __init__.py
+│   │       ├── slack_notifier.py
+│   │       ├── email_notifier.py
+│   │       ├── teams_notifier.py
+│   │       ├── discord_notifier.py
+│   │       └── template_manager.py
+│   │
+│   └── history_management/            # Capability 11
 │       ├── __init__.py
-│       ├── capability.py              # NotificationCapability
+│       ├── capability.py              # HistoryManagementCapability
 │       ├── schemas.py
 │       └── tools/
 │           ├── __init__.py
-│           ├── slack_notifier.py
-│           ├── email_notifier.py
-│           ├── teams_notifier.py
-│           ├── discord_notifier.py
-│           └── template_manager.py
+│           ├── format_training_history.py
+│           ├── commit_to_github.py
+│           ├── post_issue_comment.py
+│           └── track_version_history.py
 │
 ├── common/                            # 共通ユーティリティ
 │   ├── __init__.py
@@ -200,9 +263,14 @@ from .capabilities import (
     DataPreparationCapability,
     MLTrainingCapability,
     MLEvaluationCapability,
+    ModelPackagingCapability,
+    ModelDeploymentCapability,
+    MonitoringCapability,
+    WorkflowOptimizationCapability,
     GitHubIntegrationCapability,
-    ModelRegistryCapability,
+    RetrainOrchestrationCapability,
     NotificationCapability,
+    HistoryManagementCapability,
 )
 from .common.logger import get_logger
 from .common.exceptions import MCPServerError
@@ -217,14 +285,19 @@ class UnifiedMLOpsMCPServer:
         self.config = config
         self.server = Server("unified-mlops-mcp-server")
 
-        # Capabilityの初期化
+        # Capabilityの初期化（11個）
         self.capabilities = {
             "data_preparation": DataPreparationCapability(config),
             "ml_training": MLTrainingCapability(config),
             "ml_evaluation": MLEvaluationCapability(config),
+            "model_packaging": ModelPackagingCapability(config),
+            "model_deployment": ModelDeploymentCapability(config),
+            "monitoring": MonitoringCapability(config),
+            "workflow_optimization": WorkflowOptimizationCapability(config),
             "github_integration": GitHubIntegrationCapability(config),
-            "model_registry": ModelRegistryCapability(config),
+            "retrain_orchestration": RetrainOrchestrationCapability(config),
             "notification": NotificationCapability(config),
+            "history_management": HistoryManagementCapability(config),
         }
 
         # ツールルーター初期化

@@ -84,7 +84,14 @@ Amazonが提供するクラウドコンピューティングサービス。本�
 
 ### Capability (ケイパビリティ)
 
-統合MCP Serverが提供する機能群の単位。本システムでは11個のCapabilityが存在（Data Preparation、ML Training、ML Evaluation等）。
+統合MCP Serverが提供する機能群の単位。本システムでは11個のCapabilityが存在（Data Preparation、ML Training、ML Evaluation、
+Model Packaging、Model Deployment、Monitoring、Workflow Optimization、GitHub Integration、Retrain Orchestration、
+Notification、History Management）。
+
+### Capability Routing
+
+統合MCPサーバー内で、ツール呼び出しリクエストを適切なCapabilityにルーティングする仕組み。ツール名のプレフィックス
+（例: `data_preparation_*`）を解析し、対応するCapabilityのメソッドを実行する。
 
 ### CI/CD (Continuous Integration/Continuous Delivery)
 
@@ -317,6 +324,16 @@ MCPプロトコルを使用してMCP Serverにリクエストを送信するク�
 ### MCP Server
 
 MCPプロトコルに準拠したサーバー。ツール（機能）を提供し、MCP Clientからのリクエストに応答。
+
+### MCP stdio mode
+
+MCPサーバーの通信モードの一つ。標準入出力（stdin/stdout）を使用してローカルプロセスとして起動・通信する方式。
+開発環境やローカルテストに適しているが、リモートサーバーとしての運用には適さない。
+
+### MCP SSE mode (Server-Sent Events mode)
+
+MCPサーバーの通信モードの一つ。HTTP/SSE (Server-Sent Events) を使用してリモート通信を行う方式。
+ECS FargateやLambdaなどのクラウド環境で推奨される通信方式。
 
 ### Metrics (メトリクス)
 
@@ -585,6 +602,11 @@ VPC内からAWSサービスにプライベート接続するためのエンド�
 ### Workflow (ワークフロー)
 
 一連のタスクを自動化した処理フロー。本システムではStep Functionsで定義。
+
+### Workflow Optimization (ワークフロー最適化)
+
+MLOpsパイプライン全体の効率化と最適化を行う機能。実行時間分析、並列化提案、リソース最適化、コスト削減施策、
+ボトルネック検出などを実施し、パイプラインのパフォーマンスとコスト効率を改善する。本システムではCapability 7として実装。
 
 ---
 
