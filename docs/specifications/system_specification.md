@@ -774,11 +774,542 @@ AWS Secrets Managerで以下のシークレットを管理:
 
 ---
 
-## 6. 変更履歴
+## 6. ユースケース: 自動運転向けコンピュータビジョン
+
+本システムは、自動運転領域のコンピュータビジョンタスクに対応します。以下、YOLOX、KITTI、VAD（Vision-based Autonomous Driving）
+を用いた具体的なユースケースを示します。
+
+### 6.1 対象タスクと使用モデル
+
+#### 6.1.1 物体検出: YOLOX
+
+**タスク**: 道路上の車両、歩行者、自転車、信号機等のリアルタイム検出
+
+**モデル**: YOLOX (YOLO eXceeding YOLO series in 2021)
+
+**特徴**:
+
+- Anchor-freeアプローチで高速推論
+- YOLOX-Nano/Tiny/S/M/L/Xの6サイズ展開（エッジデバイス～サーバー対応）
+- COCO datasetでYOLOv5を上回る精度
+- 自動運転に必要な30FPS以上の推論速度を実現
+
+**本システムでの実装**:
+
+- **学習タスク**: `supervised_learning` (分類: 物体クラス、回帰: Bounding Box座標)
+- **データセット**: KITTI、BDD100K、Waymo Open Dataset等
+- **前処理**: Mosaic Augmentation、MixUp、HSV Color Jitter
+- **評価指標**: mAP@0.5、mAP@0.5:0.95、Recall、Precision、Inference Latency
+
+**GitHub Issue設定例**:
+
+```yaml
+model_type: supervised_learning
+algorithm: yolox
+variant: yolox-m  # Nano/Tiny/S/M/L/X
+dataset:
+  name: kitti_object_detection
+  s3_uri: s3://mlops-datasets/kitti/object/
+  train_split: 7481
+  val_split: 7518
+hyperparameters:
+  input_size: [640, 640]
+  batch_size: 32
+  epochs: 300
+  lr: 0.01
+  warmup_epochs: 5
+  mosaic_prob: 1.0
+  mixup_prob: 1.0
+augmentation:
+  - mosaic
+  - mixup
+  - hsv_jitter
+  - random_flip
+evaluation_metrics:
+  - mAP@0.5
+  - mAP@0.5:0.95
+  - inference_latency_ms
+deployment:
+  target: sagemaker_endpoint
+  instance_type: ml.g4dn.xlarge  # GPU推論
+  auto_scaling:
+    min_instances: 1
+    max_instances: 10
+    target_latency_ms: 50
+```
+
+#### 6.1.2 3D物体検出: KITTI 3D Object Detection
+
+**タスク**: カメラ画像とLiDAR点群から3D Bounding Boxを推定
+
+**データセット**: KITTI Vision Benchmark Suite
+
+**モデルアーキテクチャ例**:
+
+- PointPillars (LiDAR点群ベース)
+- MonoDETR (単眼カメラ画像ベース)
+- BEVFormer (Bird's Eye View変換ベース)
+
+**KITTI データセット構造**:
+
+```text
+s3://mlops-datasets/kitti/
+├── object/                    # 3D物体検出
+│   ├── training/
+│   │   ├── image_2/          # 左カメラ画像（7481枚）
+│   │   ├── image_3/          # 右カメラ画像（ステレオ）
+│   │   ├── velodyne/         # LiDAR点群（.bin）
+│   │   ├── calib/            # カメラ・LiDARキャリブレーション
+│   │   └── label_2/          # 3D Bounding Box アノテーション
+│   └── testing/
+│       ├── image_2/          # テスト画像（7518枚）
+│       ├── velodyne/
+│       └── calib/
+├── tracking/                  # 物体追跡
+│   ├── training/
+│   └── testing/
+└── depth/                     # 深度推定
+    ├── train/
+    └── val/
+```
+
+**本システムでの実装**:
+
+- **学習タスク**: `supervised_learning` (3D Bounding Box回帰 + クラス分類)
+- **前処理**:
+  - LiDAR点群のVoxelization
+  - カメラ画像の正規化・リサイズ
+  - Data Augmentation: Random Flip、Random Rotation、Global Scaling
+- **評価指標**:
+  - 3D AP (Average Precision): Easy/Moderate/Hard
+  - BEV AP (Bird's Eye View)
+  - AOS (Average Orientation Similarity)
+
+**FR-034: KITTI データ前処理サポート**
+
+システムは以下のKITTI固有の前処理をサポートする:
+
+- LiDAR点群のロード（.bin形式）
+- カメラ・LiDARキャリブレーション行列の適用
+- 3D Bounding BoxのCamera座標系⇔LiDAR座標系変換
+- Point Cloud範囲フィルタリング（X: 0～70m, Y: -40～40m, Z: -3～1m）
+
+#### 6.1.3 Vision-based Autonomous Driving (VAD)
+
+**タスク**: End-to-Endの自動運転（画像入力 → 車両制御出力）
+
+**アプローチ**:
+
+1. **Imitation Learning**: 人間のドライバーの運転データから学習
+2. **Reinforcement Learning**: シミュレータ環境（CARLA、AirSim等）で報酬最大化
+
+**VAD タスクの分類**:
+
+| サブタスク            | 入力              | 出力                   | 学習タイプ        |
+| --------------------- | ----------------- | ---------------------- | ----------------- |
+| Lane Detection        | カメラ画像        | 車線ポリライン         | 教師あり          |
+| Semantic Segmentation | カメラ画像        | ピクセル単位クラス     | 教師あり          |
+| Depth Estimation      | 単眼/ステレオ画像 | 深度マップ             | 教師あり          |
+| Path Planning         | BEV Feature Map   | 将来の軌跡座標         | 教師あり          |
+| End-to-End Control    | カメラ画像        | ステアリング・加減速   | 模倣学習/強化学習 |
+
+**本システムでの実装例: End-to-End制御**
+
+- **学習タスク**: `reinforcement_learning` または `supervised_learning` (模倣学習)
+- **環境**: CARLA Simulator、AirSim
+- **入力**: フロントカメラ画像（RGB）、車速、GPS
+- **出力**: ステアリング角度、スロットル、ブレーキ
+- **ネットワーク**: CNN（特徴抽出）+ LSTM（時系列処理）+ MLP（制御出力）
+
+**FR-035: シミュレータ統合**
+
+システムは以下のシミュレータとの統合をサポートする:
+
+- CARLA Simulator (Python API)
+- AirSim (Unreal Engine ベース)
+- AWS RoboMaker (Gazebo ベース)
+
+シミュレータからのセンサーデータ（カメラ、LiDAR、IMU等）をS3に自動保存し、学習データとして利用可能。
+
+### 6.2 自動運転向け機能要件
+
+#### FR-036: マルチモーダルデータ処理
+
+システムは以下のセンサーデータを統合処理する:
+
+- **カメラ画像**: RGB、Depth、Thermal
+- **LiDAR点群**: .bin、.pcd、.ply形式
+- **Radar**: Range-Doppler Map
+- **IMU/GPS**: 車両姿勢・位置情報
+
+各センサーデータのタイムスタンプ同期と座標系変換を自動実行。
+
+#### FR-037: BEV (Bird's Eye View) 特徴量生成
+
+カメラ画像・LiDAR点群から統一されたBEV特徴マップを生成:
+
+- LSS (Lift-Splat-Shoot) 手法
+- BEVFormer Transformer ベース手法
+- 出力: BEV特徴マップ（例: 200x200ピクセル、各ピクセル=0.5m）
+
+#### FR-038: 時系列データ処理
+
+自動運転では過去フレームの情報が重要:
+
+- Temporal Fusion: 過去N フレーム（N=3～10）の特徴量を統合
+- Optical Flow: フレーム間の動き推定
+- Object Tracking: 物体IDの時間的追跡（DeepSORT、ByteTrack等）
+
+#### FR-039: オンライン学習対応
+
+実車両からのフィードバックデータで継続的に学習:
+
+- Edge Case収集: モデルが誤検出したケースを自動収集
+- Active Learning: 不確実性の高いデータを優先的にラベリング
+- Incremental Learning: 新規データで既存モデルをFine-tuning
+
+### 6.3 自動運転向け非機能要件
+
+#### NFR-021: リアルタイム推論性能
+
+- **レイテンシ**: エンドツーエンド推論 < 100ms (10Hz以上)
+  - 物体検出: < 30ms (30FPS)
+  - Lane Detection: < 20ms
+  - Path Planning: < 50ms
+- **GPU使用率**: < 80%（余裕を持った運用）
+
+#### NFR-022: 安全性とフェイルセーフ
+
+- **モデル不確実性推定**: Bayesian Neural Network、MC Dropout等で予測の信頼度を算出
+- **Fallback機構**: モデル推論失敗時、ルールベース制御に切り替え
+- **冗長性**: 複数モデルのアンサンブルによる誤検知低減
+
+#### NFR-023: データプライバシー
+
+- **個人情報保護**: カメラ画像から顔・ナンバープレートを自動マスキング
+- **データ匿名化**: GPS座標の粗視化（例: 100m単位）
+- **GDPR/CCPA準拠**: EU・カリフォルニア州のプライバシー法規制対応
+
+### 6.4 YOLOX + KITTI ワークフロー例
+
+以下、GitHub IssueからYOLOX学習→KITTI評価までの具体的なワークフローを示します。
+
+#### Step 1: GitHub Issue作成
+
+```yaml
+title: "[MLOps] YOLOX-M on KITTI Object Detection"
+labels: mlops, supervised_learning, yolox, kitti
+body: |
+  model_type: supervised_learning
+  algorithm: yolox
+  variant: yolox-m
+
+  dataset:
+    name: kitti_object_detection
+    s3_uri: s3://mlops-datasets/kitti/object/
+    classes: [Car, Pedestrian, Cyclist]
+    train_size: 7481
+    val_size: 7518
+
+  preprocessing:
+    input_size: [640, 640]
+    augmentation:
+      - mosaic
+      - mixup
+      - hsv_jitter
+      - random_horizontal_flip
+
+  hyperparameters:
+    batch_size: 32
+    epochs: 300
+    lr: 0.01
+    weight_decay: 0.0005
+    warmup_epochs: 5
+    mosaic_prob: 1.0
+    mixup_prob: 1.0
+
+  evaluation:
+    metrics:
+      - mAP@0.5
+      - mAP@0.5:0.95
+      - recall
+      - precision
+      - inference_latency_ms
+    test_dataset: kitti_val
+
+  deployment:
+    target: sagemaker_endpoint
+    instance_type: ml.g4dn.xlarge
+    auto_scaling:
+      min_instances: 1
+      max_instances: 5
+      target_invocations_per_instance: 100
+```
+
+#### Step 2: Data Preparation Agent実行
+
+**タスク**: KITTI データの前処理
+
+**処理内容**:
+
+1. S3からKITTI画像とアノテーションをダウンロード
+2. KITTI形式のラベルをYOLOX形式（COCO JSON）に変換
+   - KITTI: `<class> <truncated> <occluded> <alpha> <bbox> <dimensions> <location> <rotation_y>`
+   - YOLOX: `{"image_id": 1, "category_id": 1, "bbox": [x, y, w, h], ...}`
+3. データ拡張の適用
+   - Mosaic: 4枚の画像をモザイク状に結合
+   - MixUp: 2枚の画像をブレンド
+   - HSV Jitter: 色空間の変換
+4. Train/Val分割（デフォルト: 80/20）
+5. 前処理済みデータをS3に保存
+
+**出力**:
+
+```text
+s3://mlops-bucket/processed/yolox-kitti-001/
+├── train/
+│   ├── images/           # 前処理済み画像
+│   └── annotations.json  # COCO形式アノテーション
+├── val/
+│   ├── images/
+│   └── annotations.json
+└── metadata.json         # データセット統計情報
+```
+
+#### Step 3: Training Agent実行
+
+**タスク**: YOLOXモデルの学習
+
+**処理内容**:
+
+1. SageMaker Training Jobの起動
+   - インスタンス: ml.p3.2xlarge (Tesla V100 GPU)
+   - コンテナイメージ: YOLOX公式Dockerイメージ + 本システム拡張
+2. YOLOX-Mモデルの学習
+   - COCO事前学習済み重みからFine-tuning
+   - 300エポック学習（Early Stopping有効）
+3. 学習ログのCloudWatch Logsへの送信
+4. 学習済みモデル（.pth）とONNXモデルをS3に保存
+
+**出力**:
+
+```text
+s3://mlops-bucket/models/yolox-kitti-001/
+├── yolox_m_kitti.pth       # PyTorch重み
+├── yolox_m_kitti.onnx      # ONNX形式（推論最適化）
+├── training_log.json       # 学習ログ
+└── hyperparameters.json    # ハイパーパラメータ記録
+```
+
+#### Step 4: Evaluation Agent実行
+
+**タスク**: KITTI Validation Setでの評価
+
+**処理内容**:
+
+1. 学習済みモデルのロード
+2. KITTI Validation Set（7518枚）で推論実行
+3. 評価指標の計算
+   - mAP@0.5: 0.87
+   - mAP@0.5:0.95: 0.65
+   - Recall: 0.89
+   - Precision: 0.85
+   - Inference Latency: 25ms (40FPS)
+4. 検出結果の可視化（Bounding Box描画）
+5. 混同行列・PR曲線の生成
+
+**出力**:
+
+```text
+s3://mlops-bucket/evaluations/yolox-kitti-001/
+├── metrics.json
+├── confusion_matrix.png
+├── pr_curve.png
+├── predictions/              # 検出結果画像
+│   ├── 000000.png
+│   ├── 000001.png
+│   └── ...
+└── evaluation_report.pdf
+```
+
+#### Step 5: Deployment Agent実行
+
+**タスク**: SageMaker Endpointへのデプロイ
+
+**処理内容**:
+
+1. ONNX形式モデルのコンテナ化
+2. SageMaker Endpointの作成
+   - インスタンス: ml.g4dn.xlarge (NVIDIA T4 GPU)
+   - TensorRT最適化適用（推論速度2倍向上）
+3. Auto Scalingの設定
+4. エンドポイントのヘルスチェック
+
+**出力**: エンドポイントURL
+
+```text
+https://runtime.sagemaker.us-east-1.amazonaws.com/endpoints/yolox-kitti-001/invocations
+```
+
+#### Step 6: Monitor Agent実行
+
+**タスク**: 本番環境での継続的監視
+
+**監視項目**:
+
+- **システムメトリクス**: Latency、Throughput、GPU使用率
+- **モデルメトリクス**: 予測信頼度分布、検出物体数分布
+- **データドリフト**: 入力画像の輝度・コントラスト分布の変化
+- **エッジケース検出**: 信頼度が低い検出結果を自動収集
+
+**アラート条件**:
+
+- Latency > 50ms が5分継続 → Slack通知
+- データドリフト検出 → 再学習トリガー
+
+### 6.5 VAD強化学習ワークフロー例
+
+#### Step 1: VAD用GitHub Issue作成
+
+```yaml
+title: "[MLOps] VAD End-to-End Control with PPO"
+labels: mlops, reinforcement_learning, vad, carla
+body: |
+  model_type: reinforcement_learning
+  algorithm: ppo  # Proximal Policy Optimization
+
+  environment:
+    simulator: carla
+    version: 0.9.15
+    town: Town03  # 都市環境
+    weather: ClearNoon
+    num_vehicles: 50
+    num_pedestrians: 100
+
+  agent:
+    observation:
+      - front_camera_rgb: [224, 224, 3]
+      - vehicle_speed: [1]
+      - gps_location: [2]
+    action:
+      - steering: [-1.0, 1.0]  # 連続値
+      - throttle: [0.0, 1.0]
+      - brake: [0.0, 1.0]
+
+  reward_function:
+    - forward_progress: +1.0 per meter
+    - collision: -100.0
+    - lane_invasion: -10.0
+    - traffic_light_violation: -50.0
+    - speed_limit_violation: -5.0
+
+  hyperparameters:
+    gamma: 0.99
+    lambda_gae: 0.95
+    learning_rate: 3e-4
+    batch_size: 256
+    num_epochs: 10
+    clip_range: 0.2
+    total_timesteps: 10000000  # 1000万ステップ
+
+  evaluation:
+    episodes: 100
+    success_criteria:
+      - collision_rate < 0.05
+      - avg_speed > 20 km/h
+      - route_completion_rate > 0.90
+```
+
+#### Step 2: VAD Training Agent実行（強化学習）
+
+**タスク**: CARLA SimulatorでPPO学習
+
+**処理内容**:
+
+1. SageMaker Training Job + CARLA Dockerコンテナの起動
+2. PPOアルゴリズムによる学習
+   - Actor Network: カメラ画像 → 行動（ステアリング、スロットル、ブレーキ）
+   - Critic Network: 状態価値の推定
+3. エピソードごとの報酬・成功率の記録
+4. 学習済みポリシーネットワークをS3に保存
+
+**出力**:
+
+```text
+s3://mlops-bucket/models/vad-ppo-carla-001/
+├── policy_network.pth
+├── value_network.pth
+├── training_curves.png     # 報酬・成功率のグラフ
+└── hyperparameters.json
+```
+
+#### Step 3: VAD Evaluation Agent実行
+
+**タスク**: CARLA評価環境での性能測定
+
+**処理内容**:
+
+1. 学習済みポリシーで100エピソード実行
+2. 評価指標の計算
+   - Collision Rate: 3.2%
+   - Route Completion Rate: 92.5%
+   - Average Speed: 24.3 km/h
+   - Traffic Light Violation Rate: 1.5%
+3. 評価動画の生成（成功例・失敗例）
+
+**出力**:
+
+```text
+s3://mlops-bucket/evaluations/vad-ppo-carla-001/
+├── metrics.json
+├── success_episodes/        # 成功エピソードの動画
+│   ├── episode_001.mp4
+│   └── ...
+└── failure_episodes/        # 失敗エピソードの動画
+    ├── episode_042.mp4
+    └── ...
+```
+
+### 6.6 自動運転MLOpsの課題と対策
+
+#### 課題1: 大容量データの管理
+
+**問題**: KITTI、Waymo等のデータセットは数百GB～数TB
+
+**対策**:
+
+- S3 Intelligent-Tieringによるコスト最適化
+- データサンプリング: 初期実験では全データの10%で検証
+- データバージョニング: DVC、Delta Lakeによる効率的な管理
+
+#### 課題2: GPU リソースコスト
+
+**問題**: 学習・推論に高価なGPUインスタンスが必要
+
+**対策**:
+
+- **学習**: SageMaker Training JobでSpot Instanceを活用（最大70%コスト削減）
+- **推論**: TensorRT最適化、量子化（FP16、INT8）で低スペックGPUでも高速化
+- **Auto Scaling**: トラフィックに応じてインスタンス数を動的調整
+
+#### 課題3: シミュレータと実環境のギャップ
+
+**問題**: シミュレータで学習したモデルが実車両で性能低下（Sim-to-Real Gap）
+
+**対策**:
+
+- **Domain Randomization**: シミュレータの環境（天候、照明、車両モデル）をランダム化
+- **Domain Adaptation**: Simulatorデータと実データでAdversarial Training
+- **Transfer Learning**: Simulatorで事前学習 → 実データでFine-tuning
+
+---
+
+## 7. 変更履歴
 
 | バージョン | 日付       | 変更内容                                       | 作成者 |
 | ---------- | ---------- | ---------------------------------------------- | ------ |
-| 1.0        | 2025-12-30 | 要件仕様書とアーキテクチャ設計書を統合 | -      |
+| 1.0        | 2025-12-30 | 要件仕様書とアーキテクチャ設計書を統合         | -      |
+| 1.1        | 2025-12-31 | 自動運転向けユースケースを追加（YOLOX、KITTI、VAD） | -      |
 
 ---
 
