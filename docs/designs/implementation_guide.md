@@ -20,7 +20,7 @@
 
 ### 1.1 概要
 
-本セクションは、統合MLOps MCPサーバーの詳細な実装設計を定義します。[mcp_design.md](mcp_design.md)および[system_specification.md](system_specification.md)で定義されたアーキテクチャを実装レベルに落とし込みます。
+本セクションは、統合MLOps MCPサーバーの詳細な実装設計を定義します。[mcp_design.md](mcp_design.md)および[../specifications/system_specification.md](../specifications/system_specification.md)で定義されたアーキテクチャを実装レベルに落とし込みます。
 
 ### 1.2 実装範囲
 
@@ -1086,7 +1086,7 @@ ECS FargateまたはLambdaのメモリ設定を増やしてください:
 
 ## 6. 参考資料
 
-- [システム仕様書](system_specification.md)
+- [システム仕様書](../specifications/system_specification.md)
 - [MCP設計書](mcp_design.md)
 - [REVIEW.md](REVIEW.md) - 設計レビューと意思決定記録
 - [Model Context Protocol 仕様](https://spec.modelcontextprotocol.io/)

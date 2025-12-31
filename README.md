@@ -24,7 +24,7 @@ AWS Step FunctionsとAmazon SageMakerを使用したエージェントベース�
 
 ![Data Flow](diagrams/data_flow.mmd)
 
-詳細は[architecture_design.md](architecture_design.md)を参照してください。
+詳細は[docs/specifications/system_specification.md](docs/specifications/system_specification.md)を参照してください。
 
 ## ディレクトリ構造
 
@@ -300,10 +300,25 @@ MIT License
 
 質問や問題がある場合は、GitHub Issuesで報告してください。
 
-## 参考資料
+## ドキュメント
 
-- [要件仕様書](requirements_specification.md)
-- [アーキテクチャ設計書](architecture_design.md)
+### 仕様書
+
+- [システム仕様書](docs/specifications/system_specification.md) - 機能要件、非機能要件、システムアーキテクチャ
+
+### 設計書
+
+- [MCP設計書](docs/designs/mcp_design.md) - 統合MLOps MCPサーバー設計、セキュリティ設計
+- [実装ガイド](docs/designs/implementation_guide.md) - 実装設計、MLOpsワークフロー、開発・運用ガイド
+- [設計レビュー](docs/designs/REVIEW.md) - 設計判断の経緯と意思決定記録
+
+### その他
+
 - [テスト設計書](test_design.md)
+- [プロジェクト構造](PROJECT_STRUCTURE.md)
+
+### 外部リンク
+
 - [Amazon SageMaker Documentation](https://docs.aws.amazon.com/sagemaker/)
 - [AWS Step Functions Documentation](https://docs.aws.amazon.com/step-functions/)
+- [Model Context Protocol 仕様](https://spec.modelcontextprotocol.io/)
