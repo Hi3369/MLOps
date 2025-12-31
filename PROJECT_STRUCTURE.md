@@ -13,7 +13,7 @@
 <details>
 <summary>詳細なディレクトリ構造を表示（クリックして展開）</summary>
 
-```
+```text
 MLOps/
 ├── README.md                              # プロジェクト概要・使い方
 ├── PROJECT_STRUCTURE.md                   # このファイル
@@ -173,45 +173,45 @@ MLOps/
 
 ### ルートディレクトリ
 
-| ファイル | 説明 |
-|---------|------|
-| [README.md](README.md) | プロジェクトの概要、セットアップ手順、使い方 |
-| [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | プロジェクト構造の説明（このファイル） |
-| requirements.txt | Python依存ライブラリ一覧 |
-| .gitignore | Git管理対象外ファイル設定 |
+| ファイル                                     | 説明                                           |
+| -------------------------------------------- | ---------------------------------------------- |
+| [README.md](README.md)                       | プロジェクトの概要、セットアップ手順、使い方 |
+| [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | プロジェクト構造の説明（このファイル）         |
+| requirements.txt                             | Python依存ライブラリ一覧                       |
+| .gitignore                                   | Git管理対象外ファイル設定                      |
 
 ### docs/ - ドキュメント
 
 #### 仕様書 (docs/specifications/)
 
-| ファイル | 説明 |
-|---------|------|
-| [system_specification.md](docs/specifications/system_specification.md) | システム仕様書（機能要件、非機能要件、システムアーキテクチャ、自動運転ユースケース） |
+| ファイル                                                                   | 説明                                                                                         |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [system_specification.md](docs/specifications/system_specification.md)    | システム仕様書（機能要件、非機能要件、システムアーキテクチャ、自動運転ユースケース）         |
 
 #### 設計書 (docs/designs/)
 
-| ファイル | 説明 |
-|---------|------|
-| [mcp_design.md](docs/designs/mcp_design.md) | MCP設計書（統合MLOps MCPサーバー設計、11 Capabilities、セキュリティ設計） |
-| [implementation_guide.md](docs/designs/implementation_guide.md) | 実装ガイド（実装設計、MLOpsワークフロー、開発・運用ガイド、自動運転実装例） |
+| ファイル                                                            | 説明                                                                                 |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [mcp_design.md](docs/designs/mcp_design.md)                        | MCP設計書（統合MLOps MCPサーバー設計、11 Capabilities、セキュリティ設計）          |
+| [implementation_guide.md](docs/designs/implementation_guide.md)    | 実装ガイド（実装設計、MLOpsワークフロー、開発・運用ガイド、自動運転実装例）       |
 
 #### レビュー記録 (docs/reviews/)
 
 各コミットに対する設計レビュー記録:
 
-| ディレクトリ | 内容 |
-|------------|------|
-| aeccac7f/REVIEW.md | ドキュメント統合レビュー（8→4ファイルに統合） |
-| 67f469b2/REVIEW.md | 用語集追加レビュー |
-| 16273bde/REVIEW.md | 自動運転ユースケース追加レビュー |
-| eaa0ad0a/REVIEW.md | 統合MCPサーバー設計レビュー |
+| ディレクトリ           | 内容                                           |
+| ---------------------- | ---------------------------------------------- |
+| aeccac7f/REVIEW.md     | ドキュメント統合レビュー（8→4ファイルに統合） |
+| 67f469b2/REVIEW.md     | 用語集追加レビュー                             |
+| 16273bde/REVIEW.md     | 自動運転ユースケース追加レビュー               |
+| eaa0ad0a/REVIEW.md     | 統合MCPサーバー設計レビュー                    |
 
 #### その他 (docs/others/)
 
-| ファイル | 説明 |
-|---------|------|
-| [glossary.md](docs/others/glossary.md) | MLOps技術用語・略語・概念の定義（100+用語、自動運転用語26語含む） |
-| [risk_management.md](docs/others/risk_management.md) | リスク管理マトリクス（技術・セキュリティ・運用・ビジネスリスク） |
+| ファイル                                                | 説明                                                                   |
+| ------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [glossary.md](docs/others/glossary.md)                 | MLOps技術用語・略語・概念の定義（100+用語、自動運転用語26語含む）      |
+| [risk_management.md](docs/others/risk_management.md)   | リスク管理マトリクス（技術・セキュリティ・運用・ビジネスリスク）       |
 
 ### mcp_server/ - 統合MCPサーバー
 
@@ -339,7 +339,7 @@ cdk deploy --all
 
 ## ドキュメント体系
 
-```
+```text
 docs/
 ├── specifications/          # 仕様書（What）
 │   └── system_specification.md

@@ -110,6 +110,7 @@ GitHubリポジトリで新しいIssueを作成し、以下の内容を記載:
 **ラベル**: `mlops:train`
 
 **本文**:
+
 ```yaml
 learning_type: supervised
 algorithm: random_forest
@@ -139,6 +140,7 @@ Issueを作成すると、自動的に学習パイプラインが起動します
 ### 教師あり学習（Supervised Learning）
 
 **分類（Classification）**:
+
 ```yaml
 learning_type: supervised
 algorithm: random_forest  # または xgboost, neural_network
@@ -151,6 +153,7 @@ evaluation_threshold: 0.85  # Accuracy閾値
 ```
 
 **回帰（Regression）**:
+
 ```yaml
 learning_type: supervised
 algorithm: linear_regression  # または xgboost, neural_network
@@ -164,6 +167,7 @@ evaluation_threshold: 0.9  # R²閾値
 ### 教師なし学習（Unsupervised Learning）
 
 **クラスタリング（K-Means）**:
+
 ```yaml
 learning_type: unsupervised
 algorithm: kmeans
@@ -175,6 +179,7 @@ evaluation_threshold: 0.5  # Silhouette Score閾値
 ```
 
 **次元削減（PCA）**:
+
 ```yaml
 learning_type: unsupervised
 algorithm: pca
@@ -202,11 +207,13 @@ evaluation_threshold: 195.0  # Average Reward閾値
 
 1. システムがオペレータに通知（GitHub Issue + Slack/Email）
 2. オペレータがIssueにコメントで設定調整を指示:
+
    ```yaml
    adjusted_hyperparameters:
      n_estimators: 200
      max_depth: 15
    ```
+
 3. システムが調整された設定で再学習を実行
 4. 最大3回まで繰り返し
 
