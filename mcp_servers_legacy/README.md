@@ -31,6 +31,7 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 **責務**: データ前処理・特徴量エンジニアリング
 
 **提供ツール**:
+
 - `load_dataset` - S3からデータセットを読み込む
 - `validate_data` - データのバリデーション
 - `preprocess_supervised` - 教師あり学習用の前処理
@@ -49,6 +50,7 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 **提供ツール**:
 
 **教師あり学習**:
+
 - `train_supervised_classifier` - 分類モデルの学習
   - Random Forest
   - XGBoost
@@ -59,6 +61,7 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
   - Neural Network
 
 **教師なし学習**:
+
 - `train_unsupervised_clustering` - クラスタリング
   - K-Means
   - DBSCAN
@@ -68,12 +71,14 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
   - t-SNE
 
 **強化学習**:
+
 - `train_reinforcement` - 強化学習モデルの学習
   - PPO (Proximal Policy Optimization)
   - DQN (Deep Q-Network)
   - A3C (Asynchronous Advantage Actor-Critic)
 
 **共通**:
+
 - `get_training_metrics` - 学習中のメトリクスを取得
 - `save_model` - 学習済みモデルをS3に保存
 
@@ -84,6 +89,7 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 **責務**: モデルの評価・可視化
 
 **提供ツール**:
+
 - `load_model` - S3からモデルをロード
 - `evaluate_classifier` - 分類モデルの評価
 - `evaluate_regressor` - 回帰モデルの評価
@@ -104,6 +110,7 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 **提供ツール**:
 
 **Issue管理**:
+
 - `get_issue` - Issueの取得
 - `create_issue` - Issueの作成
 - `update_issue` - Issueの更新
@@ -112,21 +119,25 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 - `parse_issue_body` - Issue本文のYAML/JSONパース
 
 **ラベル管理**:
+
 - `get_issue_labels` - Issueのラベル取得
 - `add_label` - ラベル追加
 - `remove_label` - ラベル削除
 
 **リポジトリ操作**:
+
 - `create_file` - ファイル作成（履歴保存用）
 - `update_file` - ファイル更新
 - `commit_changes` - 変更のコミット
 - `create_pull_request` - プルリクエスト作成
 
 **Webhook**:
+
 - `validate_webhook_signature` - Webhook署名の検証
 - `parse_webhook_payload` - Webhookペイロードのパース
 
 **影響を受けるエージェント**:
+
 - Issue Detector Agent → MCPクライアント化
 - History Writer Agent → MCPクライアント化
 
@@ -139,31 +150,37 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 **提供ツール**:
 
 **モデル登録**:
+
 - `register_model` - モデルの登録
 - `update_model_metadata` - モデルメタデータの更新
 - `delete_model` - モデルの削除
 
 **モデルバージョン管理**:
+
 - `list_model_versions` - モデルバージョン一覧取得
 - `get_model_version` - 特定バージョンの取得
 - `promote_model_version` - モデルバージョンの昇格（Staging → Production）
 - `archive_model_version` - モデルバージョンのアーカイブ
 
 **モデルステータス管理**:
+
 - `approve_model` - モデルの承認
 - `reject_model` - モデルの却下
 - `get_model_status` - モデルステータスの取得
 
 **ロールバック**:
+
 - `rollback_model` - 前バージョンへのロールバック
 - `get_rollback_history` - ロールバック履歴の取得
 
 **モデル検索**:
+
 - `search_models` - モデル検索
 - `filter_models_by_metrics` - メトリクスでフィルタリング
 - `get_best_model` - 最良モデルの取得
 
 **影響を受けるエージェント**:
+
 - Training Agent → MCPクライアント化（モデル登録部分）
 - Rollback Agent → MCPクライアント化
 
@@ -176,34 +193,41 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 **提供ツール**:
 
 **GitHub通知**:
+
 - `notify_github_issue` - GitHub Issueにコメント投稿
 - `update_github_issue_status` - Issueのステータス更新
 
 **Slack通知**:
+
 - `send_slack_message` - Slackメッセージ送信
 - `send_slack_thread_reply` - スレッド返信
 - `send_slack_dm` - DM送信
 
 **Email通知**:
+
 - `send_email` - Email送信
 - `send_email_with_attachment` - 添付ファイル付きEmail送信
 
 **Microsoft Teams通知**:
+
 - `send_teams_message` - Teamsメッセージ送信
 
 **Discord通知**:
+
 - `send_discord_message` - Discordメッセージ送信
 
 **通知テンプレート**:
+
 - `render_notification_template` - テンプレートレンダリング
 - `get_notification_templates` - テンプレート一覧取得
 
 **影響を受けるエージェント**:
+
 - Notification Agent → MCPクライアント化（通知チャネル部分）
 
 ## ディレクトリ構造
 
-```
+```text
 mcp_servers/
 ├── README.md                              # このファイル
 ├── __init__.py
@@ -308,6 +332,7 @@ mcp_servers/
 ## ローカル開発
 
 ### 前提条件
+
 - Python 3.9以上
 - MCP SDK (`pip install mcp`)
 
@@ -423,6 +448,7 @@ async def process_data():
 Lambda/ECS AgentがMCPサーバーを子プロセスとして起動し、標準入出力でJSON-RPC通信を行います。
 
 **メリット**:
+
 - シンプル
 - オーバーヘッドが少ない
 - デバッグしやすい
@@ -432,6 +458,7 @@ Lambda/ECS AgentがMCPサーバーを子プロセスとして起動し、標準�
 MCPサーバーをECS Service（常時起動）として運用し、HTTP/SSEで通信します。
 
 **メリット**:
+
 - サーバーの再利用
 - 複数クライアントから並行アクセス可能
 
