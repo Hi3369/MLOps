@@ -47,7 +47,7 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 
 **セクション構成**:
 
-```
+```text
 6. ユースケース: 自動運転向けコンピュータビジョン
 ├── 6.1 対象タスクと使用モデル
 │   ├── 6.1.1 物体検出: YOLOX
@@ -114,12 +114,14 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 **FR-034: KITTI データ前処理サポート**
 
 **内容**:
+
 - LiDAR点群のロード（.bin形式）
 - カメラ・LiDARキャリブレーション行列の適用
 - 3D Bounding Boxの座標系変換
 - Point Cloud範囲フィルタリング（X: 0～70m, Y: -40～40m, Z: -3～1m）
 
 **評価**:
+
 - ✅ KITTI固有の技術的課題を正確に特定
 - ✅ 座標系変換という実装上の難所を明示
 - ✅ 点群フィルタリングの範囲が自動運転に適切（前方70m、左右各40m）
@@ -127,11 +129,13 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 **FR-035: シミュレータ統合**
 
 **内容**:
+
 - CARLA Simulator (Python API)
 - AirSim (Unreal Engine ベース)
 - AWS RoboMaker (Gazebo ベース)
 
 **評価**:
+
 - ✅ 業界標準の3大シミュレータを網羅
 - ✅ AWS RoboMakerの追加により、AWSエコシステムとの統合性を確保
 - ✅ センサーデータのS3自動保存という実用的な機能を明示
@@ -139,12 +143,14 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 **FR-036: マルチモーダルデータ処理**
 
 **内容**:
+
 - カメラ画像（RGB、Depth、Thermal）
 - LiDAR点群（.bin、.pcd、.ply形式）
 - Radar（Range-Doppler Map）
 - IMU/GPS（車両姿勢・位置情報）
 
 **評価**:
+
 - ✅ 自動運転に必要なセンサーを包括的に列挙
 - ✅ タイムスタンプ同期という実装上の重要課題を明示
 - ✅ 座標系変換の自動実行という実用的な機能を提案
@@ -152,11 +158,13 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 **FR-037: BEV (Bird's Eye View) 特徴量生成**
 
 **内容**:
+
 - LSS (Lift-Splat-Shoot) 手法
 - BEVFormer Transformer ベース手法
 - 出力: BEV特徴マップ（200x200ピクセル、各ピクセル=0.5m）
 
 **評価**:
+
 - ✅ 最新の研究成果（LSS、BEVFormer）を反映
 - ✅ BEV解像度（0.5m/pixel）が自動運転に適切
 - ✅ マルチモーダル統合の最終形態として適切
@@ -164,11 +172,13 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 **FR-038: 時系列データ処理**
 
 **内容**:
+
 - Temporal Fusion: 過去N フレーム（N=3～10）の特徴量を統合
 - Optical Flow: フレーム間の動き推定
 - Object Tracking: 物体IDの時間的追跡（DeepSORT、ByteTrack等）
 
 **評価**:
+
 - ✅ 自動運転に不可欠な時系列処理を明示
 - ✅ フレーム数（3～10）が実用的
 - ✅ 最新のトラッキング手法（DeepSORT、ByteTrack）を採用
@@ -176,11 +186,13 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 **FR-039: オンライン学習対応**
 
 **内容**:
+
 - Edge Case収集: モデルが誤検出したケースを自動収集
 - Active Learning: 不確実性の高いデータを優先的にラベリング
 - Incremental Learning: 新規データで既存モデルをFine-tuning
 
 **評価**:
+
 - ✅ 継続的改善という現代的MLOpsの要件を満たす
 - ✅ Edge Case収集という安全性向上施策を明示
 - ✅ Active Learningによるラベリングコスト削減を考慮
@@ -197,6 +209,7 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 **NFR-021: リアルタイム推論性能**
 
 **内容**:
+
 - エンドツーエンド推論 < 100ms (10Hz以上)
 - 物体検出: < 30ms (30FPS)
 - Lane Detection: < 20ms
@@ -204,6 +217,7 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 - GPU使用率: < 80%
 
 **評価**:
+
 - ✅ 10Hzという自動運転に必要な最低周波数を明示
 - ✅ サブタスクごとのレイテンシ要件が現実的
 - ✅ GPU使用率80%という余裕を持った設定
@@ -211,11 +225,13 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 **NFR-022: 安全性とフェイルセーフ**
 
 **内容**:
+
 - モデル不確実性推定（Bayesian Neural Network、MC Dropout）
 - Fallback機構（ルールベース制御）
 - 冗長性（アンサンブル）
 
 **評価**:
+
 - ✅ 自動運転の安全性要件を深く理解
 - ✅ 不確実性推定という最新技術を導入
 - ✅ Fallback機構という現実的な安全対策
@@ -223,11 +239,13 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 **NFR-023: データプライバシー**
 
 **内容**:
+
 - 顔・ナンバープレートの自動マスキング
 - GPS座標の粗視化（100m単位）
 - GDPR/CCPA準拠
 
 **評価**:
+
 - ✅ プライバシー保護という重要課題を認識
 - ✅ GDPR/CCPAという法規制への準拠を明示
 - ✅ 具体的な技術施策（マスキング、粗視化）を提示
@@ -241,31 +259,37 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 **YOLOX + KITTI ワークフロー（6ステップ）**
 
 **Step 1: GitHub Issue作成**
+
 - ✅ YAML形式の設定例が具体的
 - ✅ ハイパーパラメータが実際の学習に使用可能な値
 - ✅ デプロイメント設定（Auto Scaling等）も含む
 
 **Step 2: Data Preparation Agent**
+
 - ✅ KITTI→COCO形式変換という実装上の難所を明示
 - ✅ Data Augmentation（Mosaic、MixUp）の具体的手順
 - ✅ S3パス構造が明確
 
 **Step 3: Training Agent**
+
 - ✅ SageMaker Training Jobの具体的な設定
 - ✅ インスタンスタイプ（ml.p3.2xlarge）が適切
 - ✅ COCO事前学習済み重みからのFine-tuningという現実的アプローチ
 
 **Step 4: Evaluation Agent**
+
 - ✅ 評価指標の数値例（mAP@0.5: 0.87）が現実的
 - ✅ Inference Latency（25ms）が要件（<30ms）を満たす
 - ✅ 可視化（混同行列、PR曲線）を含む
 
 **Step 5: Deployment Agent**
+
 - ✅ TensorRT最適化という実用的な高速化手法
 - ✅ インスタンスタイプ（ml.g4dn.xlarge）がコスト効率的
 - ✅ Auto Scaling設定が詳細
 
 **Step 6: Monitor Agent**
+
 - ✅ データドリフト検出という継続的改善施策
 - ✅ エッジケース収集という安全性向上施策
 - ✅ アラート条件（Latency > 50ms が5分継続）が具体的
@@ -280,16 +304,19 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 **VAD強化学習ワークフロー（3ステップ）**
 
 **Step 1: VAD用GitHub Issue作成**
+
 - ✅ PPOハイパーパラメータ（gamma: 0.99、learning_rate: 3e-4等）が標準的
 - ✅ 報酬関数の設計が現実的（collision: -100.0、forward_progress: +1.0）
 - ✅ CARLA環境設定（Town03、天候、車両数等）が具体的
 
 **Step 2: VAD Training Agent**
+
 - ✅ Actor-Critic構造を明示
 - ✅ 1000万ステップという学習規模が適切
 - ✅ エピソードごとの報酬記録という標準的プラクティス
 
 **Step 3: VAD Evaluation Agent**
+
 - ✅ 評価指標（Collision Rate: 3.2%、Route Completion: 92.5%）が現実的
 - ✅ 成功/失敗エピソードの動画生成という実用的な機能
 - ✅ 100エピソードという十分な評価サンプル数
@@ -309,33 +336,39 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 **課題1: 大容量データの管理**
 
 **対策**:
+
 - S3 Intelligent-Tiering
 - データサンプリング（初期実験で10%）
 - データバージョニング（DVC、Delta Lake）
 
 **評価**:
+
 - ✅ コスト最適化と実験速度のバランスを考慮
 - ✅ DVC、Delta Lakeという具体的ツールを提示
 
 **課題2: GPU リソースコスト**
 
 **対策**:
+
 - Spot Instance（最大70%コスト削減）
 - TensorRT最適化、量子化（FP16、INT8）
 - Auto Scaling
 
 **評価**:
+
 - ✅ コスト削減施策が具体的
 - ✅ 技術的施策（TensorRT、量子化）と運用施策（Spot、Auto Scaling）を両立
 
 **課題3: シミュレータと実環境のギャップ**
 
 **対策**:
+
 - Domain Randomization
 - Domain Adaptation（Adversarial Training）
 - Transfer Learning（Simulator事前学習 → 実データFine-tuning）
 
 **評価**:
+
 - ✅ Sim-to-Real Gapという自動運転特有の課題を認識
 - ✅ 最新の研究成果（Domain Randomization、Adversarial Training）を反映
 
@@ -673,7 +706,7 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 
 ### 7.1 コミットメタデータ
 
-```
+```text
 コミットハッシュ（フル）: 16273bde26a95b2a7e3cf515655599f252000354
 コミットハッシュ（短縮）: 16273bd
 コミット日時: 2025-12-31
@@ -690,7 +723,7 @@ YOLOX、KITTI、VADという業界標準のモデル・データセットへの�
 
 ### 7.3 変更統計
 
-```
+```text
 1 file changed, 533 insertions(+), 2 deletions(-)
 ```
 

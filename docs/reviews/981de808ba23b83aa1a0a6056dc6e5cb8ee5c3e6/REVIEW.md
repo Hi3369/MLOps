@@ -15,11 +15,13 @@
 #### 指摘1: Capability数の不一致
 
 **問題点**:
+
 - implementation_guide.mdでは6個のCapabilityしか記載されていない
 - mcp_design.mdでは11個のCapabilityが定義されている
 - ドキュメント間で不整合が発生
 
 **対応内容**:
+
 - implementation_guide.mdのPhase 1-2を11個のCapabilityに更新
 - mcp_server/README.mdに11個のCapability全てを詳細記載
 - PROJECT_STRUCTURE.mdのディレクトリ構造を11個に統一
@@ -27,19 +29,23 @@
 #### 指摘2: Workflow Optimization Capabilityの仕様書欠如
 
 **問題点**:
+
 - mcp_design.mdではCapability 7として定義されているが、system_specification.mdに機能要件が存在しない
 - 仕様書と設計書の乖離
 
 **対応内容**:
+
 - system_specification.mdにFR-040「ワークフロー最適化」を追加
 - 実行時間分析、並列化提案、リソース最適化、コスト削減、ボトルネック検出の5つの機能を定義
 
 #### 指摘3: 用語集の未定義用語
 
 **問題点**:
+
 - Capability、Capability Routing、MCP stdio mode、MCP SSE mode、Workflow Optimizationが用語集に未定義
 
 **対応内容**:
+
 - glossary.mdに5つの新規用語を追加
 - 各用語に詳細な説明を記載
 
@@ -50,6 +56,7 @@
 ### 2.1 Capability数の統一
 
 **変更ファイル**:
+
 - [docs/designs/implementation_guide.md](../../designs/implementation_guide.md)
 - [mcp_server/README.md](../../../mcp_server/README.md)
 - [PROJECT_STRUCTURE.md](../../../PROJECT_STRUCTURE.md)
@@ -57,6 +64,7 @@
 #### ✅ 良い点
 
 1. **11 Capabilityの完全な定義**
+
    ```text
    1. Data Preparation - データ準備
    2. ML Training - ML学習
@@ -101,6 +109,7 @@
 | History Management      | 2個      | 小       |
 
 **推奨アクション**:
+
 - 小規模Capability（2個）を将来的に統合検討
 - 例: Model Packaging + Model Deployment → Model Management
 - 例: Notification + History Management → Reporting & Logging
@@ -140,6 +149,7 @@ graph LR
 #### ✅ 良い点
 
 1. **明確な機能要件定義**
+
    ```markdown
    #### FR-040: ワークフロー最適化
 
@@ -178,6 +188,7 @@ FR-040に対応するNFR（非機能要件）を追加推奨:
 以下のような具体例を追記推奨:
 
 **ユースケース1: データ前処理のボトルネック検出**
+
 ```yaml
 # Workflow Optimization提案例
 bottleneck_detected:
@@ -197,6 +208,7 @@ bottleneck_detected:
 ```
 
 **ユースケース2: Spot Instance活用提案**
+
 ```yaml
 cost_optimization:
   current_cost: "$120/月"
@@ -280,18 +292,22 @@ cost_optimization:
 #### ✅ 確認事項
 
 **仕様書との整合性**:
+
 - ✅ FR-040（Workflow Optimization）を追加
 - ✅ 11 Capabilityの機能要件が明確
 
 **設計書との整合性**:
+
 - ✅ mcp_design.mdの11 Capabilityと一致
 - ✅ 各Capabilityのツール定義が統一
 
 **実装ガイドとの整合性**:
+
 - ✅ Phase 1-2で11 Capabilityを実装
 - ✅ ディレクトリ構造が統一
 
 **用語集との整合性**:
+
 - ✅ 主要用語が定義済み
 - ✅ 11 Capabilityが列挙
 
@@ -300,12 +316,14 @@ cost_optimization:
 **提案1: バージョン管理の統一**
 
 現状、ドキュメント間でバージョン番号が異なる:
+
 - system_specification.md: バージョン 1.0
 - implementation_guide.md: バージョン 1.1
 - mcp_design.md: バージョン 0.1
 - glossary.md: バージョン 0.1
 
 **推奨**: セマンティックバージョニング導入
+
 - メジャーバージョン: アーキテクチャ変更
 - マイナーバージョン: 機能追加
 - パッチバージョン: バグ修正・文言修正
@@ -448,6 +466,7 @@ cost_optimization:
 本コミットは、Copilotレビューの指摘1～3に適切に対応しており、**品質基準を満たしている**と判断します。
 
 **承認理由**:
+
 1. ✅ 11 Capabilityの完全な定義と統一
 2. ✅ Workflow Optimization機能要件の追加
 3. ✅ 用語集の充実（5つの新規用語追加）
@@ -455,6 +474,7 @@ cost_optimization:
 5. ✅ 234行の追加、63行の削除による大規模な改善
 
 **改善推奨事項**:
+
 - バージョン管理の統一
 - 非機能要件の追加
 - Capability依存関係図の追加

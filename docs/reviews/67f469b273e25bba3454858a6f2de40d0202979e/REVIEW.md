@@ -135,6 +135,7 @@
 **サンプル定義の品質評価**:
 
 **例1: MCP (Model Context Protocol)**
+
 ```markdown
 Anthropic社が提唱する標準プロトコル。LLMアプリケーションと外部ツール・
 データソース間の連携を標準化。
@@ -146,6 +147,7 @@ Anthropic社が提唱する標準プロトコル。LLMアプリケーション�
 - ✅ 文脈: 本システムの基盤技術であることが明確
 
 **例2: Canary Deployment**
+
 ```markdown
 新バージョンを少数のユーザーにのみ公開し、問題がなければ段階的に全体に
 展開するデプロイメント手法。
@@ -157,6 +159,7 @@ Anthropic社が提唱する標準プロトコル。LLMアプリケーション�
 - ✅ 文脈: リスク低減の意図が伝わる
 
 **例3: SageMaker**
+
 ```markdown
 AWSのフルマネージド機械学習サービス。データ準備、モデル学習、デプロイ、
 監視を統合提供。
@@ -378,7 +381,7 @@ AWSのフルマネージド機械学習サービス。データ準備、モデ�
 
 **現在のドキュメント体系**:
 
-```
+```text
 docs/
 ├── specifications/              # 仕様書
 │   └── system_specification.md  (794行)
@@ -427,7 +430,7 @@ docs/
 
 **参照関係の可視化**:
 
-```
+```text
 README.md
 ├─→ system_specification.md
 ├─→ mcp_design.md
@@ -492,7 +495,7 @@ glossary.md
 
 **新規開発者の学習パス**:
 
-```
+```text
 1. README.md
    ↓ システム概要を把握
 2. docs/others/glossary.md ←─────── 新規追加で大幅改善
@@ -528,6 +531,7 @@ glossary.md
 **アクセス経路**:
 
 1. **README.mdから**:
+
    ```markdown
    - [用語集](docs/others/glossary.md) - MLOps技術用語・略語・概念の定義
    ```
@@ -787,7 +791,7 @@ glossary.md
 
 ### 11.1 コミットメタデータ
 
-```
+```text
 コミットハッシュ（フル）: 67f469b273e25bba3454858a6f2de40d0202979e
 コミットハッシュ（短縮）: 67f469b2
 コミット日時: 2025-12-31
@@ -807,7 +811,7 @@ glossary.md
 
 ### 11.3 変更統計
 
-```
+```text
 2 files changed, 619 insertions(+)
 create mode 100644 docs/others/glossary.md
 ```
