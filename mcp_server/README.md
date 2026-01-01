@@ -16,7 +16,7 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 - ✅ **リソース効率**: メモリ・CPUを共有、オーバーヘッド削減
 - ✅ **MCP接続の最小化**: 1つのMCP接続で全ツールにアクセス
 
-## 提供Capability（6つの機能群）
+## 提供Capability（11個の機能群）
 
 ### 1. Data Preparation
 
@@ -87,7 +87,55 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 - `generate_evaluation_report` - 評価レポートの生成
 - `save_evaluation_results` - 評価結果をS3に保存
 
-### 4. GitHub Integration
+### 4. Model Packaging
+
+**責務**: モデルの形式変換・パッケージング
+
+**提供ツール**:
+
+- `export_to_onnx` - ONNXフォーマットへのエクスポート
+- `export_to_pmml` - PMMLフォーマットへのエクスポート
+- `export_to_pkl` - Pickle形式での保存
+- `create_container_image` - Dockerコンテナイメージの作成
+- `validate_export_format` - エクスポート形式のバリデーション
+
+### 5. Model Deployment
+
+**責務**: モデルのデプロイメント管理
+
+**提供ツール**:
+
+- `deploy_sagemaker_endpoint` - SageMakerエンドポイントのデプロイ
+- `update_endpoint_config` - エンドポイント設定の更新
+- `delete_endpoint` - エンドポイントの削除
+- `test_endpoint_inference` - エンドポイントの推論テスト
+- `rollback_deployment` - デプロイメントのロールバック
+
+### 6. Monitoring
+
+**責務**: モデルとシステムの監視
+
+**提供ツール**:
+
+- `get_endpoint_metrics` - エンドポイントメトリクスの取得
+- `detect_data_drift` - データドリフトの検出
+- `check_performance_degradation` - パフォーマンス劣化のチェック
+- `create_cloudwatch_alarm` - CloudWatchアラームの作成
+- `get_model_logs` - モデルログの取得
+
+### 7. Workflow Optimization
+
+**責務**: MLOpsパイプラインの最適化
+
+**提供ツール**:
+
+- `analyze_execution_time` - 実行時間の分析
+- `suggest_parallelization` - 並列化の提案
+- `optimize_resource_allocation` - リソース配分の最適化
+- `reduce_pipeline_cost` - パイプラインコストの削減提案
+- `identify_bottlenecks` - ボトルネックの特定
+
+### 8. GitHub Integration
 
 **責務**: GitHub連携機能の統合
 
@@ -120,43 +168,19 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 - `validate_webhook_signature` - Webhook署名の検証
 - `parse_webhook_payload` - Webhookペイロードのパース
 
-### 5. Model Registry
+### 9. Retrain Orchestration
 
-**責務**: モデルバージョン管理・レジストリ操作
+**責務**: 再学習トリガー判定と再学習ワークフロー起動
 
 **提供ツール**:
 
-**モデル登録**:
+- `check_retrain_triggers` - 再学習トリガーの確認
+- `evaluate_trigger_conditions` - トリガー条件の評価（ドリフト閾値、スケジュール等）
+- `create_retrain_issue` - 再学習Issueの作成
+- `start_retrain_workflow` - 再学習ワークフローの起動
+- `schedule_periodic_retrain` - 定期再学習のスケジュール設定
 
-- `register_model` - モデルの登録
-- `update_model_metadata` - モデルメタデータの更新
-- `delete_model` - モデルの削除
-
-**モデルバージョン管理**:
-
-- `list_model_versions` - モデルバージョン一覧取得
-- `get_model_version` - 特定バージョンの取得
-- `promote_model_version` - モデルバージョンの昇格（Staging → Production）
-- `archive_model_version` - モデルバージョンのアーカイブ
-
-**モデルステータス管理**:
-
-- `approve_model` - モデルの承認
-- `reject_model` - モデルの却下
-- `get_model_status` - モデルステータスの取得
-
-**ロールバック**:
-
-- `rollback_model` - 前バージョンへのロールバック
-- `get_rollback_history` - ロールバック履歴の取得
-
-**モデル検索**:
-
-- `search_models` - モデル検索
-- `filter_models_by_metrics` - メトリクスでフィルタリング
-- `get_best_model` - 最良モデルの取得
-
-### 6. Notification
+### 10. Notification
 
 **責務**: 通知チャネルの統合管理
 
@@ -191,15 +215,27 @@ MCPサーバーは、データ前処理・モデル学習・モデル評価な�
 - `render_notification_template` - テンプレートレンダリング
 - `get_notification_templates` - テンプレート一覧取得
 
+### 11. History Management
+
+**責務**: 学習履歴の記録・GitHub履歴管理・バージョン追跡
+
+**提供ツール**:
+
+- `format_training_history` - 学習履歴のフォーマット
+- `commit_history_to_github` - GitHubリポジトリへの履歴コミット
+- `post_issue_comment` - Issue進捗コメントの投稿
+- `track_version_history` - バージョン履歴の追跡
+- `generate_history_markdown` - Markdown形式の履歴生成
+
 ## ディレクトリ構造
 
-```
+```text
 mcp_server/                                # 統合MLOps MCP Server（単数形）
 ├── __init__.py
 ├── server.py                             # メインサーバー・ツールルーティング
 ├── __main__.py                           # エントリーポイント
 │
-├── capabilities/                          # 6つのCapability実装
+├── capabilities/                          # 11個のCapability実装
 │   ├── __init__.py
 │   │
 │   ├── data_preparation/                 # Capability 1: Data Preparation
@@ -418,16 +454,16 @@ async def call_mcp_tool():
 
 ## 統合アプローチのメリット
 
-### 従来の6個独立サーバーと比較
+### 従来の11個独立サーバーと比較
 
-| 項目 | 統合MCPサーバー（1個） | 独立MCPサーバー（6個） |
-|------|------|------|
-| **運用の簡素さ** | ✅ 1プロセスのみ | ❌ 6プロセス管理 |
-| **デプロイの簡素さ** | ✅ 1デプロイのみ | ❌ 6デプロイ管理 |
-| **リソース効率** | ✅ 共有により効率的 | ❌ 各サーバーでオーバーヘッド |
-| **MCP接続数** | ✅ 1接続のみ | ❌ 6接続必要 |
-| **Agent実装** | ✅ 1つのクライアントで全機能 | ❌ 6つのクライアント必要 |
-| **インフラコスト** | ✅ 低い（リソース共有） | ❌ 高い（6倍のオーバーヘッド） |
+| 項目                 | 統合MCPサーバー（1個）           | 独立MCPサーバー（11個）              |
+| -------------------- | -------------------------------- | ------------------------------------ |
+| **運用の簡素さ**     | ✅ 1プロセスのみ                 | ❌ 11プロセス管理                    |
+| **デプロイの簡素さ** | ✅ 1デプロイのみ                 | ❌ 11デプロイ管理                    |
+| **リソース効率**     | ✅ 共有により効率的              | ❌ 各サーバーでオーバーヘッド        |
+| **MCP接続数**        | ✅ 1接続のみ                     | ❌ 11接続必要                        |
+| **Agent実装**        | ✅ 1つのクライアントで全機能     | ❌ 11個のクライアント必要            |
+| **インフラコスト**   | ✅ 低い（リソース共有）          | ❌ 高い（11倍のオーバーヘッド）      |
 
 ## トラブルシューティング
 
@@ -457,7 +493,7 @@ ECS FargateまたはLambdaのメモリ設定を増やしてください:
 
 ## 参考資料
 
-- [MCP化設計書](../mcp_design.md)
-- [アーキテクチャ設計書](../architecture_design.md)
-- [MCP拡張設計書](../mcp_extended_design.md)
+- [MCP設計書](../docs/designs/mcp_design.md)
+- [システム仕様書](../docs/specifications/system_specification.md)
+- [実装ガイド](../docs/designs/implementation_guide.md)
 - [Model Context Protocol 仕様](https://spec.modelcontextprotocol.io/)
