@@ -231,6 +231,64 @@ Model Context Protocol (MCP) として専門機能を実装することで:
 - 🎯 **リソース効率**: メモリ・CPUを共有、オーバーヘッド削減
 - 🎯 **MCP接続の最小化**: 1つのMCP接続で全ツールにアクセス
 
+**Capability依存関係図**:
+
+```mermaid
+graph LR
+    %% エントリーポイント
+    A[Capability 8:<br/>GitHub Integration] --> B[Capability 7:<br/>Workflow Optimization]
+
+    %% メインフロー
+    B --> C[Capability 1:<br/>Data Preparation]
+    C --> D[Capability 2:<br/>ML Training]
+    D --> E[Capability 3:<br/>ML Evaluation]
+    E --> F[Capability 4:<br/>Model Packaging]
+    F --> G[Capability 5:<br/>Model Deployment]
+    G --> H[Capability 6:<br/>Monitoring]
+    H --> I[Capability 9:<br/>Retrain Orchestration]
+    I --> C
+
+    %% 横断的な通知
+    J[Capability 10:<br/>Notification] -.通知.-> A
+    J -.通知.-> E
+    J -.通知.-> H
+    J -.通知.-> I
+
+    %% 横断的な履歴管理
+    K[Capability 11:<br/>History Management] -.記録.-> D
+    K -.記録.-> E
+    K -.記録.-> G
+
+    %% スタイル
+    style A fill:#FFE4B5
+    style B fill:#98FB98
+    style C fill:#87CEEB
+    style D fill:#DDA0DD
+    style E fill:#F0E68C
+    style F fill:#FFB6C1
+    style G fill:#FFA07A
+    style H fill:#20B2AA
+    style I fill:#FF69B4
+    style J fill:#F0E68C
+    style K fill:#D3D3D3
+```
+
+**Capability間の依存関係**:
+
+| Capability                  | 依存先                                              | 役割                 |
+| --------------------------- | --------------------------------------------------- | -------------------- |
+| 8. GitHub Integration       | 7. Workflow Optimization                            | エントリーポイント   |
+| 7. Workflow Optimization    | 1. Data Preparation                                 | 最適化提案           |
+| 1. Data Preparation         | 2. ML Training                                      | データ前処理         |
+| 2. ML Training              | 3. ML Evaluation                                    | モデル学習           |
+| 3. ML Evaluation            | 4. Model Packaging                                  | モデル評価           |
+| 4. Model Packaging          | 5. Model Deployment                                 | モデルパッケージング |
+| 5. Model Deployment         | 6. Monitoring                                       | デプロイメント       |
+| 6. Monitoring               | 9. Retrain Orchestration                            | 監視                 |
+| 9. Retrain Orchestration    | 1. Data Preparation（ループバック）                 | 再学習判定           |
+| 10. Notification            | 全Capability（横断的）                              | 通知                 |
+| 11. History Management      | 2, 3, 5（横断的）                                   | 履歴記録             |
+
 ### 2.4 将来の拡張候補
 
 統合MCPサーバーには、将来的に以下のcapabilityを追加可能です:
@@ -675,6 +733,108 @@ stdio モードはローカルプロセス起動が前提であり、クラウ�
 - ✅ Auto Scalingによる負荷分散が可能
 - ✅ ヘルスチェック・モニタリングが容易
 
+**SSE実装例**:
+
+```python
+# Lambda Agent側（MCP Client）
+import os
+import httpx
+
+async def call_mcp_tool_via_sse(tool_name: str, arguments: dict) -> dict:
+    """
+    SSE経由でMCPツールを呼び出し
+    """
+    mcp_server_url = os.environ["MCP_SERVER_URL"]  # ECS Service URL
+
+    async with httpx.AsyncClient(timeout=300.0) as client:
+        response = await client.post(
+            f"{mcp_server_url}/tools/{tool_name}",
+            json=arguments,
+            headers={"Content-Type": "application/json"}
+        )
+        response.raise_for_status()
+        return response.json()
+
+# 使用例
+result = await call_mcp_tool_via_sse(
+    tool_name="preprocess_supervised",
+    arguments={
+        "dataset_s3_uri": "s3://mlops-bucket/datasets/my-dataset-001/raw/",
+        "target_column": "label",
+        "task_type": "classification"
+    }
+)
+```
+
+```python
+# MCP Server側（FastAPI実装例）
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import Dict, Any
+
+app = FastAPI()
+
+class ToolRequest(BaseModel):
+    arguments: Dict[str, Any]
+
+@app.post("/tools/{tool_name}")
+async def execute_tool(tool_name: str, request: ToolRequest):
+    """
+    MCPツールを実行するHTTPエンドポイント
+    """
+    try:
+        # Capability Routingでツールを実行
+        capability_name = tool_name.split("_")[0]  # 例: "preprocess" → "data_preparation"
+        capability = server.capabilities.get(capability_name)
+
+        if not capability:
+            raise HTTPException(status_code=404, detail=f"Capability not found: {capability_name}")
+
+        result = await capability.execute_tool(tool_name, request.arguments)
+        return {"status": "success", "result": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/health")
+async def health_check():
+    """ヘルスチェックエンドポイント"""
+    return {"status": "healthy"}
+```
+
+**通信方式選択フローチャート**:
+
+```mermaid
+graph TD
+    A[MCP通信方式の選択] --> B{実行環境は?}
+    B -->|本番環境<br/>ECS/Lambda| C[SSE モード]
+    B -->|ローカル開発<br/>テスト環境| D[stdio モード]
+
+    C --> E[常時稼働サーバー]
+    C --> F[複数Agent対応]
+    C --> G[Auto Scaling]
+    C --> H[ヘルスチェック]
+
+    D --> I[軽量起動]
+    D --> J[開発効率重視]
+    D --> K[デバッグ容易]
+
+    style C fill:#90EE90
+    style D fill:#FFE4B5
+```
+
+**パフォーマンス比較**:
+
+| 項目                     | stdio モード   | SSE モード       |
+| ------------------------ | -------------- | ---------------- |
+| 起動時間                 | 1-2秒/呼び出し | 常時稼働（0秒）  |
+| 同時接続数               | 1（親プロセス） | 制限なし         |
+| Auto Scaling対応         | ❌             | ✅               |
+| ヘルスチェック           | ❌             | ✅（/health）    |
+| 推奨環境                 | ローカル開発   | 本番（ECS/Lambda）|
+| レイテンシ               | 低（プロセス内）| 中（HTTP）       |
+| リソース効率             | 高（1プロセス）| 中（常駐）       |
+
 #### stdio通信（参考: ローカル開発・テスト環境）
 
 Lambda/ECS AgentがMCPサーバーを子プロセスとして起動:
@@ -716,14 +876,6 @@ async def call_mcp_tool():
 - ✅ 1つのサーバープロセスのみ起動
 - ✅ すべてのcapabilityに同じセッションでアクセス可能
 - ✅ 接続オーバーヘッド最小
-
-#### SSE通信（代替案）
-
-統合MCPサーバーをECS Service（常時起動）として運用し、HTTP/SSEで通信:
-
-- Lambda AgentがHTTPリクエストでMCPサーバーにアクセス
-- サーバー側はFastAPI等でHTTPエンドポイントを提供
-- 複数のAgentから同時にアクセス可能
 
 ---
 
@@ -1868,6 +2020,123 @@ evaluation_threshold: 0.5  # AP (Moderate) 閾値
    - AP (Moderate) >= 0.5 → 合格 → Model Registry登録
    - AP (Moderate) < 0.5 → 不合格 → 再学習提案
 
+**YOLOXワークフロー図**:
+
+```mermaid
+sequenceDiagram
+    participant Issue as GitHub Issue
+    participant SF as Step Functions
+    participant DataAgent as Data Prep Agent
+    participant TrainAgent as Training Agent
+    participant EvalAgent as Eval Agent
+    participant JudgeAgent as Judge Agent
+    participant MCP as 統合MCP Server
+    participant Registry as Model Registry
+
+    Issue->>SF: mlops:train ラベル付与
+    SF->>DataAgent: 起動
+
+    DataAgent->>MCP: preprocess_supervised(algorithm="yolox")
+    MCP-->>DataAgent: COCO JSON (s3://.../)
+    DataAgent->>SF: 完了
+
+    SF->>TrainAgent: 起動
+    TrainAgent->>MCP: train_yolox(variant="yolox-m")
+    MCP-->>TrainAgent: モデルS3 URI
+    TrainAgent->>SF: 完了
+
+    SF->>EvalAgent: 起動
+    EvalAgent->>MCP: evaluate_object_detection(format="kitti")
+    MCP-->>EvalAgent: AP (Easy/Moderate/Hard)
+    EvalAgent->>SF: 完了
+
+    SF->>JudgeAgent: 起動
+    JudgeAgent->>JudgeAgent: AP (Moderate) >= 0.5 ?
+
+    alt 合格
+        JudgeAgent->>Issue: 評価結果コメント（合格）
+        JudgeAgent->>Registry: モデル登録
+        Registry-->>JudgeAgent: 登録完了
+    else 不合格
+        JudgeAgent->>Issue: 再学習提案コメント
+    end
+
+    JudgeAgent->>SF: 完了
+```
+
+#### 16.2.3 パフォーマンス要件
+
+YOLOXユースケースの処理時間目標:
+
+| 処理ステップ               | 目標処理時間     | インスタンスタイプ | 備考                                   |
+| -------------------------- | ---------------- | ------------------ | -------------------------------------- |
+| データ前処理（KITTI→COCO） | 10分以内         | ml.m5.xlarge       | KITTI 7,481枚の変換                    |
+| モデル学習（300epoch）     | 6時間以内        | ml.p3.2xlarge      | GPU: Tesla V100 1枚                    |
+| 評価（Validation Set）     | 15分以内         | ml.p3.2xlarge      | 7,518枚の推論実行                      |
+| モデルパッケージング       | 5分以内          | ml.m5.large        | ONNX変換含む                           |
+| デプロイメント             | 15分以内         | -                  | Endpoint起動時間含む                   |
+| 推論レイテンシ（P95）      | 50ms以内         | ml.g4dn.xlarge     | バッチサイズ1、TensorRT最適化          |
+
+**コスト見積もり**:
+
+| リソース                        | 月間使用量        | 単価（USD/時間） | 月額コスト（USD） |
+| ------------------------------- | ----------------- | ---------------- | ----------------- |
+| ml.p3.2xlarge（学習）           | 20時間/月         | $3.06            | $61.20            |
+| ml.g4dn.xlarge（推論Endpoint）  | 730時間/月（常駐）| $0.526           | $383.98           |
+| S3ストレージ（KITTI + モデル）  | 50GB              | $0.023/GB        | $1.15             |
+| ECS Fargate（MCP Server）       | 730時間/月（常駐）| $0.04048/vCPU    | $29.55            |
+| **合計**                        |                   |                  | **$475.88/月**    |
+
+#### 16.2.4 エラーハンドリング戦略
+
+YOLOXユースケースで想定されるエラーと対処法:
+
+| エラーケース                          | 原因                                   | 対処法                                                  |
+| ------------------------------------- | -------------------------------------- | ------------------------------------------------------- |
+| KITTI→COCO JSON変換失敗               | アノテーション形式不正                 | バリデーション強化、エラーログ詳細化、変換スキップ     |
+| GPU OOM (Out of Memory)               | バッチサイズ過大                       | バッチサイズ自動半減（64→32→16）、勾配蓄積             |
+| AP閾値未達                            | ハイパーパラメータ不適切               | AutoML提案、過去履歴からの推奨値提示、再学習トリガー    |
+| YOLOXコンテナイメージ取得失敗         | ECRアクセス権限不足                    | IAMロール修正、フォールバック用イメージ指定             |
+| SageMaker Training Job失敗            | インスタンス制限、Spot中断             | リトライ（最大3回）、オンデマンドにフォールバック       |
+| Validation Set評価エラー              | データ不整合、メモリ不足               | データ検証強化、評価バッチサイズ削減                    |
+| Model Registry登録失敗                | 権限不足、ネットワークエラー           | IAMロール確認、リトライ（指数バックオフ）               |
+
+**リトライ戦略**:
+
+```python
+async def train_yolox_with_retry(
+    variant: str,
+    dataset_s3_uri: str,
+    hyperparameters: dict,
+    max_retries: int = 3
+) -> dict:
+    """
+    YOLOXモデル学習のリトライロジック
+    """
+    for attempt in range(max_retries):
+        try:
+            result = await train_yolox(variant, dataset_s3_uri, hyperparameters)
+            return result
+
+        except GPUOutOfMemoryError:
+            # バッチサイズを半減してリトライ
+            hyperparameters["batch_size"] = hyperparameters.get("batch_size", 64) // 2
+            logger.warning(f"GPU OOM detected. Reducing batch_size to {hyperparameters['batch_size']}")
+
+        except SpotInstanceInterruptionError:
+            # オンデマンドにフォールバック
+            hyperparameters["use_spot_instances"] = False
+            logger.warning(f"Spot interruption. Falling back to on-demand instances")
+
+        except Exception as e:
+            if attempt == max_retries - 1:
+                raise
+            logger.error(f"Training failed (attempt {attempt + 1}/{max_retries}): {str(e)}")
+            await asyncio.sleep(2 ** attempt)  # 指数バックオフ
+
+    raise RuntimeError(f"Training failed after {max_retries} attempts")
+```
+
 ### 16.3 KITTI 3D物体検出対応設計
 
 #### 16.3.1 使用するCapability
@@ -2163,11 +2432,3 @@ max_retry: 3
 - **優先度**: 🟢 自動運転向け推奨（ラベリングコスト削減に効果的）
 
 これらは現状の11 Capabilityに含まれておらず、必要に応じて追加検討します。
-
----
-
-## 17. 変更履歴
-
-| バージョン | 日付       | 変更内容                   | 作成者 |
-| ---------- | ---------- | -------------------------- | ------ |
-| 0.1        | 2025-12-31 | 初版発行（MCP設計書）      | -      |
