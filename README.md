@@ -24,7 +24,7 @@ AWS Step FunctionsとAmazon SageMakerを使用したエージェントベース�
 
 ![Data Flow](diagrams/data_flow.mmd)
 
-詳細は[architecture_design.md](architecture_design.md)を参照してください。
+詳細は[docs/specifications/system_specification.md](docs/specifications/system_specification.md)を参照してください。
 
 ## ディレクトリ構造
 
@@ -110,6 +110,7 @@ GitHubリポジトリで新しいIssueを作成し、以下の内容を記載:
 **ラベル**: `mlops:train`
 
 **本文**:
+
 ```yaml
 learning_type: supervised
 algorithm: random_forest
@@ -139,6 +140,7 @@ Issueを作成すると、自動的に学習パイプラインが起動します
 ### 教師あり学習（Supervised Learning）
 
 **分類（Classification）**:
+
 ```yaml
 learning_type: supervised
 algorithm: random_forest  # または xgboost, neural_network
@@ -151,6 +153,7 @@ evaluation_threshold: 0.85  # Accuracy閾値
 ```
 
 **回帰（Regression）**:
+
 ```yaml
 learning_type: supervised
 algorithm: linear_regression  # または xgboost, neural_network
@@ -164,6 +167,7 @@ evaluation_threshold: 0.9  # R²閾値
 ### 教師なし学習（Unsupervised Learning）
 
 **クラスタリング（K-Means）**:
+
 ```yaml
 learning_type: unsupervised
 algorithm: kmeans
@@ -175,6 +179,7 @@ evaluation_threshold: 0.5  # Silhouette Score閾値
 ```
 
 **次元削減（PCA）**:
+
 ```yaml
 learning_type: unsupervised
 algorithm: pca
@@ -202,11 +207,13 @@ evaluation_threshold: 195.0  # Average Reward閾値
 
 1. システムがオペレータに通知（GitHub Issue + Slack/Email）
 2. オペレータがIssueにコメントで設定調整を指示:
+
    ```yaml
    adjusted_hyperparameters:
      n_estimators: 200
      max_depth: 15
    ```
+
 3. システムが調整された設定で再学習を実行
 4. 最大3回まで繰り返し
 
@@ -300,10 +307,29 @@ MIT License
 
 質問や問題がある場合は、GitHub Issuesで報告してください。
 
-## 参考資料
+## ドキュメント
 
-- [要件仕様書](requirements_specification.md)
-- [アーキテクチャ設計書](architecture_design.md)
+### 仕様書
+
+- [システム仕様書](docs/specifications/system_specification.md) - 機能要件、非機能要件、システムアーキテクチャ
+
+### 設計書
+
+- [MCP設計書](docs/designs/mcp_design.md) - 統合MLOps MCPサーバー設計、セキュリティ設計
+- [実装ガイド](docs/designs/implementation_guide.md) - 実装設計、MLOpsワークフロー、開発・運用ガイド
+
+### レビュー記録
+
+- [設計レビュー (eaa0ad0a)](docs/reviews/eaa0ad0a53d5d24678b8dba91642038400ccd4f0/REVIEW.md) - 統合MCPサーバーアプローチの設計レビュー
+
+### その他
+
 - [テスト設計書](test_design.md)
+- [プロジェクト構造](PROJECT_STRUCTURE.md)
+- [用語集](docs/others/glossary.md) - MLOps技術用語・略語・概念の定義
+
+### 外部リンク
+
 - [Amazon SageMaker Documentation](https://docs.aws.amazon.com/sagemaker/)
 - [AWS Step Functions Documentation](https://docs.aws.amazon.com/step-functions/)
+- [Model Context Protocol 仕様](https://spec.modelcontextprotocol.io/)

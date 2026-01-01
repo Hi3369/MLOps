@@ -44,3 +44,21 @@ class NotificationError(MCPServerError):
 class ModelRegistryError(MCPServerError):
     """モデルレジストリエラー"""
     pass
+
+
+class GPUOutOfMemoryError(MCPServerError):
+    """GPU Out of Memory エラー
+
+    学習時にGPUメモリ不足が発生した場合にスローされる。
+    通常、バッチサイズを半減してリトライすることで解決可能。
+    """
+    pass
+
+
+class SpotInstanceInterruptionError(MCPServerError):
+    """Spot Instance 中断エラー
+
+    AWS Spot Instanceが中断された場合にスローされる。
+    オンデマンドインスタンスにフォールバックすることで解決可能。
+    """
+    pass
