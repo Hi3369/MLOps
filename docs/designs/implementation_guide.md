@@ -1779,11 +1779,542 @@ if __name__ == '__main__':
 
 ---
 
-## 7. 参考資料
+## 7. NFR-021 検証計画
+
+### 7.1 概要
+
+本セクションでは、[システム仕様書](../specifications/system_specification.md) NFR-021「ワークフロー最適化性能」の検証方法を定義します。
+
+**NFR-021 要件再掲**:
+
+- 最適化提案生成時間: 10秒以内
+- ボトルネック検出精度: 95%以上
+- コスト削減効果: 最低20%
+- 並列化による時間短縮: 最低30%
+- リソース使用率改善: 最低15%
+
+### 7.2 検証方法
+
+#### 7.2.1 最適化提案生成時間（< 10秒）
+
+**測定方法**:
+
+```python
+"""
+Capability 7 (Workflow Optimization) の提案生成時間を測定
+"""
+import time
+from mcp_server.capabilities.workflow_optimization import WorkflowOptimizationCapability
+
+async def test_nfr021_generation_time():
+    """NFR-021: 最適化提案生成時間のテスト"""
+    capability = WorkflowOptimizationCapability(config)
+
+    # テストデータ: 過去30日間のワークフロー実行履歴
+    workflow_history = load_workflow_history(days=30)
+
+    start_time = time.time()
+
+    # 最適化提案の生成
+    result = await capability.execute_tool(
+        "analyze_and_optimize_workflow",
+        arguments={
+            "workflow_history": workflow_history,
+            "optimization_targets": ["cost", "time", "resource"]
+        }
+    )
+
+    generation_time = time.time() - start_time
+
+    # 検証
+    assert generation_time < 10.0, f"Generation time {generation_time:.2f}s exceeds 10s"
+    print(f"✅ NFR-021-1 PASS: Generation time = {generation_time:.2f}s")
+
+    return result
+```
+
+**合格基準**: 30日間のワークフロー履歴（最大1000実行）を分析し、10秒以内に最適化提案を生成
+
+**測定環境**:
+
+- CPU: 4 vCPU
+- メモリ: 8GB
+- データサイズ: 30日間、最大1000ワークフロー実行履歴
+
+**記録項目**:
+
+- 実測時間（秒）
+- ワークフロー実行数
+- 提案数
+
+---
+
+#### 7.2.2 ボトルネック検出精度（≥ 95%）
+
+**測定方法**:
+
+1. **Ground Truth作成**: 人手でワークフロー10件のボトルネックを特定
+   - 学習ステップが遅い（例: GPU待ち時間が全体の60%）
+   - データ前処理が遅い（例: S3ダウンロードが全体の40%）
+   - デプロイが遅い（例: エンドポイント起動が10分）
+
+2. **自動検出実行**: Capability 7でボトルネックを自動検出
+
+3. **精度計算**:
+
+```python
+"""
+ボトルネック検出精度の測定
+"""
+def calculate_bottleneck_detection_accuracy(ground_truth: list, detected: list) -> float:
+    """
+    Args:
+        ground_truth: 人手で特定したボトルネックリスト
+            例: [{"workflow_id": "wf-001", "bottleneck": "training_step", "reason": "GPU待ち"}]
+        detected: 自動検出されたボトルネックリスト
+
+    Returns:
+        精度（0.0～1.0）
+    """
+    correct = 0
+
+    for gt in ground_truth:
+        # 同じworkflow_idで同じボトルネックが検出されたか
+        match = any(
+            d["workflow_id"] == gt["workflow_id"] and
+            d["bottleneck"] == gt["bottleneck"]
+            for d in detected
+        )
+        if match:
+            correct += 1
+
+    accuracy = correct / len(ground_truth)
+    return accuracy
+
+
+# テスト実行
+async def test_nfr021_bottleneck_accuracy():
+    """NFR-021: ボトルネック検出精度のテスト"""
+    # Ground Truth（人手で特定したボトルネック10件）
+    ground_truth = [
+        {"workflow_id": "wf-001", "bottleneck": "training_step", "reason": "GPU待ち"},
+        {"workflow_id": "wf-002", "bottleneck": "data_preparation", "reason": "S3ダウンロード遅延"},
+        {"workflow_id": "wf-003", "bottleneck": "deployment", "reason": "エンドポイント起動遅延"},
+        # ... 計10件
+    ]
+
+    capability = WorkflowOptimizationCapability(config)
+
+    # 自動検出
+    detected_bottlenecks = []
+    for gt in ground_truth:
+        result = await capability.execute_tool(
+            "detect_bottleneck",
+            arguments={"workflow_id": gt["workflow_id"]}
+        )
+        detected_bottlenecks.append(result)
+
+    # 精度計算
+    accuracy = calculate_bottleneck_detection_accuracy(ground_truth, detected_bottlenecks)
+
+    # 検証
+    assert accuracy >= 0.95, f"Accuracy {accuracy:.2%} is below 95%"
+    print(f"✅ NFR-021-2 PASS: Bottleneck detection accuracy = {accuracy:.2%}")
+
+    return accuracy
+```
+
+**合格基準**: 10件のテストケースで、9.5件以上（95%）を正しく検出
+
+**Ground Truthの作成基準**:
+
+- ワークフロー全体の実行時間のうち、単一ステップが50%以上を占める場合をボトルネックと定義
+- 例: 学習ステップが60分、全体が100分 → 学習がボトルネック
+
+---
+
+#### 7.2.3 コスト削減効果（≥ 20%）
+
+**測定方法**:
+
+```python
+"""
+最適化前後のコスト比較
+"""
+async def test_nfr021_cost_reduction():
+    """NFR-021: コスト削減効果のテスト"""
+    capability = WorkflowOptimizationCapability(config)
+
+    # 最適化前のコスト測定（30日間）
+    cost_before = get_aws_cost(start_date="2026-01-01", end_date="2026-01-30")
+    print(f"Cost before optimization: ${cost_before:.2f}")
+
+    # 最適化提案の取得と適用
+    optimization_result = await capability.execute_tool(
+        "optimize_workflow_cost",
+        arguments={
+            "workflow_id": "ml-training-workflow",
+            "optimization_strategies": [
+                "spot_instances",      # Spot Instanceの活用
+                "right_sizing",        # インスタンスサイズ最適化
+                "lifecycle_policies"   # S3ライフサイクルポリシー
+            ]
+        }
+    )
+
+    # 最適化を適用
+    apply_optimization(optimization_result["recommendations"])
+
+    # 最適化後のコスト測定（次の30日間）
+    cost_after = get_aws_cost(start_date="2026-02-01", end_date="2026-03-02")
+    print(f"Cost after optimization: ${cost_after:.2f}")
+
+    # 削減率計算
+    reduction_rate = (cost_before - cost_after) / cost_before
+    reduction_amount = cost_before - cost_after
+
+    # 検証
+    assert reduction_rate >= 0.20, f"Cost reduction {reduction_rate:.2%} is below 20%"
+    print(f"✅ NFR-021-3 PASS: Cost reduction = {reduction_rate:.2%} (${reduction_amount:.2f})")
+
+    return reduction_rate
+```
+
+**合格基準**: 最適化適用後30日間のAWSコストが、適用前30日間と比較して20%以上削減
+
+**測定期間**:
+
+- ベースライン期間: 最適化適用前30日間
+- 評価期間: 最適化適用後30日間
+
+**コスト計測対象**:
+
+- SageMaker Training Job
+- SageMaker Endpoint
+- S3ストレージ
+- Lambda実行
+- ECS Fargate
+
+**除外項目**:
+
+- 一時的なスパイク（異常値）
+- 新規プロジェクト追加による増加
+
+---
+
+#### 7.2.4 並列化による時間短縮（≥ 30%）
+
+**測定方法**:
+
+```python
+"""
+並列化による実行時間短縮の測定
+"""
+async def test_nfr021_parallelization_speedup():
+    """NFR-021: 並列化による時間短縮のテスト"""
+    capability = WorkflowOptimizationCapability(config)
+
+    # 最適化前: 逐次実行
+    workflow_sequential = {
+        "steps": [
+            {"name": "data_prep_1", "duration": 300},      # 5分
+            {"name": "data_prep_2", "duration": 300},      # 5分
+            {"name": "data_prep_3", "duration": 300},      # 5分
+            {"name": "training", "duration": 1800},        # 30分（前処理完了後）
+            {"name": "evaluation", "duration": 600}        # 10分（学習完了後）
+        ]
+    }
+    time_before = sum(step["duration"] for step in workflow_sequential["steps"])
+    print(f"Sequential execution time: {time_before}s ({time_before/60:.1f}min)")
+
+    # 並列化提案の取得
+    optimization_result = await capability.execute_tool(
+        "suggest_parallelization",
+        arguments={
+            "workflow": workflow_sequential
+        }
+    )
+
+    # 並列化後の予測実行時間
+    # data_prep_1, data_prep_2, data_prep_3 を並列実行 → max(300, 300, 300) = 300s
+    # training → 1800s
+    # evaluation → 600s
+    # 合計: 300 + 1800 + 600 = 2700s
+    time_after = optimization_result["estimated_execution_time"]
+    print(f"Parallel execution time: {time_after}s ({time_after/60:.1f}min)")
+
+    # 短縮率計算
+    speedup_rate = (time_before - time_after) / time_before
+
+    # 検証
+    assert speedup_rate >= 0.30, f"Speedup {speedup_rate:.2%} is below 30%"
+    print(f"✅ NFR-021-4 PASS: Time reduction = {speedup_rate:.2%}")
+
+    return speedup_rate
+```
+
+**合格基準**: 並列化提案を適用後、ワークフロー実行時間が30%以上短縮
+
+**並列化対象ステップの例**:
+
+- データ前処理（複数データソースを並列で前処理）
+- ハイパーパラメータチューニング（複数パラメータセットを並列学習）
+- モデル評価（複数メトリクスを並列計算）
+
+**測定対象**:
+
+- Step Functions のワークフロー実行時間
+- CloudWatch Logs の実行ログから実測
+
+---
+
+#### 7.2.5 リソース使用率改善（≥ 15%）
+
+**測定方法**:
+
+```python
+"""
+リソース使用率改善の測定
+"""
+async def test_nfr021_resource_utilization():
+    """NFR-021: リソース使用率改善のテスト"""
+    capability = WorkflowOptimizationCapability(config)
+
+    # 最適化前のリソース使用率測定（7日間）
+    metrics_before = get_cloudwatch_metrics(
+        namespace="AWS/SageMaker",
+        metric_names=["CPUUtilization", "GPUUtilization", "MemoryUtilization"],
+        start_time="2026-01-01",
+        end_time="2026-01-07",
+        period=3600  # 1時間ごと
+    )
+
+    cpu_before = calculate_average(metrics_before["CPUUtilization"])
+    gpu_before = calculate_average(metrics_before["GPUUtilization"])
+    memory_before = calculate_average(metrics_before["MemoryUtilization"])
+
+    print(f"Resource utilization before optimization:")
+    print(f"  CPU: {cpu_before:.1f}%")
+    print(f"  GPU: {gpu_before:.1f}%")
+    print(f"  Memory: {memory_before:.1f}%")
+
+    # 最適化提案の取得と適用
+    optimization_result = await capability.execute_tool(
+        "optimize_resource_allocation",
+        arguments={
+            "target_utilization": {
+                "cpu": 70,      # 目標CPU使用率70%
+                "gpu": 80,      # 目標GPU使用率80%
+                "memory": 75    # 目標メモリ使用率75%
+            }
+        }
+    )
+
+    # 最適化を適用（インスタンスタイプ変更、バッチサイズ調整等）
+    apply_optimization(optimization_result["recommendations"])
+
+    # 最適化後のリソース使用率測定（次の7日間）
+    metrics_after = get_cloudwatch_metrics(
+        namespace="AWS/SageMaker",
+        metric_names=["CPUUtilization", "GPUUtilization", "MemoryUtilization"],
+        start_time="2026-01-08",
+        end_time="2026-01-14",
+        period=3600
+    )
+
+    cpu_after = calculate_average(metrics_after["CPUUtilization"])
+    gpu_after = calculate_average(metrics_after["GPUUtilization"])
+    memory_after = calculate_average(metrics_after["MemoryUtilization"])
+
+    print(f"Resource utilization after optimization:")
+    print(f"  CPU: {cpu_after:.1f}%")
+    print(f"  GPU: {gpu_after:.1f}%")
+    print(f"  Memory: {memory_after:.1f}%")
+
+    # 改善率計算（平均）
+    improvement_rate = (
+        ((cpu_after - cpu_before) / cpu_before) +
+        ((gpu_after - gpu_before) / gpu_before) +
+        ((memory_after - memory_before) / memory_before)
+    ) / 3
+
+    # 検証
+    assert improvement_rate >= 0.15, f"Resource improvement {improvement_rate:.2%} is below 15%"
+    print(f"✅ NFR-021-5 PASS: Resource utilization improvement = {improvement_rate:.2%}")
+
+    return improvement_rate
+
+
+def calculate_average(datapoints: list) -> float:
+    """CloudWatch メトリクスの平均値を計算"""
+    if not datapoints:
+        return 0.0
+    return sum(dp["Average"] for dp in datapoints) / len(datapoints)
+```
+
+**合格基準**: CPU、GPU、メモリの平均使用率が、最適化前と比較して15%以上改善
+
+**測定期間**:
+
+- ベースライン期間: 最適化適用前7日間
+- 評価期間: 最適化適用後7日間
+
+**最適化手法例**:
+
+- インスタンスタイプの適正化（オーバースペックの場合はダウンサイジング、アンダースペックの場合はアップサイジング）
+- バッチサイズの調整（GPU使用率を最大化）
+- 並列度の調整（CPU使用率を最大化）
+
+---
+
+### 7.3 統合テスト
+
+上記5つの検証を統合したテストスイートを作成します。
+
+**ファイルパス**: `tests/system/test_nfr021_workflow_optimization.py`
+
+```python
+"""
+NFR-021 ワークフロー最適化性能の統合テスト
+"""
+import pytest
+import asyncio
+from datetime import datetime, timedelta
+
+
+class TestNFR021WorkflowOptimization:
+    """NFR-021 検証テストスイート"""
+
+    @pytest.mark.asyncio
+    async def test_all_nfr021_requirements(self):
+        """NFR-021 全要件の統合テスト"""
+        results = {}
+
+        # 1. 最適化提案生成時間
+        generation_time = await test_nfr021_generation_time()
+        results["generation_time"] = generation_time
+
+        # 2. ボトルネック検出精度
+        accuracy = await test_nfr021_bottleneck_accuracy()
+        results["bottleneck_accuracy"] = accuracy
+
+        # 3. コスト削減効果（30日間のため、スキップまたはモック）
+        # results["cost_reduction"] = await test_nfr021_cost_reduction()
+
+        # 4. 並列化による時間短縮
+        speedup = await test_nfr021_parallelization_speedup()
+        results["parallelization_speedup"] = speedup
+
+        # 5. リソース使用率改善（7日間のため、スキップまたはモック）
+        # results["resource_improvement"] = await test_nfr021_resource_utilization()
+
+        # テスト結果のサマリー
+        print("\n" + "="*60)
+        print("NFR-021 検証結果サマリー")
+        print("="*60)
+        print(f"✅ 最適化提案生成時間: {results['generation_time']:.2f}s (要件: <10s)")
+        print(f"✅ ボトルネック検出精度: {results['bottleneck_accuracy']:.2%} (要件: ≥95%)")
+        print(f"✅ 並列化時間短縮: {results['parallelization_speedup']:.2%} (要件: ≥30%)")
+        print("="*60)
+
+        # 全要件が合格していることを確認
+        assert results["generation_time"] < 10.0
+        assert results["bottleneck_accuracy"] >= 0.95
+        assert results["parallelization_speedup"] >= 0.30
+```
+
+---
+
+### 7.4 検証スケジュール
+
+| 検証項目                       | 実施タイミング           | 所要時間  | 担当者      |
+| ------------------------------ | ------------------------ | --------- | ----------- |
+| 最適化提案生成時間             | Capability 7 実装完了時  | 1時間     | ML Engineer |
+| ボトルネック検出精度           | Capability 7 実装完了時  | 4時間     | ML Engineer |
+| 並列化による時間短縮           | Capability 7 実装完了時  | 2時間     | ML Engineer |
+| コスト削減効果                 | Phase 2 完了後           | 30日間    | DevOps Engineer |
+| リソース使用率改善             | Phase 2 完了後           | 7日間     | DevOps Engineer |
+
+**注**: コスト削減効果とリソース使用率改善は測定期間が長いため、Phase 2完了後に実施。
+
+---
+
+### 7.5 合格基準まとめ
+
+| 指標                       | 測定方法                                     | 合格基準     | ステータス |
+| -------------------------- | -------------------------------------------- | ------------ | ---------- |
+| 最適化提案生成時間         | `time.time()`で計測                          | < 10秒       | 🔄 未実施  |
+| ボトルネック検出精度       | Ground Truth 10件との一致率                  | ≥ 95%        | 🔄 未実施  |
+| コスト削減効果             | 最適化前後30日間のAWSコスト比較              | ≥ 20%削減    | 🔄 未実施  |
+| 並列化による時間短縮       | 最適化前後のワークフロー実行時間比較         | ≥ 30%短縮    | 🔄 未実施  |
+| リソース使用率改善         | CloudWatch MetricsでCPU/GPU/メモリ使用率比較 | ≥ 15%改善    | 🔄 未実施  |
+
+---
+
+### 7.6 テストデータ
+
+#### Ground Truth（ボトルネック検出用）
+
+テストケース10件を`tests/fixtures/nfr021_bottleneck_ground_truth.json`に保存:
+
+```json
+[
+  {
+    "workflow_id": "wf-001",
+    "bottleneck": "training_step",
+    "reason": "GPU待ち時間が全体の60%",
+    "execution_time_total": 6000,
+    "execution_time_bottleneck": 3600
+  },
+  {
+    "workflow_id": "wf-002",
+    "bottleneck": "data_preparation",
+    "reason": "S3ダウンロード遅延が全体の55%",
+    "execution_time_total": 1800,
+    "execution_time_bottleneck": 990
+  },
+  {
+    "workflow_id": "wf-003",
+    "bottleneck": "deployment",
+    "reason": "エンドポイント起動が全体の70%",
+    "execution_time_total": 900,
+    "execution_time_bottleneck": 630
+  }
+]
+```
+
+---
+
+### 7.7 継続的モニタリング
+
+NFR-021要件は一度検証するだけでなく、本番環境で継続的に監視します。
+
+**CloudWatch Dashboard**: `MLOps-NFR021-Monitoring`
+
+**表示メトリクス**:
+
+- Capability 7 の実行時間（P50、P95、P99）
+- ボトルネック検出の実行回数と結果
+- 週次コスト削減額
+- ワークフロー実行時間の推移
+- リソース使用率（CPU、GPU、メモリ）の推移
+
+**アラート設定**:
+
+| アラート名                     | 条件                       | 通知先         |
+| ------------------------------ | -------------------------- | -------------- |
+| 最適化提案生成時間超過         | 実行時間 > 10秒            | Slack          |
+| ボトルネック検出精度低下       | 精度 < 90%                 | Slack, Email   |
+| コスト削減効果未達             | 削減率 < 15%（週次）       | Email          |
+
+---
+
+## 8. 参考資料
 
 - [システム仕様書](../specifications/system_specification.md)
 - [MCP設計書](mcp_design.md)
 - [設計レビュー (eaa0ad0a)](../reviews/eaa0ad0a53d5d24678b8dba91642038400ccd4f0/REVIEW.md) - 統合MCPサーバーアプローチの設計レビュー
+- [設計レビュー (0a7c18f)](../reviews/0a7c18f7529868ee8984600d83ce405f919db36c/REVIEW.md) - NFR-021検証計画の策定根拠
 - [Model Context Protocol 仕様](https://spec.modelcontextprotocol.io/)
 
 ---
