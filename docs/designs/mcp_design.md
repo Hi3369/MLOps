@@ -47,9 +47,9 @@ Model Context Protocol (MCP) として専門機能を実装することで:
 - ✅ **一貫性の向上**: バージョン管理・依存関係が統一
 - ✅ **開発効率**: 共通ユーティリティ・設定の再利用
 
-### 2.2 提供Capability（11個の機能群）
+### 2.2 提供Capability（12個の機能群）
 
-統合MCPサーバーは、以下の**11個のcapability**を提供します（各MCPエージェントと1対1対応）:
+統合MCPサーバーは、以下の**12個のcapability**を提供します:
 
 #### Capability 1: GitHub Integration
 
@@ -142,7 +142,6 @@ Model Context Protocol (MCP) として専門機能を実装することで:
 
 - `build_docker_image`: Dockerイメージビルド
 - `push_to_ecr`: ECRへのプッシュ
-- `create_model_package`: SageMakerモデルパッケージ作成
 - `generate_api_spec`: 推論APIスペック生成
 - `optimize_container`: コンテナ最適化（マルチステージビルド、ONNX変換等）
 
@@ -215,9 +214,28 @@ Model Context Protocol (MCP) として専門機能を実装することで:
 - `post_issue_comment`: Issue進捗コメント投稿
 - `track_version_history`: バージョン履歴追跡
 
+#### Capability 12: Model Registry
+
+**対応エージェント**: Packaging Agent（Model Registryも担当）
+
+**責務**: モデル登録・バージョン管理・承認ワークフロー
+
+**提供ツール**:
+
+- `register_model`: モデルをSageMaker Model Registryに登録
+- `create_model_package`: SageMakerモデルパッケージ作成
+- `update_model_approval_status`: モデルの承認ステータス更新
+- `get_model_package`: モデルパッケージ情報取得
+- `list_model_packages`: モデルパッケージ一覧取得
+
+**Note**:
+Model RegistryはModel Packagingから分離された独立したCapabilityです。
+Model Packagingはコンテナ化とECR登録に特化し、Model Registryは
+SageMaker Model Registryへの登録とバージョン管理に特化します。
+
 ### 2.3 Capability構成の設計方針
 
-**11個のCapabilityに分割した理由**:
+**12個のCapabilityに分割した理由**:
 
 1. **責務の明確化**: 各Capabilityは単一の明確な責務を持つ（単一責任の原則）
 2. **エージェントとの1対1対応**: MCP化された各エージェントに対応
@@ -913,7 +931,7 @@ MLOps/
 │   ├── server.py                         # メインサーバー・ツールルーティング
 │   ├── __main__.py                       # エントリーポイント
 │   │
-│   ├── capabilities/                      # 11個のCapability実装
+│   ├── capabilities/                      # 12個のCapability実装
 │   │   ├── __init__.py
 │   │   │
 │   │   ├── data_preparation/             # Capability 1: Data Preparation
@@ -1578,7 +1596,7 @@ LambdaAgentSG:
 
 ### 14.1 統合MCPサーバーの設計概要
 
-**1つの統合MLOps MCPサーバー** として実装し、**11個のCapability**を提供します（各MCPエージェントと1対1対応）:
+**1つの統合MLOps MCPサーバー** として実装し、**12個のCapability**を提供します:
 
 1. **GitHub Integration** - Issue検知・パース・ワークフロー起動
 2. **Workflow Optimization** - モデル特性分析・最適化提案

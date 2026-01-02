@@ -1,499 +1,177 @@
-# 統合MLOps MCP Server
+# MLOps Integrated MCP Server
+
+統合MLOps MCPサーバーは、MLOpsパイプラインの全専門機能を単一のMCPサーバーとして提供します。
 
 ## 概要
 
-統合MLOps MCP Serverは、MLOpsパイプラインの全専門機能を**1つのMCPサーバー**として提供します。
-
-MCPサーバーは、データ前処理・モデル学習・モデル評価などの機械学習専門機能を標準化されたプロトコルで提供します。これにより、以下のメリットを実現します:
-
-- ✅ **再利用性**: 他プロジェクトでも利用可能
-- ✅ **保守性**: 機能追加・変更が1つのサーバー内で完結
-- ✅ **テスト容易性**: ローカル環境で全Capabilityを一度にテスト可能
-- ✅ **拡張性**: 新しいCapability・ツールを容易に追加
-- ✅ **ベンダーニュートラル**: クラウドプロバイダーに非依存
-- ✅ **運用の簡素化**: 1つのサーバープロセス/コンテナのみ管理
-- ✅ **デプロイの簡素化**: 1つのデプロイパイプラインで完結
-- ✅ **リソース効率**: メモリ・CPUを共有、オーバーヘッド削減
-- ✅ **MCP接続の最小化**: 1つのMCP接続で全ツールにアクセス
-
-## 提供Capability（11個の機能群）
-
-### 1. Data Preparation
-
-**責務**: データ前処理・特徴量エンジニアリング
-
-**提供ツール**:
-
-- `load_dataset` - S3からデータセットを読み込む
-- `validate_data` - データのバリデーション
-- `preprocess_supervised` - 教師あり学習用の前処理
-- `preprocess_unsupervised` - 教師なし学習用の前処理
-- `preprocess_reinforcement` - 強化学習用の前処理
-- `split_dataset` - データセットの分割
-- `feature_engineering` - 特徴量エンジニアリング
-- `save_processed_data` - 処理済みデータをS3に保存
-
-### 2. ML Training
-
-**責務**: 機械学習モデルの学習
-
-**提供ツール**:
-
-**教師あり学習**:
-
-- `train_supervised_classifier` - 分類モデルの学習
-  - Random Forest
-  - XGBoost
-  - Neural Network
-- `train_supervised_regressor` - 回帰モデルの学習
-  - Linear Regression
-  - XGBoost Regressor
-  - Neural Network Regressor
-
-**教師なし学習**:
-
-- `train_unsupervised_clustering` - クラスタリング
-  - K-Means
-  - DBSCAN
-  - Autoencoder
-- `train_unsupervised_dimension_reduction` - 次元削減
-  - PCA
-  - t-SNE
-
-**強化学習**:
-
-- `train_reinforcement` - 強化学習モデルの学習
-  - PPO (Proximal Policy Optimization)
-  - DQN (Deep Q-Network)
-  - A3C (Asynchronous Advantage Actor-Critic)
-
-**共通**:
-
-- `get_training_metrics` - 学習中のメトリクスを取得
-- `save_model` - 学習済みモデルをS3に保存
-
-### 3. ML Evaluation
-
-**責務**: モデルの評価・可視化
-
-**提供ツール**:
-
-- `load_model` - S3からモデルをロード
-- `evaluate_classifier` - 分類モデルの評価
-- `evaluate_regressor` - 回帰モデルの評価
-- `evaluate_clustering` - クラスタリングモデルの評価
-- `evaluate_reinforcement` - 強化学習モデルの評価
-- `compare_models` - 複数モデルの比較
-- `generate_evaluation_report` - 評価レポートの生成
-- `save_evaluation_results` - 評価結果をS3に保存
-
-### 4. Model Packaging
-
-**責務**: モデルの形式変換・パッケージング
-
-**提供ツール**:
-
-- `export_to_onnx` - ONNXフォーマットへのエクスポート
-- `export_to_pmml` - PMMLフォーマットへのエクスポート
-- `export_to_pkl` - Pickle形式での保存
-- `create_container_image` - Dockerコンテナイメージの作成
-- `validate_export_format` - エクスポート形式のバリデーション
-
-### 5. Model Deployment
-
-**責務**: モデルのデプロイメント管理
-
-**提供ツール**:
-
-- `deploy_sagemaker_endpoint` - SageMakerエンドポイントのデプロイ
-- `update_endpoint_config` - エンドポイント設定の更新
-- `delete_endpoint` - エンドポイントの削除
-- `test_endpoint_inference` - エンドポイントの推論テスト
-- `rollback_deployment` - デプロイメントのロールバック
-
-### 6. Monitoring
-
-**責務**: モデルとシステムの監視
-
-**提供ツール**:
-
-- `get_endpoint_metrics` - エンドポイントメトリクスの取得
-- `detect_data_drift` - データドリフトの検出
-- `check_performance_degradation` - パフォーマンス劣化のチェック
-- `create_cloudwatch_alarm` - CloudWatchアラームの作成
-- `get_model_logs` - モデルログの取得
-
-### 7. Workflow Optimization
-
-**責務**: MLOpsパイプラインの最適化
-
-**提供ツール**:
-
-- `analyze_execution_time` - 実行時間の分析
-- `suggest_parallelization` - 並列化の提案
-- `optimize_resource_allocation` - リソース配分の最適化
-- `reduce_pipeline_cost` - パイプラインコストの削減提案
-- `identify_bottlenecks` - ボトルネックの特定
-
-### 8. GitHub Integration
-
-**責務**: GitHub連携機能の統合
-
-**提供ツール**:
-
-**Issue管理**:
-
-- `get_issue` - Issueの取得
-- `create_issue` - Issueの作成
-- `update_issue` - Issueの更新
-- `add_issue_comment` - Issueにコメント追加
-- `get_issue_comments` - Issueのコメント一覧取得
-- `parse_issue_body` - Issue本文のYAML/JSONパース
-
-**ラベル管理**:
-
-- `get_issue_labels` - Issueのラベル取得
-- `add_label` - ラベル追加
-- `remove_label` - ラベル削除
-
-**リポジトリ操作**:
-
-- `create_file` - ファイル作成（履歴保存用）
-- `update_file` - ファイル更新
-- `commit_changes` - 変更のコミット
-- `create_pull_request` - プルリクエスト作成
-
-**Webhook**:
-
-- `validate_webhook_signature` - Webhook署名の検証
-- `parse_webhook_payload` - Webhookペイロードのパース
-
-### 9. Retrain Orchestration
-
-**責務**: 再学習トリガー判定と再学習ワークフロー起動
-
-**提供ツール**:
-
-- `check_retrain_triggers` - 再学習トリガーの確認
-- `evaluate_trigger_conditions` - トリガー条件の評価（ドリフト閾値、スケジュール等）
-- `create_retrain_issue` - 再学習Issueの作成
-- `start_retrain_workflow` - 再学習ワークフローの起動
-- `schedule_periodic_retrain` - 定期再学習のスケジュール設定
-
-### 10. Notification
-
-**責務**: 通知チャネルの統合管理
-
-**提供ツール**:
-
-**GitHub通知**:
-
-- `notify_github_issue` - GitHub Issueにコメント投稿
-- `update_github_issue_status` - Issueのステータス更新
-
-**Slack通知**:
-
-- `send_slack_message` - Slackメッセージ送信
-- `send_slack_thread_reply` - スレッド返信
-- `send_slack_dm` - DM送信
-
-**Email通知**:
-
-- `send_email` - Email送信
-- `send_email_with_attachment` - 添付ファイル付きEmail送信
-
-**Microsoft Teams通知**:
-
-- `send_teams_message` - Teamsメッセージ送信
-
-**Discord通知**:
-
-- `send_discord_message` - Discordメッセージ送信
-
-**通知テンプレート**:
-
-- `render_notification_template` - テンプレートレンダリング
-- `get_notification_templates` - テンプレート一覧取得
-
-### 11. History Management
-
-**責務**: 学習履歴の記録・GitHub履歴管理・バージョン追跡
-
-**提供ツール**:
-
-- `format_training_history` - 学習履歴のフォーマット
-- `commit_history_to_github` - GitHubリポジトリへの履歴コミット
-- `post_issue_comment` - Issue進捗コメントの投稿
-- `track_version_history` - バージョン履歴の追跡
-- `generate_history_markdown` - Markdown形式の履歴生成
+このMCPサーバーは、以下の12個のCapabilityを統合し、Claude Desktop/Claude APIから利用可能にします:
+
+1. **GitHub Integration** - GitHub Issue検知・パース・ワークフロー起動
+2. **Workflow Optimization** - モデル特性分析・最適化提案
+3. **Data Preparation** - データ前処理・特徴量エンジニアリング（Phase 1実装済み）
+4. **ML Training** - モデル学習（教師あり/教師なし/強化学習）
+5. **ML Evaluation** - モデル評価・メトリクス計算・可視化
+6. **Model Packaging** - モデルコンテナ化・ECR登録
+7. **Model Deployment** - モデルデプロイ・エンドポイント管理
+8. **Model Monitoring** - パフォーマンス監視・ドリフト検出
+9. **Retrain Management** - 再学習トリガー判定・ワークフロー起動
+10. **Notification** - 通知管理（Slack/Email/GitHub）
+11. **History Management** - 学習履歴記録・GitHub連携
+12. **Model Registry** - モデル登録・バージョン管理
+
+### Phase 1 Week 1-2 実装範囲
+
+現在実装されているのは:
+- MCPサーバーの基本構造
+- Data Preparation Capability（骨格のみ）
+  - `load_dataset`: S3からデータセット読み込み
+  - `validate_data`: データバリデーション
+  - `preprocess_supervised`: 教師あり学習用前処理
 
 ## ディレクトリ構造
 
-```text
-mcp_server/                                # 統合MLOps MCP Server（単数形）
-├── __init__.py
-├── server.py                             # メインサーバー・ツールルーティング
-├── __main__.py                           # エントリーポイント
-│
-├── capabilities/                          # 11個のCapability実装
+```
+mcp_server/
+├── __init__.py              # パッケージ初期化
+├── __main__.py              # エントリーポイント
+├── server.py                # MLOpsServer本体
+├── common/                  # 共通ユーティリティ
 │   ├── __init__.py
-│   │
-│   ├── data_preparation/                 # Capability 1: Data Preparation
-│   │   ├── __init__.py
-│   │   ├── capability.py                 # Capability定義
-│   │   └── tools/
-│   │       ├── __init__.py
-│   │       ├── load_dataset.py
-│   │       ├── validate_data.py
-│   │       ├── preprocess_supervised.py
-│   │       ├── preprocess_unsupervised.py
-│   │       ├── preprocess_reinforcement.py
-│   │       ├── feature_engineering.py
-│   │       └── split_dataset.py
-│   │
-│   ├── ml_training/                      # Capability 2: ML Training
-│   │   ├── __init__.py
-│   │   ├── capability.py
-│   │   └── tools/
-│   │       ├── __init__.py
-│   │       ├── supervised/
-│   │       │   ├── random_forest.py
-│   │       │   ├── xgboost.py
-│   │       │   └── neural_network.py
-│   │       ├── unsupervised/
-│   │       │   ├── kmeans.py
-│   │       │   ├── dbscan.py
-│   │       │   ├── pca.py
-│   │       │   └── tsne.py
-│   │       └── reinforcement/
-│   │           ├── ppo.py
-│   │           ├── dqn.py
-│   │           └── a3c.py
-│   │
-│   ├── ml_evaluation/                    # Capability 3: ML Evaluation
-│   │   ├── __init__.py
-│   │   ├── capability.py
-│   │   └── tools/
-│   │       ├── __init__.py
-│   │       ├── evaluate_classifier.py
-│   │       ├── evaluate_regressor.py
-│   │       ├── evaluate_clustering.py
-│   │       ├── evaluate_reinforcement.py
-│   │       ├── compare_models.py
-│   │       └── visualization.py
-│   │
-│   ├── github_integration/               # Capability 4: GitHub Integration
-│   │   ├── __init__.py
-│   │   ├── capability.py
-│   │   └── tools/
-│   │       ├── __init__.py
-│   │       ├── issue_management.py
-│   │       ├── label_management.py
-│   │       ├── repository_operations.py
-│   │       ├── webhook_handler.py
-│   │       └── parser.py
-│   │
-│   ├── model_registry/                   # Capability 5: Model Registry
-│   │   ├── __init__.py
-│   │   ├── capability.py
-│   │   └── tools/
-│   │       ├── __init__.py
-│   │       ├── model_registration.py
-│   │       ├── version_management.py
-│   │       ├── status_management.py
-│   │       ├── rollback.py
-│   │       └── search.py
-│   │
-│   └── notification/                     # Capability 6: Notification
-│       ├── __init__.py
-│       ├── capability.py
-│       └── tools/
-│           ├── __init__.py
-│           ├── github_notifier.py
-│           ├── slack_notifier.py
-│           ├── email_notifier.py
-│           ├── teams_notifier.py
-│           ├── discord_notifier.py
-│           └── template_manager.py
-│
-├── common/                                # 共通ユーティリティ
-│   ├── __init__.py
-│   ├── s3_utils.py
-│   ├── logger.py
-│   └── config.py
-│
-├── Dockerfile                            # ECS Fargate用Dockerイメージ
-└── requirements.txt                      # すべてのcapabilityの依存関係を統合
+│   ├── logger.py            # ロギング設定
+│   ├── s3_utils.py          # S3操作（Phase 1ではstub）
+│   └── config.py            # 設定管理
+└── capabilities/            # Capability実装
+    └── data_preparation/    # Data Preparation Capability
+        ├── __init__.py
+        ├── capability.py    # Capability本体
+        └── tools/           # ツール実装
+            ├── __init__.py
+            ├── load_dataset.py
+            ├── validate_data.py
+            └── preprocess_supervised.py
 ```
 
-## ローカル開発
+## セットアップ
 
-### 前提条件
+### 必要要件
 
-- Python 3.9以上
-- MCP SDK (`pip install mcp`)
+- Python 3.10以上
+- AWS認証情報（S3アクセス用、Phase 2以降）
 
-### 統合MCPサーバーの起動
+### インストール
 
 ```bash
-cd mcp_server && python -m mcp_server
-```
-
-または
-
-```bash
-python -m mcp_server
-```
-
-### 統合MCPサーバーのテスト
-
-```bash
-# サーバー・ルーティングのテスト
-pytest tests/mcp_server/test_server.py
-
-# 各Capabilityのテスト
-pytest tests/mcp_server/test_data_preparation.py
-pytest tests/mcp_server/test_ml_training.py
-pytest tests/mcp_server/test_ml_evaluation.py
-pytest tests/mcp_server/test_github_integration.py
-pytest tests/mcp_server/test_model_registry.py
-pytest tests/mcp_server/test_notification.py
-
-# 統合テスト
-pytest tests/integration/test_agent_mcp_integration.py
-```
-
-## デプロイメント
-
-### ECS Fargate デプロイ（推奨）
-
-統合MCPサーバーを1つのECS Fargateタスクとしてデプロイ
-
-**推奨構成**:
-
-- CPU: 2 vCPU
-- Memory: 8GB
-- Auto Scaling: 最小1タスク、最大5タスク
-
-```bash
-# Dockerイメージのビルド
-cd mcp_server
-docker build -t mlops-unified-mcp-server .
-
-# ECRへのプッシュ
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
-docker tag mlops-unified-mcp-server:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/mlops-unified-mcp-server:latest
-docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/mlops-unified-mcp-server:latest
-
-# ECS Serviceのデプロイ（CDK経由）
-cd cdk
-cdk deploy UnifiedMCPServerStack
-```
-
-### Lambda デプロイ（軽量処理・開発環境向け）
-
-統合MCPサーバーを1つのLambda関数としてデプロイ
-
-**推奨構成**:
-
-- Memory: 4096MB - 10240MB
-- Timeout: 15分
-- Ephemeral storage: 10GB
-
-```bash
-# Lambda関数のパッケージング
-cd mcp_server
-zip -r function.zip .
-
-# Lambdaへのデプロイ（CDK経由）
-cd cdk
-cdk deploy UnifiedMCPServerStack --context deployment-type=lambda
-```
-
-## MCPクライアント実装例
-
-```python
-# Lambda Agent側（MCP Client）
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-
-async def call_mcp_tool():
-    # 統合MCPサーバーを起動
-    server_params = StdioServerParameters(
-        command="python",
-        args=["-m", "mcp_server"],  # 統合サーバー
-        env={"AWS_REGION": "us-east-1"}
-    )
-
-    async with stdio_client(server_params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-
-            # Data Preparationツールを呼び出し
-            result = await session.call_tool(
-                "preprocess_supervised",
-                arguments={
-                    "dataset_s3_uri": "s3://mlops-bucket/datasets/train.csv",
-                    "target_column": "label",
-                    "task_type": "classification"
-                }
-            )
-
-            # ML Trainingツールを呼び出し（同じセッションで）
-            result2 = await session.call_tool(
-                "train_supervised_classifier",
-                arguments={
-                    "algorithm": "random_forest",
-                    "train_data_s3_uri": "s3://mlops-bucket/processed/train.csv",
-                    "training_job_name": "rf-training-001"
-                }
-            )
-
-            return result, result2
-```
-
-## 統合アプローチのメリット
-
-### 従来の11個独立サーバーと比較
-
-| 項目                 | 統合MCPサーバー（1個）           | 独立MCPサーバー（11個）              |
-| -------------------- | -------------------------------- | ------------------------------------ |
-| **運用の簡素さ**     | ✅ 1プロセスのみ                 | ❌ 11プロセス管理                    |
-| **デプロイの簡素さ** | ✅ 1デプロイのみ                 | ❌ 11デプロイ管理                    |
-| **リソース効率**     | ✅ 共有により効率的              | ❌ 各サーバーでオーバーヘッド        |
-| **MCP接続数**        | ✅ 1接続のみ                     | ❌ 11接続必要                        |
-| **Agent実装**        | ✅ 1つのクライアントで全機能     | ❌ 11個のクライアント必要            |
-| **インフラコスト**   | ✅ 低い（リソース共有）          | ❌ 高い（11倍のオーバーヘッド）      |
-
-## トラブルシューティング
-
-### サーバーが起動しない
-
-```bash
-# 依存関係の確認
+# 依存パッケージのインストール
 pip install -r requirements.txt
 
-# Python versionの確認
-python --version  # 3.9以上が必要
+# 開発環境の場合
+pip install -r requirements.txt
 ```
 
-### ツールが見つからない
+### 環境変数
 
 ```bash
-# サーバーのツール一覧を確認
-python -m mcp_server --list-tools
+# ログレベル
+export LOG_LEVEL=INFO
+
+# AWS設定（Phase 2以降で使用）
+export MLOPS_S3_BUCKET=your-mlops-bucket
+export AWS_REGION=us-west-2
 ```
 
-### メモリ不足エラー
+## 使用方法
 
-ECS FargateまたはLambdaのメモリ設定を増やしてください:
+### サーバーの起動
 
-- ECS: 8GB → 16GB
-- Lambda: 4096MB → 10240MB
+```bash
+# モジュールとして実行
+python -m mcp_server
 
-## 参考資料
+# または
+python mcp_server/__main__.py
+```
 
-- [MCP設計書](../docs/designs/mcp_design.md)
-- [システム仕様書](../docs/specifications/system_specification.md)
-- [実装ガイド](../docs/designs/implementation_guide.md)
-- [Model Context Protocol 仕様](https://spec.modelcontextprotocol.io/)
+### ツールの利用
+
+Phase 1では骨格実装のため、各ツールはダミーデータを返します。
+
+```python
+from mcp_server import MLOpsServer
+
+# サーバー初期化
+server = MLOpsServer()
+
+# 利用可能なツールのリスト取得
+tools = server.list_tools()
+
+# ツールの実行
+result = server.call_tool(
+    "data_preparation.load_dataset",
+    {"bucket": "my-bucket", "key": "data/train.csv"}
+)
+```
+
+## 開発
+
+### コード品質チェック
+
+```bash
+# フォーマット
+black mcp_server/
+isort mcp_server/
+
+# リント
+flake8 mcp_server/
+
+# 型チェック
+mypy mcp_server/
+```
+
+### テスト
+
+```bash
+# テスト実行
+pytest
+
+# カバレッジ付き
+pytest --cov=mcp_server
+```
+
+## Phase 1 実装状況
+
+- [x] MCPサーバー基本構造
+- [x] 共通ユーティリティ（logger, config, s3_utils stub）
+- [x] Data Preparation Capability骨格
+  - [x] load_dataset (stub)
+  - [x] validate_data (stub)
+  - [x] preprocess_supervised (stub)
+- [ ] Phase 2: 実際のS3連携実装
+- [ ] Phase 2: データ処理ロジック実装
+- [ ] Phase 3+: 他のCapability実装
+
+## アーキテクチャ
+
+### Unified MCP Server方式
+
+単一のMCPサーバーが複数のCapabilityをホストし、ツール名を`{capability}.{tool}`形式で提供します。
+
+**利点:**
+- 単一プロセスで全機能を管理
+- Capability間のコード共有が容易
+- 統一されたログ・監視
+- デプロイ・運用がシンプル
+
+### Tool Naming Convention
+
+```
+{capability_name}.{tool_name}
+
+例:
+- data_preparation.load_dataset
+- ml_training.train_supervised
+- model_registry.register_model
+```
+
+## ライセンス
+
+内部プロジェクト用

@@ -1,7 +1,7 @@
 """Model Registry Capability実装"""
 from typing import Any, List
 
-from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource
+from mcp.types import EmbeddedResource, ImageContent, TextContent, Tool
 
 from ..base import BaseCapability
 
@@ -21,9 +21,17 @@ class ModelRegistryCapability(BaseCapability):
                         "model_package_group_name": {"type": "string"},
                         "model_s3_uri": {"type": "string"},
                         "evaluation_metrics": {"type": "object"},
-                        "model_approval_status": {"type": "string", "enum": ["PendingManualApproval", "Approved", "Rejected"], "default": "PendingManualApproval"},
+                        "model_approval_status": {
+                            "type": "string",
+                            "enum": ["PendingManualApproval", "Approved", "Rejected"],
+                            "default": "PendingManualApproval",
+                        },
                     },
-                    "required": ["model_package_group_name", "model_s3_uri", "evaluation_metrics"],
+                    "required": [
+                        "model_package_group_name",
+                        "model_s3_uri",
+                        "evaluation_metrics",
+                    ],
                 },
             ),
             Tool(
@@ -33,7 +41,10 @@ class ModelRegistryCapability(BaseCapability):
                     "type": "object",
                     "properties": {
                         "model_package_arn": {"type": "string"},
-                        "approval_status": {"type": "string", "enum": ["Approved", "Rejected"]},
+                        "approval_status": {
+                            "type": "string",
+                            "enum": ["Approved", "Rejected"],
+                        },
                     },
                     "required": ["model_package_arn", "approval_status"],
                 },
@@ -64,15 +75,13 @@ class ModelRegistryCapability(BaseCapability):
         ]
 
     async def execute_tool(
-        self,
-        tool_name: str,
-        arguments: dict[str, Any]
+        self, tool_name: str, arguments: dict[str, Any]
     ) -> List[TextContent | ImageContent | EmbeddedResource]:
         """ツール実行"""
         # TODO: 実装
         return [
             TextContent(
                 type="text",
-                text=f"Model Registry tool '{tool_name}' executed (stub implementation)"
+                text=f"Model Registry tool '{tool_name}' executed (stub implementation)",
             )
         ]

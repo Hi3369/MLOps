@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, List
 
-from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource
+from mcp.types import EmbeddedResource, ImageContent, TextContent, Tool
 
 
 class BaseCapability(ABC):
@@ -27,9 +27,7 @@ class BaseCapability(ABC):
 
     @abstractmethod
     async def execute_tool(
-        self,
-        tool_name: str,
-        arguments: dict[str, Any]
+        self, tool_name: str, arguments: dict[str, Any]
     ) -> List[TextContent | ImageContent | EmbeddedResource]:
         """
         ツールを実行

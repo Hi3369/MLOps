@@ -1,7 +1,7 @@
 """GitHub Integration Capability実装"""
 from typing import Any, List
 
-from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource
+from mcp.types import EmbeddedResource, ImageContent, TextContent, Tool
 
 from ..base import BaseCapability
 
@@ -23,7 +23,12 @@ class GitHubIntegrationCapability(BaseCapability):
                         "issue_number": {"type": "integer"},
                         "comment_body": {"type": "string"},
                     },
-                    "required": ["repo_owner", "repo_name", "issue_number", "comment_body"],
+                    "required": [
+                        "repo_owner",
+                        "repo_name",
+                        "issue_number",
+                        "comment_body",
+                    ],
                 },
             ),
             Tool(
@@ -56,15 +61,13 @@ class GitHubIntegrationCapability(BaseCapability):
         ]
 
     async def execute_tool(
-        self,
-        tool_name: str,
-        arguments: dict[str, Any]
+        self, tool_name: str, arguments: dict[str, Any]
     ) -> List[TextContent | ImageContent | EmbeddedResource]:
         """ツール実行"""
         # TODO: 実装
         return [
             TextContent(
                 type="text",
-                text=f"GitHub Integration tool '{tool_name}' executed (stub implementation)"
+                text=f"GitHub Integration tool '{tool_name}' executed (stub implementation)",
             )
         ]

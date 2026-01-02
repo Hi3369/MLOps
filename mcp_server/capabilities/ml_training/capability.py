@@ -1,7 +1,7 @@
 """ML Training Capability実装"""
 from typing import Any, List
 
-from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource
+from mcp.types import EmbeddedResource, ImageContent, TextContent, Tool
 
 from ..base import BaseCapability
 
@@ -18,13 +18,21 @@ class MLTrainingCapability(BaseCapability):
                 inputSchema={
                     "type": "object",
                     "properties": {
-                        "algorithm": {"type": "string", "enum": ["random_forest", "xgboost", "neural_network"]},
+                        "algorithm": {
+                            "type": "string",
+                            "enum": ["random_forest", "xgboost", "neural_network"],
+                        },
                         "train_data_s3_uri": {"type": "string"},
                         "target_column": {"type": "string"},
                         "hyperparameters": {"type": "object"},
                         "model_output_s3_uri": {"type": "string"},
                     },
-                    "required": ["algorithm", "train_data_s3_uri", "target_column", "model_output_s3_uri"],
+                    "required": [
+                        "algorithm",
+                        "train_data_s3_uri",
+                        "target_column",
+                        "model_output_s3_uri",
+                    ],
                 },
             ),
             Tool(
@@ -33,12 +41,19 @@ class MLTrainingCapability(BaseCapability):
                 inputSchema={
                     "type": "object",
                     "properties": {
-                        "algorithm": {"type": "string", "enum": ["kmeans", "dbscan", "pca", "tsne"]},
+                        "algorithm": {
+                            "type": "string",
+                            "enum": ["kmeans", "dbscan", "pca", "tsne"],
+                        },
                         "train_data_s3_uri": {"type": "string"},
                         "hyperparameters": {"type": "object"},
                         "model_output_s3_uri": {"type": "string"},
                     },
-                    "required": ["algorithm", "train_data_s3_uri", "model_output_s3_uri"],
+                    "required": [
+                        "algorithm",
+                        "train_data_s3_uri",
+                        "model_output_s3_uri",
+                    ],
                 },
             ),
             Tool(
@@ -58,15 +73,13 @@ class MLTrainingCapability(BaseCapability):
         ]
 
     async def execute_tool(
-        self,
-        tool_name: str,
-        arguments: dict[str, Any]
+        self, tool_name: str, arguments: dict[str, Any]
     ) -> List[TextContent | ImageContent | EmbeddedResource]:
         """ツール実行"""
         # TODO: 実装
         return [
             TextContent(
                 type="text",
-                text=f"ML Training tool '{tool_name}' executed (stub implementation)"
+                text=f"ML Training tool '{tool_name}' executed (stub implementation)",
             )
         ]

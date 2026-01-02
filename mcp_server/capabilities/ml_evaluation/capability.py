@@ -1,7 +1,7 @@
 """ML Evaluation Capability実装"""
 from typing import Any, List
 
-from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource
+from mcp.types import EmbeddedResource, ImageContent, TextContent, Tool
 
 from ..base import BaseCapability
 
@@ -66,15 +66,13 @@ class MLEvaluationCapability(BaseCapability):
         ]
 
     async def execute_tool(
-        self,
-        tool_name: str,
-        arguments: dict[str, Any]
+        self, tool_name: str, arguments: dict[str, Any]
     ) -> List[TextContent | ImageContent | EmbeddedResource]:
         """ツール実行"""
         # TODO: 実装
         return [
             TextContent(
                 type="text",
-                text=f"ML Evaluation tool '{tool_name}' executed (stub implementation)"
+                text=f"ML Evaluation tool '{tool_name}' executed (stub implementation)",
             )
         ]

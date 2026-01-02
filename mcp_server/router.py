@@ -1,10 +1,10 @@
 """ツールルーティング機構"""
 from typing import Any
 
-from mcp.types import TextContent, ImageContent, EmbeddedResource
+from mcp.types import EmbeddedResource, ImageContent, TextContent
 
-from .common.logger import get_logger
 from .common.exceptions import ToolNotFoundError
+from .common.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -32,9 +32,7 @@ class ToolRouter:
         return mapping
 
     async def route_tool_call(
-        self,
-        tool_name: str,
-        arguments: dict[str, Any]
+        self, tool_name: str, arguments: dict[str, Any]
     ) -> list[TextContent | ImageContent | EmbeddedResource]:
         """ツール呼び出しを適切なCapabilityにルーティング"""
 
