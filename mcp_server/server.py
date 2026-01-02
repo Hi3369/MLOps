@@ -66,6 +66,22 @@ class MLOpsServer:
         except ImportError as e:
             logger.warning(f"ML Training Capability not available: {e}")
 
+        # ML Evaluation Capability
+        try:
+            from .capabilities.ml_evaluation.capability import MLEvaluationCapability
+
+            ml_evaluation = MLEvaluationCapability()
+            self.capabilities["ml_evaluation"] = ml_evaluation
+
+            # ツールをグローバルツールリストに登録
+            for tool_name, tool_func in ml_evaluation.get_tools().items():
+                full_tool_name = f"ml_evaluation.{tool_name}"
+                self.tools[full_tool_name] = tool_func
+                logger.info(f"Registered tool: {full_tool_name}")
+
+        except ImportError as e:
+            logger.warning(f"ML Evaluation Capability not available: {e}")
+
         logger.info(f"Total {len(self.tools)} tools registered")
 
     def list_tools(self) -> List[Dict[str, Any]]:
