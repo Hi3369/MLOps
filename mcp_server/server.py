@@ -50,6 +50,22 @@ class MLOpsServer:
         except ImportError as e:
             logger.warning(f"Data Preparation Capability not available: {e}")
 
+        # ML Training Capability
+        try:
+            from .capabilities.ml_training.capability import MLTrainingCapability
+
+            ml_training = MLTrainingCapability()
+            self.capabilities["ml_training"] = ml_training
+
+            # ツールをグローバルツールリストに登録
+            for tool_name, tool_func in ml_training.get_tools().items():
+                full_tool_name = f"ml_training.{tool_name}"
+                self.tools[full_tool_name] = tool_func
+                logger.info(f"Registered tool: {full_tool_name}")
+
+        except ImportError as e:
+            logger.warning(f"ML Training Capability not available: {e}")
+
         logger.info(f"Total {len(self.tools)} tools registered")
 
     def list_tools(self) -> List[Dict[str, Any]]:

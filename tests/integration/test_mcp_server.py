@@ -34,8 +34,9 @@ class TestMLOpsServerInitialization:
         assert hasattr(server, "tools")
         assert hasattr(server, "capabilities")
 
-        # Data Preparation Capabilityの登録確認
+        # Capabilitiesの登録確認
         assert "data_preparation" in server.capabilities
+        assert "ml_training" in server.capabilities
         assert len(server.tools) > 0
 
     def test_tools_registration(self):
@@ -45,13 +46,23 @@ class TestMLOpsServerInitialization:
         server = MLOpsServer()
 
         # Data Preparation toolsが登録されていることを確認
-        expected_tools = [
+        expected_data_prep_tools = [
             "data_preparation.load_dataset",
             "data_preparation.validate_data",
             "data_preparation.preprocess_supervised",
         ]
 
-        for tool_name in expected_tools:
+        for tool_name in expected_data_prep_tools:
+            assert tool_name in server.tools, f"Tool {tool_name} not registered"
+
+        # ML Training toolsが登録されていることを確認
+        expected_ml_training_tools = [
+            "ml_training.train_classification",
+            "ml_training.train_regression",
+            "ml_training.train_clustering",
+        ]
+
+        for tool_name in expected_ml_training_tools:
             assert tool_name in server.tools, f"Tool {tool_name} not registered"
 
     def test_list_tools(self):
@@ -377,11 +388,11 @@ class TestServerCapabilities:
         """
         server = MLOpsServer()
 
-        # 現在はData Preparationのみ
-        assert len(server.capabilities) == 1
+        # Data Preparation と ML Training が登録されている
+        assert len(server.capabilities) == 2
 
-        # toolsには3つのツールが登録されている
-        assert len(server.tools) == 3
+        # toolsには6つのツールが登録されている (Data Prep: 3 + ML Training: 3)
+        assert len(server.tools) == 6
 
         # 将来的に他のCapabilityが追加されることを想定
         # （このテストは構造の確認のみ）
