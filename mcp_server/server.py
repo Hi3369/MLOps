@@ -114,6 +114,22 @@ class MLOpsServer:
         except ImportError as e:
             logger.warning(f"Model Packaging Capability not available: {e}")
 
+        # Model Deployment Capability
+        try:
+            from .capabilities.model_deployment.capability import ModelDeploymentCapability
+
+            model_deployment = ModelDeploymentCapability()
+            self.capabilities["model_deployment"] = model_deployment
+
+            # ツールをグローバルツールリストに登録
+            for tool_name, tool_func in model_deployment.get_tools().items():
+                full_tool_name = f"model_deployment.{tool_name}"
+                self.tools[full_tool_name] = tool_func
+                logger.info(f"Registered tool: {full_tool_name}")
+
+        except ImportError as e:
+            logger.warning(f"Model Deployment Capability not available: {e}")
+
         logger.info(f"Total {len(self.tools)} tools registered")
 
     def list_tools(self) -> List[Dict[str, Any]]:

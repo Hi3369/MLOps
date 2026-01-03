@@ -40,6 +40,7 @@ class TestMLOpsServerInitialization:
         assert "ml_evaluation" in server.capabilities
         assert "model_registry" in server.capabilities
         assert "model_packaging" in server.capabilities
+        assert "model_deployment" in server.capabilities
         assert len(server.tools) > 0
 
     def test_tools_registration(self):
@@ -100,6 +101,22 @@ class TestMLOpsServerInitialization:
         ]
 
         for tool_name in expected_model_packaging_tools:
+            assert tool_name in server.tools, f"Tool {tool_name} not registered"
+
+        # Model Deployment toolsが登録されていることを確認
+        expected_model_deployment_tools = [
+            "model_deployment.deploy_to_sagemaker",
+            "model_deployment.update_endpoint_traffic",
+            "model_deployment.update_endpoint_capacity",
+            "model_deployment.configure_autoscaling",
+            "model_deployment.delete_autoscaling",
+            "model_deployment.monitor_endpoint",
+            "model_deployment.health_check_endpoint",
+            "model_deployment.delete_endpoint",
+            "model_deployment.rollback_deployment",
+        ]
+
+        for tool_name in expected_model_deployment_tools:
             assert tool_name in server.tools, f"Tool {tool_name} not registered"
 
     def test_list_tools(self):
@@ -425,11 +442,11 @@ class TestServerCapabilities:
         """
         server = MLOpsServer()
 
-        # Data Preparation, ML Training, ML Evaluation, Model Registry, Model Packaging が登録されている
-        assert len(server.capabilities) == 5
+        # Data Preparation, ML Training, ML Evaluation, Model Registry, Model Packaging, Model Deployment が登録されている
+        assert len(server.capabilities) == 6
 
-        # toolsには19つのツールが登録されている (Data Prep: 3 + ML Training: 3 + ML Evaluation: 3 + Model Registry: 5 + Model Packaging: 5)
-        assert len(server.tools) == 19
+        # toolsには28つのツールが登録されている (Data Prep: 3 + ML Training: 3 + ML Evaluation: 3 + Model Registry: 5 + Model Packaging: 5 + Model Deployment: 9)
+        assert len(server.tools) == 28
 
         # 将来的に他のCapabilityが追加されることを想定
         # （このテストは構造の確認のみ）
