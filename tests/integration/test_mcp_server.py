@@ -38,6 +38,7 @@ class TestMLOpsServerInitialization:
         assert "data_preparation" in server.capabilities
         assert "ml_training" in server.capabilities
         assert "ml_evaluation" in server.capabilities
+        assert "model_registry" in server.capabilities
         assert len(server.tools) > 0
 
     def test_tools_registration(self):
@@ -74,6 +75,18 @@ class TestMLOpsServerInitialization:
         ]
 
         for tool_name in expected_ml_evaluation_tools:
+            assert tool_name in server.tools, f"Tool {tool_name} not registered"
+
+        # Model Registry toolsが登録されていることを確認
+        expected_model_registry_tools = [
+            "model_registry.register_model",
+            "model_registry.list_models",
+            "model_registry.get_model",
+            "model_registry.update_model_status",
+            "model_registry.delete_model",
+        ]
+
+        for tool_name in expected_model_registry_tools:
             assert tool_name in server.tools, f"Tool {tool_name} not registered"
 
     def test_list_tools(self):
@@ -399,11 +412,11 @@ class TestServerCapabilities:
         """
         server = MLOpsServer()
 
-        # Data Preparation, ML Training, ML Evaluation が登録されている
-        assert len(server.capabilities) == 3
+        # Data Preparation, ML Training, ML Evaluation, Model Registry が登録されている
+        assert len(server.capabilities) == 4
 
-        # toolsには9つのツールが登録されている (Data Prep: 3 + ML Training: 3 + ML Evaluation: 3)
-        assert len(server.tools) == 9
+        # toolsには14つのツールが登録されている (Data Prep: 3 + ML Training: 3 + ML Evaluation: 3 + Model Registry: 5)
+        assert len(server.tools) == 14
 
         # 将来的に他のCapabilityが追加されることを想定
         # （このテストは構造の確認のみ）
