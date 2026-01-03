@@ -1,98 +1,91 @@
-"""Data Preparation Capability実装"""
-from typing import Any, List
+"""
+Data Preparation Capability Implementation
 
-from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource
+データ前処理・特徴量エンジニアリングのツールを提供します。
+"""
 
-from ..base import BaseCapability
+import logging
+from typing import Any, Callable, Dict
+
+logger = logging.getLogger(__name__)
 
 
-class DataPreparationCapability(BaseCapability):
-    """データ前処理・特徴量エンジニアリング"""
+class DataPreparationCapability:
+    """
+    Data Preparation Capability
 
-    def list_tools(self) -> List[Tool]:
-        """提供ツール一覧"""
-        return [
-            Tool(
-                name="load_dataset",
-                description="S3からデータセットを読み込む",
-                inputSchema={
+    提供ツール:
+    - load_dataset: S3からデータセット読み込み
+    - validate_data: データバリデーション
+    - preprocess_supervised: 教師あり学習用前処理
+    """
+
+    def __init__(self):
+        """Capabilityの初期化"""
+        logger.info("Initializing Data Preparation Capability")
+        self._tools = self._register_tools()
+
+    def _register_tools(self) -> Dict[str, Callable]:
+        """ツールの登録"""
+        from .tools import load_dataset, preprocess_supervised, validate_data
+
+        return {
+            "load_dataset": load_dataset.load_dataset,
+            "validate_data": validate_data.validate_data,
+            "preprocess_supervised": preprocess_supervised.preprocess_supervised,
+        }
+
+    def get_tools(self) -> Dict[str, Callable]:
+        """登録されているツールを返す"""
+        return self._tools
+
+    def get_tool_schemas(self) -> Dict[str, Dict[str, Any]]:
+        """
+        各ツールのスキーマを返す
+
+        Returns:
+            ツール名をキーとしたスキーマ辞書
+        """
+        return {
+            "load_dataset": {
+                "name": "load_dataset",
+                "description": "S3からデータセットを読み込む",
+                "parameters": {
                     "type": "object",
                     "properties": {
-                        "s3_uri": {"type": "string", "description": "S3 URI (s3://bucket/key)"},
-                        "file_format": {"type": "string", "enum": ["csv", "parquet", "json"], "default": "csv"},
+                        "bucket": {"type": "string", "description": "S3バケット名"},
+                        "key": {"type": "string", "description": "S3オブジェクトキー"},
                     },
-                    "required": ["s3_uri"],
+                    "required": ["bucket", "key"],
                 },
-            ),
-            Tool(
-                name="validate_data",
-                description="データのバリデーション（欠損値、型チェック等）",
-                inputSchema={
+            },
+            "validate_data": {
+                "name": "validate_data",
+                "description": "データのバリデーションを実行",
+                "parameters": {
                     "type": "object",
                     "properties": {
-                        "data_s3_uri": {"type": "string"},
-                        "schema": {"type": "object", "description": "期待されるスキーマ"},
-                    },
-                    "required": ["data_s3_uri"],
-                },
-            ),
-            Tool(
-                name="preprocess_supervised",
-                description="教師あり学習用の前処理",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "dataset_s3_uri": {"type": "string"},
-                        "target_column": {"type": "string"},
-                        "task_type": {"type": "string", "enum": ["classification", "regression"]},
-                        "preprocessing_config": {
+                        "data": {
                             "type": "object",
-                            "properties": {
-                                "normalize": {"type": "boolean", "default": True},
-                                "handle_missing": {"type": "string", "enum": ["drop", "mean", "median", "mode"], "default": "mean"},
-                                "encode_categorical": {"type": "boolean", "default": True},
-                            },
+                            "description": "検証するデータ",
                         },
                     },
-                    "required": ["dataset_s3_uri", "target_column", "task_type"],
+                    "required": ["data"],
                 },
-            ),
-            Tool(
-                name="preprocess_unsupervised",
-                description="教師なし学習用の前処理",
-                inputSchema={
+            },
+            "preprocess_supervised": {
+                "name": "preprocess_supervised",
+                "description": "教師あり学習用のデータ前処理",
+                "parameters": {
                     "type": "object",
                     "properties": {
-                        "dataset_s3_uri": {"type": "string"},
-                        "preprocessing_config": {"type": "object"},
+                        "data": {"type": "object", "description": "前処理するデータ"},
+                        "target_column": {
+                            "type": "string",
+                            "description": "ターゲット列名",
+                        },
                     },
-                    "required": ["dataset_s3_uri"],
+                    "required": ["data", "target_column"],
                 },
-            ),
-            Tool(
-                name="preprocess_reinforcement",
-                description="強化学習用の環境データ準備",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "env_name": {"type": "string"},
-                        "env_config": {"type": "object"},
-                    },
-                    "required": ["env_name"],
-                },
-            ),
-        ]
-
-    async def execute_tool(
-        self,
-        tool_name: str,
-        arguments: dict[str, Any]
-    ) -> List[TextContent | ImageContent | EmbeddedResource]:
-        """ツール実行"""
-        # TODO: 実装
-        return [
-            TextContent(
-                type="text",
-                text=f"Data Preparation tool '{tool_name}' executed (stub implementation)"
-            )
-        ]
+            },
+        }

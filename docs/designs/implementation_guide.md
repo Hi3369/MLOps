@@ -788,7 +788,7 @@ stateDiagram-v2
 
 MCPサーバーは、データ前処理・モデル学習・モデル評価などの機械学習専門機能を標準化されたプロトコルで提供します。
 
-### 3.2 提供Capability（6個の機能群）
+### 3.2 提供Capability（12個の機能群）
 
 #### 1. Data Preparation
 

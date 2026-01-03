@@ -1,72 +1,140 @@
 """ML Training Capability実装"""
-from typing import Any, List
+import logging
+from typing import Any, Callable, Dict
 
-from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource
+from .tools import train_classification, train_clustering, train_regression
 
-from ..base import BaseCapability
+logger = logging.getLogger(__name__)
 
 
-class MLTrainingCapability(BaseCapability):
+class MLTrainingCapability:
     """機械学習モデル学習"""
 
-    def list_tools(self) -> List[Tool]:
-        """提供ツール一覧"""
-        return [
-            Tool(
-                name="train_supervised_model",
-                description="教師あり学習モデルを学習",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "algorithm": {"type": "string", "enum": ["random_forest", "xgboost", "neural_network"]},
-                        "train_data_s3_uri": {"type": "string"},
-                        "target_column": {"type": "string"},
-                        "hyperparameters": {"type": "object"},
-                        "model_output_s3_uri": {"type": "string"},
-                    },
-                    "required": ["algorithm", "train_data_s3_uri", "target_column", "model_output_s3_uri"],
-                },
-            ),
-            Tool(
-                name="train_unsupervised_model",
-                description="教師なし学習モデルを学習",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "algorithm": {"type": "string", "enum": ["kmeans", "dbscan", "pca", "tsne"]},
-                        "train_data_s3_uri": {"type": "string"},
-                        "hyperparameters": {"type": "object"},
-                        "model_output_s3_uri": {"type": "string"},
-                    },
-                    "required": ["algorithm", "train_data_s3_uri", "model_output_s3_uri"],
-                },
-            ),
-            Tool(
-                name="train_reinforcement_model",
-                description="強化学習モデルを学習",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "algorithm": {"type": "string", "enum": ["ppo", "dqn", "a3c"]},
-                        "env_name": {"type": "string"},
-                        "hyperparameters": {"type": "object"},
-                        "model_output_s3_uri": {"type": "string"},
-                    },
-                    "required": ["algorithm", "env_name", "model_output_s3_uri"],
-                },
-            ),
-        ]
+    def __init__(self):
+        """Capabilityの初期化"""
+        logger.info("Initializing ML Training Capability")
+        self._tools = self._register_tools()
 
-    async def execute_tool(
-        self,
-        tool_name: str,
-        arguments: dict[str, Any]
-    ) -> List[TextContent | ImageContent | EmbeddedResource]:
-        """ツール実行"""
-        # TODO: 実装
-        return [
-            TextContent(
-                type="text",
-                text=f"ML Training tool '{tool_name}' executed (stub implementation)"
-            )
-        ]
+    def _register_tools(self) -> Dict[str, Callable]:
+        """ツールの登録"""
+        return {
+            "train_classification": train_classification,
+            "train_regression": train_regression,
+            "train_clustering": train_clustering,
+        }
+
+    def get_tools(self) -> Dict[str, Callable]:
+        """登録されているツールを返す"""
+        return self._tools
+
+    def get_tool_schemas(self) -> Dict[str, Dict[str, Any]]:
+        """
+        各ツールのスキーマを返す
+
+        Returns:
+            ツール名をキーとしたスキーマ辞書
+        """
+        return {
+            "train_classification": {
+                "name": "train_classification",
+                "description": "分類モデルを学習 (Random Forest, Logistic Regression, Neural Network)",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "train_data_s3_uri": {
+                            "type": "string",
+                            "description": "学習データのS3 URI (前処理済みデータ)",
+                        },
+                        "algorithm": {
+                            "type": "string",
+                            "description": "アルゴリズム",
+                            "enum": [
+                                "random_forest",
+                                "logistic_regression",
+                                "neural_network",
+                            ],
+                        },
+                        "hyperparameters": {
+                            "type": "object",
+                            "description": "ハイパーパラメータ辞書",
+                        },
+                        "model_output_s3_uri": {
+                            "type": "string",
+                            "description": "モデル保存先S3 URI",
+                        },
+                        "file_format": {
+                            "type": "string",
+                            "description": "ファイルフォーマット (csv, parquet)",
+                        },
+                    },
+                    "required": ["train_data_s3_uri", "model_output_s3_uri"],
+                },
+            },
+            "train_regression": {
+                "name": "train_regression",
+                "description": "回帰モデルを学習 (Random Forest, Linear Regression, Ridge, Neural Network)",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "train_data_s3_uri": {
+                            "type": "string",
+                            "description": "学習データのS3 URI (前処理済みデータ)",
+                        },
+                        "algorithm": {
+                            "type": "string",
+                            "description": "アルゴリズム",
+                            "enum": [
+                                "random_forest",
+                                "linear_regression",
+                                "ridge",
+                                "neural_network",
+                            ],
+                        },
+                        "hyperparameters": {
+                            "type": "object",
+                            "description": "ハイパーパラメータ辞書",
+                        },
+                        "model_output_s3_uri": {
+                            "type": "string",
+                            "description": "モデル保存先S3 URI",
+                        },
+                        "file_format": {
+                            "type": "string",
+                            "description": "ファイルフォーマット (csv, parquet)",
+                        },
+                    },
+                    "required": ["train_data_s3_uri", "model_output_s3_uri"],
+                },
+            },
+            "train_clustering": {
+                "name": "train_clustering",
+                "description": "クラスタリングモデルを学習 (KMeans, DBSCAN, PCA)",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "train_data_s3_uri": {
+                            "type": "string",
+                            "description": "学習データのS3 URI",
+                        },
+                        "algorithm": {
+                            "type": "string",
+                            "description": "アルゴリズム",
+                            "enum": ["kmeans", "dbscan", "pca"],
+                        },
+                        "hyperparameters": {
+                            "type": "object",
+                            "description": "ハイパーパラメータ辞書",
+                        },
+                        "model_output_s3_uri": {
+                            "type": "string",
+                            "description": "モデル保存先S3 URI",
+                        },
+                        "file_format": {
+                            "type": "string",
+                            "description": "ファイルフォーマット (csv, parquet)",
+                        },
+                    },
+                    "required": ["train_data_s3_uri", "model_output_s3_uri"],
+                },
+            },
+        }
