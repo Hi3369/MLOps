@@ -98,6 +98,22 @@ class MLOpsServer:
         except ImportError as e:
             logger.warning(f"Model Registry Capability not available: {e}")
 
+        # Model Packaging Capability
+        try:
+            from .capabilities.model_packaging.capability import ModelPackagingCapability
+
+            model_packaging = ModelPackagingCapability()
+            self.capabilities["model_packaging"] = model_packaging
+
+            # ツールをグローバルツールリストに登録
+            for tool_name, tool_func in model_packaging.get_tools().items():
+                full_tool_name = f"model_packaging.{tool_name}"
+                self.tools[full_tool_name] = tool_func
+                logger.info(f"Registered tool: {full_tool_name}")
+
+        except ImportError as e:
+            logger.warning(f"Model Packaging Capability not available: {e}")
+
         logger.info(f"Total {len(self.tools)} tools registered")
 
     def list_tools(self) -> List[Dict[str, Any]]:
