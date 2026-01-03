@@ -41,6 +41,7 @@ class TestMLOpsServerInitialization:
         assert "model_registry" in server.capabilities
         assert "model_packaging" in server.capabilities
         assert "model_deployment" in server.capabilities
+        assert "model_monitoring" in server.capabilities
         assert len(server.tools) > 0
 
     def test_tools_registration(self):
@@ -117,6 +118,23 @@ class TestMLOpsServerInitialization:
         ]
 
         for tool_name in expected_model_deployment_tools:
+            assert tool_name in server.tools, f"Tool {tool_name} not registered"
+
+        # Model Monitoring toolsが登録されていることを確認
+        expected_model_monitoring_tools = [
+            "model_monitoring.collect_system_metrics",
+            "model_monitoring.collect_model_metrics",
+            "model_monitoring.detect_data_drift",
+            "model_monitoring.detect_concept_drift",
+            "model_monitoring.create_cloudwatch_alarm",
+            "model_monitoring.delete_cloudwatch_alarm",
+            "model_monitoring.get_alarm_state",
+            "model_monitoring.update_dashboard",
+            "model_monitoring.create_monitoring_dashboard",
+            "model_monitoring.delete_dashboard",
+        ]
+
+        for tool_name in expected_model_monitoring_tools:
             assert tool_name in server.tools, f"Tool {tool_name} not registered"
 
     def test_list_tools(self):
@@ -442,11 +460,11 @@ class TestServerCapabilities:
         """
         server = MLOpsServer()
 
-        # Data Preparation, ML Training, ML Evaluation, Model Registry, Model Packaging, Model Deployment が登録されている
-        assert len(server.capabilities) == 6
+        # Data Preparation, ML Training, ML Evaluation, Model Registry, Model Packaging, Model Deployment, Model Monitoring が登録されている
+        assert len(server.capabilities) == 7
 
-        # toolsには28つのツールが登録されている (Data Prep: 3 + ML Training: 3 + ML Evaluation: 3 + Model Registry: 5 + Model Packaging: 5 + Model Deployment: 9)
-        assert len(server.tools) == 28
+        # toolsには38つのツールが登録されている (Data Prep: 3 + ML Training: 3 + ML Evaluation: 3 + Model Registry: 5 + Model Packaging: 5 + Model Deployment: 9 + Model Monitoring: 10)
+        assert len(server.tools) == 38
 
         # 将来的に他のCapabilityが追加されることを想定
         # （このテストは構造の確認のみ）
