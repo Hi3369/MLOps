@@ -1,73 +1,79 @@
 """GitHub Integration Capability実装"""
-from typing import Any, List
+import logging
+from typing import Any, Callable, Dict
 
-from mcp.types import EmbeddedResource, ImageContent, TextContent, Tool
+from .tools import (
+    detect_mlops_issue,
+    parse_issue_config,
+    start_workflow,
+    validate_training_params,
+)
 
-from ..base import BaseCapability
+logger = logging.getLogger(__name__)
 
 
-class GitHubIntegrationCapability(BaseCapability):
-    """GitHub統合・Issue管理"""
+class GitHubIntegrationCapability:
+    """GitHub統合・Issue管理・ワークフロー起動"""
 
-    def list_tools(self) -> List[Tool]:
-        """提供ツール一覧"""
-        return [
-            Tool(
-                name="create_issue_comment",
-                description="GitHub Issueにコメントを作成",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "repo_owner": {"type": "string"},
-                        "repo_name": {"type": "string"},
-                        "issue_number": {"type": "integer"},
-                        "comment_body": {"type": "string"},
-                    },
-                    "required": [
-                        "repo_owner",
-                        "repo_name",
-                        "issue_number",
-                        "comment_body",
-                    ],
+    def __init__(self):
+        """Capabilityの初期化"""
+        logger.info("Initializing GitHub Integration Capability")
+        self._tools = self._register_tools()
+
+    def _register_tools(self) -> Dict[str, Callable]:
+        """ツールの登録"""
+        return {
+            "detect_mlops_issue": detect_mlops_issue,
+            "parse_issue_config": parse_issue_config,
+            "validate_training_params": validate_training_params,
+            "start_workflow": start_workflow,
+        }
+
+    def get_tools(self) -> Dict[str, Callable]:
+        """登録されているツールを返す"""
+        return self._tools
+
+    def get_tool_schemas(self) -> Dict[str, Dict[str, Any]]:
+        """
+        各ツールのスキーマを返す
+
+        Returns:
+            ツールスキーマ辞書
+        """
+        return {
+            "detect_mlops_issue": {
+                "name": "detect_mlops_issue",
+                "description": "MLOps用Issueを検知",
+                "parameters": {
+                    "repo_owner": "リポジトリオーナー",
+                    "repo_name": "リポジトリ名",
+                    "issue_number": "Issue番号（指定時は単一Issue取得）",
+                    "labels": "フィルタリングするラベル（mlops, training等）",
                 },
-            ),
-            Tool(
-                name="update_issue_labels",
-                description="GitHub Issueのラベルを更新",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "repo_owner": {"type": "string"},
-                        "repo_name": {"type": "string"},
-                        "issue_number": {"type": "integer"},
-                        "labels": {"type": "array", "items": {"type": "string"}},
-                    },
-                    "required": ["repo_owner", "repo_name", "issue_number", "labels"],
+            },
+            "parse_issue_config": {
+                "name": "parse_issue_config",
+                "description": "Issue本文からYAML/JSON設定をパース",
+                "parameters": {
+                    "issue_body": "Issue本文",
+                    "config_format": "設定フォーマット（auto, yaml, json）",
                 },
-            ),
-            Tool(
-                name="create_training_history_file",
-                description="学習履歴ファイルをリポジトリに作成",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "repo_owner": {"type": "string"},
-                        "repo_name": {"type": "string"},
-                        "training_results": {"type": "object"},
-                    },
-                    "required": ["repo_owner", "repo_name", "training_results"],
+            },
+            "validate_training_params": {
+                "name": "validate_training_params",
+                "description": "学習パラメータをバリデーション",
+                "parameters": {
+                    "training_config": "学習設定（model_type, hyperparameters, dataset等）",
+                    "strict": "厳密モード（True: 不明なパラメータをエラーに）",
                 },
-            ),
-        ]
-
-    async def execute_tool(
-        self, tool_name: str, arguments: dict[str, Any]
-    ) -> List[TextContent | ImageContent | EmbeddedResource]:
-        """ツール実行"""
-        # TODO: 実装
-        return [
-            TextContent(
-                type="text",
-                text=f"GitHub Integration tool '{tool_name}' executed (stub implementation)",
-            )
-        ]
+            },
+            "start_workflow": {
+                "name": "start_workflow",
+                "description": "Step Functionsワークフローを起動",
+                "parameters": {
+                    "workflow_type": "ワークフロータイプ（training, inference等）",
+                    "input_params": "ワークフロー入力パラメータ",
+                    "execution_name": "実行名（オプション、未指定時は自動生成）",
+                },
+            },
+        }

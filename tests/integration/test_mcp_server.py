@@ -42,6 +42,8 @@ class TestMLOpsServerInitialization:
         assert "model_packaging" in server.capabilities
         assert "model_deployment" in server.capabilities
         assert "model_monitoring" in server.capabilities
+        assert "workflow_optimization" in server.capabilities
+        assert "github_integration" in server.capabilities
         assert len(server.tools) > 0
 
     def test_tools_registration(self):
@@ -135,6 +137,29 @@ class TestMLOpsServerInitialization:
         ]
 
         for tool_name in expected_model_monitoring_tools:
+            assert tool_name in server.tools, f"Tool {tool_name} not registered"
+
+        # Workflow Optimization toolsが登録されていることを確認
+        expected_workflow_optimization_tools = [
+            "workflow_optimization.analyze_model_characteristics",
+            "workflow_optimization.generate_optimization_proposal",
+            "workflow_optimization.retrieve_similar_model_history",
+            "workflow_optimization.apply_optimizations",
+            "workflow_optimization.track_optimization_history",
+        ]
+
+        for tool_name in expected_workflow_optimization_tools:
+            assert tool_name in server.tools, f"Tool {tool_name} not registered"
+
+        # GitHub Integration toolsが登録されていることを確認
+        expected_github_integration_tools = [
+            "github_integration.detect_mlops_issue",
+            "github_integration.parse_issue_config",
+            "github_integration.validate_training_params",
+            "github_integration.start_workflow",
+        ]
+
+        for tool_name in expected_github_integration_tools:
             assert tool_name in server.tools, f"Tool {tool_name} not registered"
 
     def test_list_tools(self):
@@ -460,11 +485,11 @@ class TestServerCapabilities:
         """
         server = MLOpsServer()
 
-        # Data Preparation, ML Training, ML Evaluation, Model Registry, Model Packaging, Model Deployment, Model Monitoring が登録されている
-        assert len(server.capabilities) == 7
+        # Data Preparation, ML Training, ML Evaluation, Model Registry, Model Packaging, Model Deployment, Model Monitoring, Workflow Optimization, GitHub Integration が登録されている
+        assert len(server.capabilities) == 9
 
-        # toolsには38つのツールが登録されている (Data Prep: 3 + ML Training: 3 + ML Evaluation: 3 + Model Registry: 5 + Model Packaging: 5 + Model Deployment: 9 + Model Monitoring: 10)
-        assert len(server.tools) == 38
+        # toolsには47つのツールが登録されている (Data Prep: 3 + ML Training: 3 + ML Evaluation: 3 + Model Registry: 5 + Model Packaging: 5 + Model Deployment: 9 + Model Monitoring: 10 + Workflow Optimization: 5 + GitHub Integration: 4)
+        assert len(server.tools) == 47
 
         # 将来的に他のCapabilityが追加されることを想定
         # （このテストは構造の確認のみ）

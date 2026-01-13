@@ -146,6 +146,42 @@ class MLOpsServer:
         except ImportError as e:
             logger.warning(f"Model Monitoring Capability not available: {e}")
 
+        # Workflow Optimization Capability
+        try:
+            from .capabilities.workflow_optimization.capability import (
+                WorkflowOptimizationCapability,
+            )
+
+            workflow_optimization = WorkflowOptimizationCapability()
+            self.capabilities["workflow_optimization"] = workflow_optimization
+
+            # ツールをグローバルツールリストに登録
+            for tool_name, tool_func in workflow_optimization.get_tools().items():
+                full_tool_name = f"workflow_optimization.{tool_name}"
+                self.tools[full_tool_name] = tool_func
+                logger.info(f"Registered tool: {full_tool_name}")
+
+        except ImportError as e:
+            logger.warning(f"Workflow Optimization Capability not available: {e}")
+
+        # GitHub Integration Capability
+        try:
+            from .capabilities.github_integration.capability import (
+                GitHubIntegrationCapability,
+            )
+
+            github_integration = GitHubIntegrationCapability()
+            self.capabilities["github_integration"] = github_integration
+
+            # ツールをグローバルツールリストに登録
+            for tool_name, tool_func in github_integration.get_tools().items():
+                full_tool_name = f"github_integration.{tool_name}"
+                self.tools[full_tool_name] = tool_func
+                logger.info(f"Registered tool: {full_tool_name}")
+
+        except ImportError as e:
+            logger.warning(f"GitHub Integration Capability not available: {e}")
+
         logger.info(f"Total {len(self.tools)} tools registered")
 
     def list_tools(self) -> List[Dict[str, Any]]:
