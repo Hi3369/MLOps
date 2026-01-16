@@ -4,9 +4,14 @@ Send GitHub Notification Tool
 GitHub Issue/PRコメント通知ツール
 """
 
+import json
 import logging
 import os
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -102,10 +107,7 @@ def _mock_github_notification(
     assignees: Optional[list],
 ) -> Dict[str, Any]:
     """モックGitHub通知"""
-    import uuid
-    from datetime import datetime
-
-    notification_id = str(uuid.uuid4())[:8]
+    notification_id = str(uuid4())[:8]
 
     result = {
         "status": "success",
@@ -115,7 +117,7 @@ def _mock_github_notification(
             "repo": f"{repo_owner}/{repo_name}",
             "notification_type": notification_type,
             "message_preview": message[:100] + "..." if len(message) > 100 else message,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "mock": True,
         },
     }
@@ -149,10 +151,6 @@ def _send_real_github_notification(
     assignees: Optional[list],
 ) -> Dict[str, Any]:
     """GitHub APIを使用した実際の通知送信"""
-    import json
-    import urllib.request
-    from datetime import datetime
-
     base_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}"
     headers = {
         "Authorization": f"token {github_token}",
@@ -193,7 +191,7 @@ def _send_real_github_notification(
                 "notification_result": {
                     "repo": f"{repo_owner}/{repo_name}",
                     "notification_type": notification_type,
-                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 },
             }
 
