@@ -44,6 +44,7 @@ class TestMLOpsServerInitialization:
         assert "model_monitoring" in server.capabilities
         assert "workflow_optimization" in server.capabilities
         assert "github_integration" in server.capabilities
+        assert "notification" in server.capabilities
         assert len(server.tools) > 0
 
     def test_tools_registration(self):
@@ -160,6 +161,17 @@ class TestMLOpsServerInitialization:
         ]
 
         for tool_name in expected_github_integration_tools:
+            assert tool_name in server.tools, f"Tool {tool_name} not registered"
+
+        # Notification toolsが登録されていることを確認
+        expected_notification_tools = [
+            "notification.send_slack_notification",
+            "notification.send_email_notification",
+            "notification.send_github_notification",
+            "notification.apply_notification_template",
+        ]
+
+        for tool_name in expected_notification_tools:
             assert tool_name in server.tools, f"Tool {tool_name} not registered"
 
     def test_list_tools(self):
@@ -485,11 +497,11 @@ class TestServerCapabilities:
         """
         server = MLOpsServer()
 
-        # Data Preparation, ML Training, ML Evaluation, Model Registry, Model Packaging, Model Deployment, Model Monitoring, Workflow Optimization, GitHub Integration が登録されている
-        assert len(server.capabilities) == 9
+        # Data Preparation, ML Training, ML Evaluation, Model Registry, Model Packaging, Model Deployment, Model Monitoring, Workflow Optimization, GitHub Integration, Notification が登録されている
+        assert len(server.capabilities) == 10
 
-        # toolsには47つのツールが登録されている (Data Prep: 3 + ML Training: 3 + ML Evaluation: 3 + Model Registry: 5 + Model Packaging: 5 + Model Deployment: 9 + Model Monitoring: 10 + Workflow Optimization: 5 + GitHub Integration: 4)
-        assert len(server.tools) == 47
+        # toolsには51つのツールが登録されている (Data Prep: 3 + ML Training: 3 + ML Evaluation: 3 + Model Registry: 5 + Model Packaging: 5 + Model Deployment: 9 + Model Monitoring: 10 + Workflow Optimization: 5 + GitHub Integration: 4 + Notification: 4)
+        assert len(server.tools) == 51
 
         # 将来的に他のCapabilityが追加されることを想定
         # （このテストは構造の確認のみ）

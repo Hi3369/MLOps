@@ -182,6 +182,22 @@ class MLOpsServer:
         except ImportError as e:
             logger.warning(f"GitHub Integration Capability not available: {e}")
 
+        # Notification Capability
+        try:
+            from .capabilities.notification.capability import NotificationCapability
+
+            notification = NotificationCapability()
+            self.capabilities["notification"] = notification
+
+            # ツールをグローバルツールリストに登録
+            for tool_name, tool_func in notification.get_tools().items():
+                full_tool_name = f"notification.{tool_name}"
+                self.tools[full_tool_name] = tool_func
+                logger.info(f"Registered tool: {full_tool_name}")
+
+        except ImportError as e:
+            logger.warning(f"Notification Capability not available: {e}")
+
         logger.info(f"Total {len(self.tools)} tools registered")
 
     def list_tools(self) -> List[Dict[str, Any]]:
