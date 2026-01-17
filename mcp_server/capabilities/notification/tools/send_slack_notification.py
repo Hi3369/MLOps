@@ -7,7 +7,11 @@ Slack通知送信ツール
 import json
 import logging
 import os
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -85,10 +89,7 @@ def _mock_slack_notification(
     blocks: Optional[list],
 ) -> Dict[str, Any]:
     """モックSlack通知"""
-    import uuid
-    from datetime import datetime
-
-    message_id = str(uuid.uuid4())[:8]
+    message_id = str(uuid4())[:8]
 
     return {
         "status": "success",
@@ -101,7 +102,7 @@ def _mock_slack_notification(
             "message_preview": message[:100] + "..." if len(message) > 100 else message,
             "has_attachments": attachments is not None and len(attachments) > 0,
             "has_blocks": blocks is not None and len(blocks) > 0,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "mock": True,
         },
     }
@@ -117,10 +118,6 @@ def _send_real_slack_notification(
     blocks: Optional[list],
 ) -> Dict[str, Any]:
     """実際のSlack通知送信"""
-    import urllib.request
-    import uuid
-    from datetime import datetime
-
     # ペイロード構築
     payload = {
         "text": message,
@@ -148,7 +145,7 @@ def _send_real_slack_notification(
             response_body = response.read().decode("utf-8")
 
             if response.status == 200:
-                message_id = str(uuid.uuid4())[:8]
+                message_id = str(uuid4())[:8]
                 return {
                     "status": "success",
                     "message": "Slack notification sent successfully",
@@ -159,7 +156,7 @@ def _send_real_slack_notification(
                         "message_preview": (
                             message[:100] + "..." if len(message) > 100 else message
                         ),
-                        "timestamp": datetime.utcnow().isoformat() + "Z",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
                         "response": response_body,
                     },
                 }

@@ -6,7 +6,9 @@ Email通知送信ツール（AWS SES使用）
 
 import logging
 import os
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +55,8 @@ def send_email_notification(
         raise ValueError("body must not be empty")
 
     # メールアドレス形式の簡易検証
-    for addr in to_addresses:
+    all_addresses = to_addresses + (cc_addresses or []) + (bcc_addresses or [])
+    for addr in all_addresses:
         if "@" not in addr:
             raise ValueError(f"Invalid email address: {addr}")
 
@@ -101,10 +104,7 @@ def _mock_email_notification(
     html_body: Optional[str],
 ) -> Dict[str, Any]:
     """モックEmail通知"""
-    import uuid
-    from datetime import datetime
-
-    message_id = str(uuid.uuid4())
+    message_id = str(uuid4())
 
     return {
         "status": "success",
@@ -118,7 +118,7 @@ def _mock_email_notification(
             "subject": subject,
             "body_preview": body[:100] + "..." if len(body) > 100 else body,
             "has_html_body": html_body is not None,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "mock": True,
         },
     }
@@ -136,7 +136,6 @@ def _send_real_email_notification(
 ) -> Dict[str, Any]:
     """AWS SESを使用した実際のEmail送信"""
     import boto3
-    from datetime import datetime
 
     ses_client = boto3.client("ses")
 
@@ -181,7 +180,7 @@ def _send_real_email_notification(
             "subject": subject,
             "body_preview": body[:100] + "..." if len(body) > 100 else body,
             "has_html_body": html_body is not None,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "request_id": response.get("ResponseMetadata", {}).get("RequestId"),
         },
     }
