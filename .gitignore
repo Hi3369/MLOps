@@ -67,3 +67,5 @@ secrets.yaml
 *.tmp
 *.bak
 *.swp
+.claude/plans/
+.claude/settings.local.json
