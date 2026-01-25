@@ -17,6 +17,7 @@ def delete_endpoint(
     endpoint_name: str,
     delete_endpoint_config: bool = True,
     delete_model: bool = False,
+    force: bool = False,
 ) -> Dict[str, Any]:
     """
     エンドポイントを削除
@@ -25,6 +26,7 @@ def delete_endpoint(
         endpoint_name: エンドポイント名
         delete_endpoint_config: エンドポイント設定も削除するか
         delete_model: モデルも削除するか
+        force: 確認をスキップして強制削除するか（デフォルト: False）
 
     Returns:
         削除結果辞書
@@ -33,6 +35,26 @@ def delete_endpoint(
 
     # SageMakerクライアント
     sagemaker_client = boto3.client("sagemaker")
+
+    # 強制削除でない場合は確認処理とエンドポイントステータスのチェック
+    if not force:
+        try:
+            endpoint_info = sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
+            endpoint_status = endpoint_info.get("EndpointStatus", "Unknown")
+            if endpoint_status == "InService":
+                return {
+                    "status": "confirmation_required",
+                    "message": (
+                        f"Endpoint '{endpoint_name}' is currently InService. "
+                        "Set force=True to confirm deletion of an active endpoint."
+                    ),
+                    "endpoint_info": {
+                        "endpoint_name": endpoint_name,
+                        "endpoint_status": endpoint_status,
+                    },
+                }
+        except ClientError:
+            pass  # エンドポイントが存在しない場合は後続処理でエラーになる
 
     deleted_resources = []
 

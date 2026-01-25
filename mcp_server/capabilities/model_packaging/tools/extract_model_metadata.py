@@ -65,9 +65,11 @@ def extract_model_metadata(
         head_response = s3_client.head_object(Bucket=model_bucket, Key=model_key)
         s3_metadata = {
             "size_bytes": head_response.get("ContentLength", 0),
-            "last_modified": head_response.get("LastModified", "").isoformat()
-            if head_response.get("LastModified")
-            else None,
+            "last_modified": (
+                head_response.get("LastModified", "").isoformat()
+                if head_response.get("LastModified")
+                else None
+            ),
             "content_type": head_response.get("ContentType", ""),
         }
     except Exception as e:

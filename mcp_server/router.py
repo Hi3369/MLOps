@@ -1,4 +1,5 @@
 """ツールルーティング機構"""
+
 from typing import Any
 
 from mcp.types import EmbeddedResource, ImageContent, TextContent

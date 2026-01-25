@@ -84,8 +84,8 @@ def _detect_via_github_api(
     github_token: str,
 ) -> Dict[str, Any]:
     """GitHub APIを使用してIssueを検知"""
-    import urllib.request
     import json
+    import urllib.request
 
     base_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/issues"
 

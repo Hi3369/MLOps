@@ -58,8 +58,7 @@ def load_dataset(s3_uri: str, file_format: str = "csv") -> Dict[str, Any]:
             df = pd.read_json(io.BytesIO(file_content))
         else:
             raise ValueError(
-                f"Unsupported file format: {file_format}. "
-                f"Supported formats: csv, parquet, json"
+                f"Unsupported file format: {file_format}. " f"Supported formats: csv, parquet, json"
             )
 
         # データセット情報を収集

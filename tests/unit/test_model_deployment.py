@@ -33,6 +33,15 @@ class TestDeployToSageMaker:
     deploy_to_sagemaker関数のユニットテスト
     """
 
+    @pytest.fixture(autouse=True)
+    def mock_env_vars(self):
+        """環境変数のモック"""
+        with patch.dict(
+            os.environ,
+            {"SAGEMAKER_EXECUTION_ROLE_ARN": "arn:aws:iam::123456789012:role/test-role"},
+        ):
+            yield
+
     @pytest.fixture
     def mock_sagemaker_deploy(self):
         """デプロイ用モックSageMakerクライアント"""
@@ -115,7 +124,13 @@ class TestDeployToSageMaker:
         """
         既存エンドポイントの更新テスト
         """
-        with patch("boto3.client") as mock_client:
+        with (
+            patch("boto3.client") as mock_client,
+            patch.dict(
+                os.environ,
+                {"SAGEMAKER_EXECUTION_ROLE_ARN": "arn:aws:iam::123456789012:role/test-role"},
+            ),
+        ):
             mock_sagemaker = Mock()
 
             # モデル作成

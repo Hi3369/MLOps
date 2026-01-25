@@ -109,9 +109,7 @@ class TestEvaluateTriggerConditions:
 
     def test_evaluate_drift_threshold_triggered(self):
         """ドリフト閾値条件（トリガー発火）テスト"""
-        conditions = [
-            {"type": "drift_threshold", "threshold": 0.1, "comparison": "gt"}
-        ]
+        conditions = [{"type": "drift_threshold", "threshold": 0.1, "comparison": "gt"}]
         metrics = {"drift_score": 0.15}
         result = evaluate_trigger_conditions(conditions, metrics)
 
@@ -121,9 +119,7 @@ class TestEvaluateTriggerConditions:
 
     def test_evaluate_drift_threshold_not_triggered(self):
         """ドリフト閾値条件（トリガー非発火）テスト"""
-        conditions = [
-            {"type": "drift_threshold", "threshold": 0.1, "comparison": "gt"}
-        ]
+        conditions = [{"type": "drift_threshold", "threshold": 0.1, "comparison": "gt"}]
         metrics = {"drift_score": 0.05}
         result = evaluate_trigger_conditions(conditions, metrics)
 
@@ -133,7 +129,12 @@ class TestEvaluateTriggerConditions:
     def test_evaluate_performance_threshold(self):
         """パフォーマンス閾値条件テスト"""
         conditions = [
-            {"type": "performance_threshold", "metric": "accuracy", "threshold": 0.9, "comparison": "lt"}
+            {
+                "type": "performance_threshold",
+                "metric": "accuracy",
+                "threshold": 0.9,
+                "comparison": "lt",
+            }
         ]
         metrics = {"accuracy": 0.85}
         result = evaluate_trigger_conditions(conditions, metrics)
@@ -151,9 +152,7 @@ class TestEvaluateTriggerConditions:
 
     def test_evaluate_data_volume_condition(self):
         """データ量条件テスト"""
-        conditions = [
-            {"type": "data_volume", "threshold": 1000, "comparison": "gte"}
-        ]
+        conditions = [{"type": "data_volume", "threshold": 1000, "comparison": "gte"}]
         metrics = {"data_sample_count": 1500}
         result = evaluate_trigger_conditions(conditions, metrics)
 
@@ -164,7 +163,12 @@ class TestEvaluateTriggerConditions:
         """複数条件テスト"""
         conditions = [
             {"type": "drift_threshold", "threshold": 0.1, "comparison": "gt"},
-            {"type": "performance_threshold", "metric": "accuracy", "threshold": 0.9, "comparison": "lt"},
+            {
+                "type": "performance_threshold",
+                "metric": "accuracy",
+                "threshold": 0.9,
+                "comparison": "lt",
+            },
         ]
         metrics = {"drift_score": 0.05, "accuracy": 0.95}
         result = evaluate_trigger_conditions(conditions, metrics)
@@ -181,9 +185,7 @@ class TestEvaluateTriggerConditions:
     def test_evaluate_empty_metrics_error(self):
         """空メトリクスでエラーテスト"""
         with pytest.raises(ValueError, match="current_metrics must not be empty"):
-            evaluate_trigger_conditions(
-                [{"type": "drift_threshold", "threshold": 0.1}], {}
-            )
+            evaluate_trigger_conditions([{"type": "drift_threshold", "threshold": 0.1}], {})
 
 
 class TestCreateRetrainIssue:
@@ -439,9 +441,7 @@ class TestIntegration:
     def test_condition_evaluation_to_workflow_start(self):
         """条件評価→ワークフロー起動のワークフローテスト"""
         # 1. 条件評価
-        conditions = [
-            {"type": "drift_threshold", "threshold": 0.1, "comparison": "gt"}
-        ]
+        conditions = [{"type": "drift_threshold", "threshold": 0.1, "comparison": "gt"}]
         metrics = {"drift_score": 0.15}
         eval_result = evaluate_trigger_conditions(conditions, metrics)
         assert eval_result["status"] == "success"
@@ -463,9 +463,7 @@ class TestIntegration:
         assert trigger_result["status"] == "success"
 
         # 2. 条件評価
-        conditions = [
-            {"type": "drift_threshold", "threshold": 0.1, "comparison": "gt"}
-        ]
+        conditions = [{"type": "drift_threshold", "threshold": 0.1, "comparison": "gt"}]
         metrics = {"drift_score": 0.15}
         eval_result = evaluate_trigger_conditions(conditions, metrics)
         assert eval_result["status"] == "success"

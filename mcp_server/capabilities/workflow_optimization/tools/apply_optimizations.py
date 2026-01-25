@@ -168,9 +168,7 @@ def _apply_resource_optimization(
     return changes
 
 
-def _apply_data_optimization(
-    config: Dict[str, Any], suggestions: Dict[str, Any]
-) -> Dict[str, Any]:
+def _apply_data_optimization(config: Dict[str, Any], suggestions: Dict[str, Any]) -> Dict[str, Any]:
     """データ最適化を適用"""
     changes = {}
 
@@ -196,10 +194,7 @@ def _apply_algorithm_optimization(
     changes = {}
 
     # 代替アルゴリズムの提案がある場合
-    if (
-        "alternative_algorithms" in suggestions
-        and suggestions["alternative_algorithms"]
-    ):
+    if "alternative_algorithms" in suggestions and suggestions["alternative_algorithms"]:
         alternative_algorithms = suggestions["alternative_algorithms"]
         # 最初の代替アルゴリズムを選択
         selected_algorithm = alternative_algorithms[0]
@@ -215,9 +210,7 @@ def _apply_algorithm_optimization(
     return changes
 
 
-def _calculate_config_diff(
-    original: Dict[str, Any], optimized: Dict[str, Any]
-) -> Dict[str, Any]:
+def _calculate_config_diff(original: Dict[str, Any], optimized: Dict[str, Any]) -> Dict[str, Any]:
     """設定の差分を計算"""
     diff = {
         "added": {},

@@ -105,17 +105,22 @@ def _create_model(
     model_s3_uri: str,
 ) -> str:
     """SageMakerモデルを作成"""
-    # 実行ロールARN（環境変数から取得することを想定）
+    # 実行ロールARN（環境変数から取得）
     import os
 
-    execution_role = os.environ.get(
-        "SAGEMAKER_EXECUTION_ROLE_ARN",
-        "arn:aws:iam::123456789012:role/SageMakerExecutionRole",
-    )
+    execution_role = os.environ.get("SAGEMAKER_EXECUTION_ROLE_ARN")
+    if not execution_role:
+        raise ValueError(
+            "SAGEMAKER_EXECUTION_ROLE_ARN environment variable must be set. "
+            "Please configure a valid IAM role ARN for SageMaker execution."
+        )
 
-    # デフォルトコンテナイメージ（sklearn用）
-    # 本番環境では適切なイメージを選択
-    container_image = "382416733822.dkr.ecr.us-east-1.amazonaws.com/sklearn:latest"
+    # コンテナイメージ（環境変数から取得、未設定時はデフォルト）
+    container_image = os.environ.get(
+        "SAGEMAKER_CONTAINER_IMAGE",
+        "763104351884.dkr.ecr.us-east-1.amazonaws.com/sklearn-inference:latest",
+    )
+    logger.info(f"Using container image: {container_image}")
 
     response = sagemaker_client.create_model(
         ModelName=model_name,

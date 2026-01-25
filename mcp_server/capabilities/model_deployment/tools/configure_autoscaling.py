@@ -20,6 +20,8 @@ def configure_autoscaling(
     max_capacity: int = 4,
     target_metric: str = "SageMakerVariantInvocationsPerInstance",
     target_value: float = 70.0,
+    scale_in_cooldown: int = 300,
+    scale_out_cooldown: int = 60,
 ) -> Dict[str, Any]:
     """
     エンドポイントのオートスケーリングを設定
@@ -31,6 +33,8 @@ def configure_autoscaling(
         max_capacity: 最大インスタンス数
         target_metric: ターゲットメトリクス
         target_value: ターゲット値
+        scale_in_cooldown: スケールイン後のクールダウン時間（秒）
+        scale_out_cooldown: スケールアウト後のクールダウン時間（秒）
 
     Returns:
         設定結果辞書
@@ -49,6 +53,8 @@ def configure_autoscaling(
     valid_metrics = {
         "SageMakerVariantInvocationsPerInstance": "InvocationsPerInstance",
         "CPUUtilization": "CPUUtilization",
+        "MemoryUtilization": "MemoryUtilization",
+        "GPUUtilization": "GPUUtilization",
         "ModelLatency": "ModelLatency",
     }
 
@@ -91,8 +97,8 @@ def configure_autoscaling(
                 "PredefinedMetricSpecification": {
                     "PredefinedMetricType": predefined_metric_type,
                 },
-                "ScaleInCooldown": 300,  # 5分
-                "ScaleOutCooldown": 60,  # 1分
+                "ScaleInCooldown": scale_in_cooldown,
+                "ScaleOutCooldown": scale_out_cooldown,
             },
         )
 

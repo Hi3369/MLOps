@@ -1,4 +1,5 @@
 """設定管理"""
+
 import os
 from dataclasses import dataclass
 from typing import Optional

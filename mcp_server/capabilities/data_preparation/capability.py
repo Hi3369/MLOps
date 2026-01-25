@@ -53,10 +53,18 @@ class DataPreparationCapability:
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "bucket": {"type": "string", "description": "S3バケット名"},
-                        "key": {"type": "string", "description": "S3オブジェクトキー"},
+                        "s3_uri": {
+                            "type": "string",
+                            "description": "S3 URI (例: s3://bucket-name/path/to/file.csv)",
+                        },
+                        "file_format": {
+                            "type": "string",
+                            "enum": ["csv", "parquet", "json"],
+                            "description": "ファイルフォーマット",
+                            "default": "csv",
+                        },
                     },
-                    "required": ["bucket", "key"],
+                    "required": ["s3_uri"],
                 },
             },
             "validate_data": {
@@ -65,12 +73,28 @@ class DataPreparationCapability:
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "data": {
-                            "type": "object",
-                            "description": "検証するデータ",
+                        "s3_uri": {
+                            "type": "string",
+                            "description": "S3 URI (例: s3://bucket-name/path/to/file.csv)",
+                        },
+                        "file_format": {
+                            "type": "string",
+                            "enum": ["csv", "parquet", "json"],
+                            "description": "ファイルフォーマット",
+                            "default": "csv",
+                        },
+                        "required_columns": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "必須カラムのリスト",
+                        },
+                        "max_missing_ratio": {
+                            "type": "number",
+                            "description": "許容する欠損値の割合 (0.0-1.0)",
+                            "default": 0.5,
                         },
                     },
-                    "required": ["data"],
+                    "required": ["s3_uri"],
                 },
             },
             "preprocess_supervised": {
@@ -79,13 +103,64 @@ class DataPreparationCapability:
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "data": {"type": "object", "description": "前処理するデータ"},
+                        "s3_uri": {
+                            "type": "string",
+                            "description": "S3 URI (例: s3://bucket-name/path/to/file.csv)",
+                        },
                         "target_column": {
                             "type": "string",
                             "description": "ターゲット列名",
                         },
+                        "task_type": {
+                            "type": "string",
+                            "enum": ["classification", "regression"],
+                            "description": "タスクタイプ",
+                            "default": "classification",
+                        },
+                        "file_format": {
+                            "type": "string",
+                            "enum": ["csv", "parquet", "json"],
+                            "description": "入力ファイルフォーマット",
+                            "default": "csv",
+                        },
+                        "test_size": {
+                            "type": "number",
+                            "description": "テストデータの割合 (0.0-1.0)",
+                            "default": 0.2,
+                        },
+                        "normalize": {
+                            "type": "boolean",
+                            "description": "数値変数を正規化するか",
+                            "default": True,
+                        },
+                        "handle_missing": {
+                            "type": "string",
+                            "enum": ["drop", "mean", "median", "mode"],
+                            "description": "欠損値の処理方法",
+                            "default": "drop",
+                        },
+                        "encode_categorical": {
+                            "type": "boolean",
+                            "description": "カテゴリ変数をエンコードするか",
+                            "default": True,
+                        },
+                        "output_s3_uri": {
+                            "type": "string",
+                            "description": "出力先S3 URI (省略時は自動生成)",
+                        },
+                        "output_format": {
+                            "type": "string",
+                            "enum": ["csv", "parquet"],
+                            "description": "出力ファイルフォーマット",
+                            "default": "csv",
+                        },
+                        "random_state": {
+                            "type": "integer",
+                            "description": "乱数シード（再現性確保用）",
+                            "default": 42,
+                        },
                     },
-                    "required": ["data", "target_column"],
+                    "required": ["s3_uri", "target_column"],
                 },
             },
         }

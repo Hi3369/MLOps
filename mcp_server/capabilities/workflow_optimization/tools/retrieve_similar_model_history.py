@@ -121,9 +121,7 @@ def _calculate_statistics(items: List[Dict]) -> Dict[str, Any]:
 
     # トレーニング時間の平均
     training_times = [item.get("training_time_minutes", 0) for item in items]
-    avg_training_time = (
-        sum(training_times) / len(training_times) if training_times else 0
-    )
+    avg_training_time = sum(training_times) / len(training_times) if training_times else 0
 
     # 精度の平均
     accuracies = [item.get("accuracy", 0) for item in items]
@@ -141,9 +139,7 @@ def _calculate_statistics(items: List[Dict]) -> Dict[str, Any]:
             if key not in hyperparameter_counts:
                 hyperparameter_counts[key] = {}
             value_str = str(value)
-            hyperparameter_counts[key][value_str] = (
-                hyperparameter_counts[key].get(value_str, 0) + 1
-            )
+            hyperparameter_counts[key][value_str] = hyperparameter_counts[key].get(value_str, 0) + 1
 
     most_common_hyperparameters = {}
     for key, value_counts in hyperparameter_counts.items():

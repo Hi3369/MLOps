@@ -66,9 +66,7 @@ def train_clustering(
         else:
             raise ValueError(f"Unsupported file format: {file_format}")
 
-        logger.info(
-            f"Loaded training data: {len(df)} samples, {len(df.columns)} features"
-        )
+        logger.info(f"Loaded training data: {len(df)} samples, {len(df.columns)} features")
 
     except ClientError as e:
         logger.error(f"S3 access error: {e}")
@@ -129,9 +127,7 @@ def train_clustering(
 
         s3_client.put_object(
             Bucket=output_bucket,
-            Key=output_key
-            if output_key.endswith(".pkl")
-            else f"{output_key}/model.pkl",
+            Key=output_key if output_key.endswith(".pkl") else f"{output_key}/model.pkl",
             Body=model_buffer.getvalue(),
         )
 

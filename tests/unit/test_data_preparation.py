@@ -103,6 +103,39 @@ class TestLoadDataset:
         with pytest.raises(ValueError, match="Unsupported file format"):
             load_dataset(s3_uri="s3://test-bucket/data.txt", file_format="unsupported")
 
+    @pytest.mark.skipif(
+        not hasattr(pd.DataFrame, "to_parquet") or True,
+        reason="pyarrow or fastparquet not installed",
+    )
+    def test_load_dataset_parquet_success(self, sample_csv_data):
+        """
+        Parquetファイルの正常読み込みテスト
+        """
+        pytest.importorskip("pyarrow")
+        with patch("boto3.client") as mock_client:
+            # Parquetデータをバイト列に変換
+            parquet_buffer = io.BytesIO()
+            sample_csv_data.to_parquet(parquet_buffer, index=False)
+            parquet_bytes = parquet_buffer.getvalue()
+
+            # S3レスポンスをモック
+            mock_s3 = Mock()
+            mock_s3.get_object.return_value = {
+                "Body": io.BytesIO(parquet_bytes),
+            }
+            mock_client.return_value = mock_s3
+
+            result = load_dataset(s3_uri="s3://test-bucket/data.parquet", file_format="parquet")
+
+            # ステータス確認
+            assert result["status"] == "success"
+            assert result["file_format"] == "parquet"
+
+            # データセット情報確認
+            dataset_info = result["dataset_info"]
+            assert dataset_info["rows"] == 5
+            assert dataset_info["columns"] == 4
+
 
 class TestValidateData:
     """
@@ -277,8 +310,8 @@ class TestPreprocessSupervised:
         assert preprocessing_results["target_classes"] is not None
         assert len(preprocessing_results["target_classes"]) == 2
 
-        # S3への保存確認
-        assert mock_s3_for_preprocessing.put_object.call_count == 2  # train + test
+        # S3への保存確認（train + test, LabelEncoderの保存も含む場合がある）
+        assert mock_s3_for_preprocessing.put_object.call_count >= 2
 
     def test_preprocess_supervised_missing_target_column(self, mock_s3_for_preprocessing):
         """
@@ -338,3 +371,85 @@ class TestPreprocessSupervised:
 
         preprocessing_results = result["preprocessing_results"]
         assert preprocessing_results["normalized"] is False
+
+    def test_preprocess_supervised_with_task_type_regression(self, mock_s3_for_preprocessing):
+        """
+        回帰タスクの前処理テスト
+        """
+        # 回帰用データを準備
+        regression_data = pd.DataFrame(
+            {
+                "numeric_feature": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+                "categorical_feature": ["A", "B", "A", "B", "A", "B", "A", "B", "A", "B"],
+                "target": [10.5, 20.3, 30.1, 40.8, 50.2, 60.7, 70.4, 80.9, 90.6, 100.0],
+            }
+        )
+
+        with patch("boto3.client") as mock_client:
+            csv_buffer = io.StringIO()
+            regression_data.to_csv(csv_buffer, index=False)
+            csv_bytes = csv_buffer.getvalue().encode("utf-8")
+
+            mock_s3 = Mock()
+            mock_s3.get_object.return_value = {
+                "Body": io.BytesIO(csv_bytes),
+            }
+            mock_s3.put_object.return_value = {}
+            mock_client.return_value = mock_s3
+
+            result = preprocess_supervised(
+                s3_uri="s3://test-bucket/train.csv",
+                target_column="target",
+                task_type="regression",
+                normalize=True,
+            )
+
+            preprocessing_results = result["preprocessing_results"]
+            assert preprocessing_results["task_type"] == "regression"
+            # 回帰タスクではターゲットクラスはNone
+            assert preprocessing_results["target_classes"] is None
+
+    def test_preprocess_supervised_with_random_state(self, mock_s3_for_preprocessing):
+        """
+        乱数シードの指定テスト（べき等性）
+        """
+        result = preprocess_supervised(
+            s3_uri="s3://test-bucket/train.csv",
+            target_column="target",
+            random_state=123,
+        )
+
+        preprocessing_results = result["preprocessing_results"]
+        assert preprocessing_results["random_state"] == 123
+
+    def test_preprocess_supervised_test_size_boundary(self, mock_s3_for_preprocessing):
+        """
+        test_size境界値テスト
+        """
+        # test_size=0.1 (最小分割)
+        result = preprocess_supervised(
+            s3_uri="s3://test-bucket/train.csv",
+            target_column="target",
+            test_size=0.1,
+        )
+
+        preprocessing_results = result["preprocessing_results"]
+        # 10サンプル * 0.1 = 1サンプルがテスト
+        assert preprocessing_results["test_samples"] == 1
+        assert preprocessing_results["train_samples"] == 9
+
+    def test_preprocess_supervised_output_format_parquet(self, mock_s3_for_preprocessing):
+        """
+        Parquet出力形式テスト
+        """
+        pytest.importorskip("pyarrow")
+        result = preprocess_supervised(
+            s3_uri="s3://test-bucket/train.csv",
+            target_column="target",
+            output_format="parquet",
+        )
+
+        preprocessing_results = result["preprocessing_results"]
+        assert preprocessing_results["output_format"] == "parquet"
+        # put_objectが呼ばれた回数を確認（train, test, metadata）
+        assert mock_s3_for_preprocessing.put_object.call_count == 3

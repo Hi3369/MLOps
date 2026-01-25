@@ -185,7 +185,7 @@ class TestJudgeAgent:
                 "accuracy": 0.90,
                 "precision": 0.88,
                 "recall": 0.92,
-                "f1_score": 0.90
+                "f1_score": 0.90,
                 # auc_roc is missing
             },
             "acceptance_criteria": {

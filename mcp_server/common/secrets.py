@@ -1,4 +1,5 @@
 """AWS Secrets Manager統合"""
+
 import json
 from functools import lru_cache
 

@@ -51,9 +51,7 @@ def track_optimization_history(
             table.load()
         except ClientError as e:
             if e.response["Error"]["Code"] == "ResourceNotFoundException":
-                logger.warning(
-                    f"Table {table_name} not found, returning mock tracking result"
-                )
+                logger.warning(f"Table {table_name} not found, returning mock tracking result")
                 return _get_mock_tracking_result(optimization_id, results)
             raise
 
@@ -157,9 +155,9 @@ def _update_statistics(table, history_record: Dict[str, Any]) -> Dict[str, Any]:
 
         # 統計を更新
         stats["total_records"] = stats.get("total_records", 0) + 1
-        stats["total_optimizations"] = stats.get(
+        stats["total_optimizations"] = stats.get("total_optimizations", 0) + history_record.get(
             "total_optimizations", 0
-        ) + history_record.get("total_optimizations", 0)
+        )
 
         # 最適化タイプ別のカウント更新
         metrics = history_record.get("metrics", {})
@@ -188,9 +186,7 @@ def _update_statistics(table, history_record: Dict[str, Any]) -> Dict[str, Any]:
         return {}
 
 
-def _get_mock_tracking_result(
-    optimization_id: str, results: Dict[str, Any]
-) -> Dict[str, Any]:
+def _get_mock_tracking_result(optimization_id: str, results: Dict[str, Any]) -> Dict[str, Any]:
     """モック追跡結果を返す（開発・テスト用）"""
     logger.info("Returning mock optimization tracking result")
 

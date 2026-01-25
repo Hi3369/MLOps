@@ -68,9 +68,7 @@ def generate_optimization_proposal(
             proposals.append(data_proposal)
 
         # 4. アルゴリズム選択提案
-        algorithm_proposal = _generate_algorithm_proposal(
-            algorithm, model_characteristics
-        )
+        algorithm_proposal = _generate_algorithm_proposal(algorithm, model_characteristics)
         if algorithm_proposal:
             proposals.append(algorithm_proposal)
 
@@ -142,9 +140,7 @@ def _generate_hyperparameter_proposal(
         "priority": "high",
         "description": f"{algorithm}のハイパーパラメータチューニング",
         "suggestions": suggestions,
-        "tuning_strategy": "grid_search"
-        if estimated_time < max_time * 0.5
-        else "random_search",
+        "tuning_strategy": "grid_search" if estimated_time < max_time * 0.5 else "random_search",
         "expected_improvement": "5-15%",
     }
 
@@ -293,9 +289,7 @@ def _estimate_performance_improvement(proposals: list) -> str:
     return f"{int(total_improvement)}% improvement expected"
 
 
-def _check_constraints(
-    total_cost: float, total_time: float, constraints: Dict[str, Any]
-) -> bool:
+def _check_constraints(total_cost: float, total_time: float, constraints: Dict[str, Any]) -> bool:
     """制約条件を満たしているかチェック"""
     max_cost = constraints.get("max_cost_usd", float("inf"))
     max_time = constraints.get("max_training_time_minutes", float("inf"))

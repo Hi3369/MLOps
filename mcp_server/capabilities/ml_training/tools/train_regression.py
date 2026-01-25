@@ -26,6 +26,7 @@ def train_regression(
     hyperparameters: Dict[str, Any] = None,
     model_output_s3_uri: str = None,
     file_format: str = "csv",
+    validation_data_s3_uri: str = None,
 ) -> Dict[str, Any]:
     """
     回帰モデルを学習
@@ -36,6 +37,7 @@ def train_regression(
         hyperparameters: ハイパーパラメータ辞書
         model_output_s3_uri: モデル保存先S3 URI
         file_format: ファイルフォーマット (csv, parquet)
+        validation_data_s3_uri: 検証データのS3 URI（オーバーフィッティング検出用）
 
     Returns:
         学習結果辞書
@@ -67,9 +69,7 @@ def train_regression(
         else:
             raise ValueError(f"Unsupported file format: {file_format}")
 
-        logger.info(
-            f"Loaded training data: {len(df)} samples, {len(df.columns)} features"
-        )
+        logger.info(f"Loaded training data: {len(df)} samples, {len(df.columns)} features")
 
     except ClientError as e:
         logger.error(f"S3 access error: {e}")
@@ -117,6 +117,46 @@ def train_regression(
     train_score = model.score(X_train, y_train)
     logger.info(f"Training R^2 score: {train_score:.4f}")
 
+    # 検証データでの評価（オーバーフィッティング検出）
+    validation_score = None
+    overfitting_warning = None
+    if validation_data_s3_uri:
+        try:
+            if not validation_data_s3_uri.startswith("s3://"):
+                raise ValueError("Invalid validation S3 URI: must start with 's3://'")
+
+            val_parts = validation_data_s3_uri[5:].split("/", 1)
+            if len(val_parts) != 2:
+                raise ValueError("Invalid validation S3 URI format")
+
+            val_bucket, val_key = val_parts
+            val_response = s3_client.get_object(Bucket=val_bucket, Key=val_key)
+            val_content = val_response["Body"].read()
+
+            if file_format.lower() == "csv":
+                val_df = pd.read_csv(io.BytesIO(val_content))
+            elif file_format.lower() == "parquet":
+                val_df = pd.read_parquet(io.BytesIO(val_content))
+            else:
+                raise ValueError(f"Unsupported file format: {file_format}")
+
+            X_val = val_df.iloc[:, :-1]
+            y_val = val_df.iloc[:, -1]
+            validation_score = model.score(X_val, y_val)
+            logger.info(f"Validation R^2 score: {validation_score:.4f}")
+
+            # オーバーフィッティング検出
+            score_diff = train_score - validation_score
+            if score_diff > 0.1:
+                overfitting_warning = (
+                    f"Potential overfitting detected: train_r2={train_score:.4f}, "
+                    f"validation_r2={validation_score:.4f}, diff={score_diff:.4f}"
+                )
+                logger.warning(overfitting_warning)
+
+        except ClientError as e:
+            logger.warning(f"Failed to load validation data: {e}")
+
     # モデルの保存
     if model_output_s3_uri:
         # モデルをシリアライズ
@@ -130,9 +170,7 @@ def train_regression(
 
         s3_client.put_object(
             Bucket=output_bucket,
-            Key=output_key
-            if output_key.endswith(".pkl")
-            else f"{output_key}/model.pkl",
+            Key=output_key if output_key.endswith(".pkl") else f"{output_key}/model.pkl",
             Body=model_buffer.getvalue(),
         )
 
@@ -145,6 +183,10 @@ def train_regression(
             "n_features": len(X_train.columns),
             "feature_names": X_train.columns.tolist(),
         }
+        if validation_score is not None:
+            metadata["validation_r2_score"] = float(validation_score)
+        if overfitting_warning:
+            metadata["overfitting_warning"] = overfitting_warning
 
         metadata_key = (
             output_key.replace(".pkl", "_metadata.json")
@@ -159,7 +201,7 @@ def train_regression(
 
         logger.info(f"Saved model to {model_output_s3_uri}")
 
-    return {
+    result = {
         "status": "success",
         "message": f"Regression model trained successfully with {algorithm}",
         "training_results": {
@@ -172,3 +214,10 @@ def train_regression(
             "model_s3_uri": model_output_s3_uri,
         },
     }
+
+    if validation_score is not None:
+        result["training_results"]["validation_r2_score"] = float(validation_score)
+    if overfitting_warning:
+        result["training_results"]["overfitting_warning"] = overfitting_warning
+
+    return result
