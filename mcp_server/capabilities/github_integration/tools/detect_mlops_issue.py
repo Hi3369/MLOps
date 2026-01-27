@@ -99,8 +99,9 @@ def _detect_via_github_api(
         if issue_number:
             # 単一Issue取得
             url = f"{base_url}/{issue_number}"
+            assert url.startswith("https://"), "URL must use HTTPS"  # nosec B310
             req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=30) as response:
+            with urllib.request.urlopen(req, timeout=30) as response:  # nosec B310
                 issue_data = json.loads(response.read().decode())
                 issues = [_parse_github_issue(issue_data)]
         else:
@@ -111,8 +112,9 @@ def _detect_via_github_api(
             else:
                 url += "?state=open"
 
+            assert url.startswith("https://"), "URL must use HTTPS"  # nosec B310
             req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=30) as response:
+            with urllib.request.urlopen(req, timeout=30) as response:  # nosec B310
                 issues_data = json.loads(response.read().decode())
                 issues = [_parse_github_issue(issue) for issue in issues_data]
 

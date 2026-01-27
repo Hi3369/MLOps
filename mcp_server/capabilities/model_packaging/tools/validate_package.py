@@ -62,7 +62,11 @@ def validate_package(
         # tar.gzを展開
         try:
             with tarfile.open(fileobj=io.BytesIO(package_content), mode="r:gz") as tar:
-                tar.extractall(tmp_path)
+                # セキュリティ: メンバーの検証（パストラバーサル防止）
+                for member in tar.getmembers():
+                    if member.name.startswith("/") or ".." in member.name:
+                        raise ValueError(f"Unsafe tar member: {member.name}")
+                tar.extractall(tmp_path, filter="data")  # nosec B202
 
             logger.info("Package extracted successfully")
 

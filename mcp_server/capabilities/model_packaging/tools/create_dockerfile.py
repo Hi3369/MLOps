@@ -78,6 +78,7 @@ def _generate_optimized_dockerfile(
     base_image: str, framework: str, model_s3_uri: str, python_version: str
 ) -> str:
     """最適化されたDockerfileを生成（マルチステージビルド）"""
+    # nosec B608 - This is Dockerfile content generation, not SQL
     dockerfile = f"""# Multi-stage build for optimized image size
 # Stage 1: Builder
 FROM {base_image} AS builder
@@ -145,6 +146,7 @@ CMD ["python", "inference.py"]
 
 def _generate_simple_dockerfile(base_image: str, framework: str, model_s3_uri: str) -> str:
     """シンプルなDockerfileを生成"""
+    # nosec B608 - This is Dockerfile content generation, not SQL
     dockerfile = f"""FROM {base_image}
 
 WORKDIR /app

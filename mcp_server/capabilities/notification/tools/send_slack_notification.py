@@ -132,6 +132,10 @@ def _send_real_slack_notification(
     if blocks:
         payload["blocks"] = blocks
 
+    # URLスキーム検証
+    if not webhook_url.startswith("https://"):
+        raise ValueError("Webhook URL must use HTTPS")
+
     # リクエスト送信
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
@@ -141,7 +145,7 @@ def _send_real_slack_notification(
     )
 
     try:
-        with urllib.request.urlopen(req, timeout=10) as response:
+        with urllib.request.urlopen(req, timeout=10) as response:  # nosec B310
             response_body = response.read().decode("utf-8")
 
             if response.status == 200:

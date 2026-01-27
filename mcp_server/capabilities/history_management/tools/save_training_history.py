@@ -6,6 +6,7 @@ Save Training History Tool
 
 import logging
 import os
+import tempfile
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from uuid import uuid4
@@ -71,9 +72,10 @@ def save_training_history(
                 env=env,
             )
         else:
+            default_local_path = os.path.join(tempfile.gettempdir(), "training_history")
             result = _save_to_local(
                 formatted_history=formatted_history,
-                local_path=local_path or "/tmp/training_history",
+                local_path=local_path or default_local_path,
                 filename=filename,
                 env=env,
             )

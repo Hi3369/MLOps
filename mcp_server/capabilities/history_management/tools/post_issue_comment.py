@@ -181,7 +181,8 @@ def _real_post_comment(
     )
 
     try:
-        with urllib.request.urlopen(req, timeout=30) as response:
+        assert api_url.startswith("https://"), "URL must use HTTPS"  # nosec B310
+        with urllib.request.urlopen(req, timeout=30) as response:  # nosec B310
             response_data = json.loads(response.read().decode("utf-8"))
 
             return {
