@@ -500,8 +500,8 @@ class TestServerCapabilities:
         # Data Preparation, ML Training, ML Evaluation, Model Registry, Model Packaging, Model Deployment, Model Monitoring, Workflow Optimization, GitHub Integration, Notification が登録されている
         assert len(server.capabilities) == 10
 
-        # toolsには51つのツールが登録されている (Data Prep: 3 + ML Training: 3 + ML Evaluation: 3 + Model Registry: 5 + Model Packaging: 5 + Model Deployment: 9 + Model Monitoring: 10 + Workflow Optimization: 5 + GitHub Integration: 4 + Notification: 4)
-        assert len(server.tools) == 51
+        # toolsには53つのツールが登録されている (Data Prep: 3 + ML Training: 3 + ML Evaluation: 5 + Model Registry: 5 + Model Packaging: 5 + Model Deployment: 9 + Model Monitoring: 10 + Workflow Optimization: 5 + GitHub Integration: 4 + Notification: 4)
+        assert len(server.tools) == 53
 
         # 将来的に他のCapabilityが追加されることを想定
         # （このテストは構造の確認のみ）
