@@ -216,6 +216,24 @@ class MLOpsServer:
         except ImportError as e:
             logger.warning(f"Experiment Tracking Capability not available: {e}")
 
+        # Data Versioning Capability
+        try:
+            from .capabilities.data_versioning.capability import (
+                DataVersioningCapability,
+            )
+
+            data_versioning = DataVersioningCapability()
+            self.capabilities["data_versioning"] = data_versioning
+
+            # ツールをグローバルツールリストに登録
+            for tool_name, tool_func in data_versioning.get_tools().items():
+                full_tool_name = f"data_versioning.{tool_name}"
+                self.tools[full_tool_name] = tool_func
+                logger.info(f"Registered tool: {full_tool_name}")
+
+        except ImportError as e:
+            logger.warning(f"Data Versioning Capability not available: {e}")
+
         logger.info(f"Total {len(self.tools)} tools registered")
 
     def list_tools(self) -> List[Dict[str, Any]]:
