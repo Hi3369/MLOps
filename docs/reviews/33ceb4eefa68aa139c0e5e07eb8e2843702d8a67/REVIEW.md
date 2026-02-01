@@ -79,7 +79,7 @@ Model Deployment Capabilityの実装は、MLOpsプラットフォームの包括
 
 ### アーキテクチャ
 
-```
+```text
 mcp_server/capabilities/model_deployment/
 ├── capability.py              (261行) - メインcapabilityクラス
 ├── tools/
@@ -105,23 +105,27 @@ tests/integration/test_mcp_server.py (更新) - 統合テスト
 **合格率**: 100%
 
 #### TestDeployToSageMaker (4個のテスト)
+
 - ✅ `test_deploy_to_sagemaker_success` - 基本的なデプロイ成功
 - ✅ `test_deploy_to_sagemaker_with_model_name` - カスタムモデル名指定
 - ✅ `test_deploy_to_sagemaker_update_existing` - 既存エンドポイント更新
 - ✅ `test_deploy_to_sagemaker_invalid_uri` - 無効なS3 URI検証
 
 #### TestUpdateEndpointTraffic (4個のテスト)
+
 - ✅ `test_update_endpoint_traffic_success` - トラフィック配分更新
 - ✅ `test_update_endpoint_traffic_canary_deployment` - カナリアデプロイ（10%トラフィック）
 - ✅ `test_update_endpoint_traffic_invalid_weights` - 無効な重み検証
 - ✅ `test_update_endpoint_traffic_not_found` - エンドポイント未検出エラー処理
 
 #### TestUpdateEndpointCapacity (3個のテスト)
+
 - ✅ `test_update_endpoint_capacity_success` - 容量更新成功
 - ✅ `test_update_endpoint_capacity_scale_up` - スケールアップ
 - ✅ `test_update_endpoint_capacity_invalid_count` - 無効なインスタンス数検証
 
 #### TestConfigureAutoscaling (5個のテスト)
+
 - ✅ `test_configure_autoscaling_success` - オートスケーリング設定成功
 - ✅ `test_configure_autoscaling_cpu_metric` - CPU使用率メトリクス
 - ✅ `test_configure_autoscaling_invalid_min_capacity` - 無効な最小容量検証
@@ -129,25 +133,30 @@ tests/integration/test_mcp_server.py (更新) - 統合テスト
 - ✅ `test_configure_autoscaling_invalid_metric` - 無効なメトリクスタイプ検証
 
 #### TestDeleteAutoscaling (1個のテスト)
+
 - ✅ `test_delete_autoscaling_success` - オートスケーリング削除成功
 
 #### TestMonitorEndpoint (3個のテスト)
+
 - ✅ `test_monitor_endpoint_success` - メトリクス付き監視
 - ✅ `test_monitor_endpoint_without_metrics` - メトリクスなし監視
 - ✅ `test_monitor_endpoint_not_found` - エンドポイント未検出エラー処理
 
 #### TestHealthCheckEndpoint (3個のテスト)
+
 - ✅ `test_health_check_endpoint_success` - ヘルスチェック成功
 - ✅ `test_health_check_endpoint_with_custom_payload` - カスタムペイロード
 - ✅ `test_health_check_endpoint_failure` - ヘルスチェック失敗処理
 
 #### TestDeleteEndpoint (4個のテスト)
+
 - ✅ `test_delete_endpoint_success` - エンドポイント削除成功
 - ✅ `test_delete_endpoint_with_model` - モデルも含めて削除
 - ✅ `test_delete_endpoint_only_endpoint` - エンドポイントのみ削除
 - ✅ `test_delete_endpoint_not_found` - エンドポイント未検出エラー処理
 
 #### TestRollbackDeployment (3個のテスト)
+
 - ✅ `test_rollback_deployment_auto_detect` - 自動検出によるロールバック
 - ✅ `test_rollback_deployment_explicit_config` - 明示的な設定名指定
 - ✅ `test_rollback_deployment_no_previous_config` - 前の設定が存在しない場合のエラー処理
@@ -155,12 +164,14 @@ tests/integration/test_mcp_server.py (更新) - 統合テスト
 ### 統合テスト
 
 **更新されたテスト**:
+
 - ✅ `test_capability_initialization` - 6個のcapabilityを検証（model_deployment追加）
 - ✅ `test_tool_registration` - 28個の総ツール数を検証（9個のmodel_deploymentツール追加）
 - ✅ `test_tool_list` - ツールリストにmodel_deploymentツールが含まれることを検証
 
 **テスト結果**:
-```
+
+```text
 tests/unit/test_model_deployment.py::TestDeployToSageMaker::test_deploy_to_sagemaker_success PASSED
 tests/unit/test_model_deployment.py::TestDeployToSageMaker::test_deploy_to_sagemaker_with_model_name PASSED
 tests/unit/test_model_deployment.py::TestDeployToSageMaker::test_deploy_to_sagemaker_update_existing PASSED
@@ -221,6 +232,7 @@ tests/unit/test_model_deployment.py::TestRollbackDeployment::test_rollback_deplo
 ### コードスタイル
 
 **強み**:
+
 - ✅ 一貫したdocstring形式（Google style）
 - ✅ 関数パラメータと戻り値の型ヒント
 - ✅ わかりやすい変数名（日本語コメント付き）
@@ -232,12 +244,14 @@ tests/unit/test_model_deployment.py::TestRollbackDeployment::test_rollback_deplo
 **良い実践例**:
 
 1. **早期S3 URI検証** ([deploy_to_sagemaker.py:42-43](../../mcp_server/capabilities/model_deployment/tools/deploy_to_sagemaker.py#L42-L43)):
+
 ```python
 if not model_s3_uri.startswith("s3://"):
     raise ValueError("Invalid S3 URI: must start with 's3://'")
 ```
 
-2. **包括的なロギング** ([deploy_to_sagemaker.py:39,56,67,73](../../mcp_server/capabilities/model_deployment/tools/deploy_to_sagemaker.py#L39,L56,L67,L73)):
+1. **包括的なロギング** ([deploy_to_sagemaker.py:39,56,67,73](../../mcp_server/capabilities/model_deployment/tools/deploy_to_sagemaker.py#L39,L56,L67,L73)):
+
 ```python
 logger.info(f"Deploying model to SageMaker endpoint: {endpoint_name}")
 # ... 実装 ...
@@ -246,7 +260,8 @@ logger.info(f"Endpoint config created: {endpoint_config_arn}")
 logger.info(f"Endpoint {'created' if is_new else 'updated'}: {endpoint_arn}")
 ```
 
-3. **既存リソースの自動検出** ([deploy_to_sagemaker.py:156-183](../../mcp_server/capabilities/model_deployment/tools/deploy_to_sagemaker.py#L156-L183)):
+1. **既存リソースの自動検出** ([deploy_to_sagemaker.py:156-183](../../mcp_server/capabilities/model_deployment/tools/deploy_to_sagemaker.py#L156-L183)):
+
 ```python
 def _create_or_update_endpoint(sagemaker_client, endpoint_name, endpoint_config_name):
     try:
@@ -262,7 +277,8 @@ def _create_or_update_endpoint(sagemaker_client, endpoint_name, endpoint_config_
             return response["EndpointArn"], True
 ```
 
-4. **段階的削除オプション** ([delete_endpoint.py:16-20](../../mcp_server/capabilities/model_deployment/tools/delete_endpoint.py#L16-L20)):
+1. **段階的削除オプション** ([delete_endpoint.py:16-20](../../mcp_server/capabilities/model_deployment/tools/delete_endpoint.py#L16-L20)):
+
 ```python
 def delete_endpoint(
     endpoint_name: str,
@@ -315,11 +331,13 @@ def delete_endpoint(
 ### デプロイメントライフサイクル管理
 
 実装は完全なデプロイメントライフサイクルをカバー:
-```
+
+```text
 デプロイ → トラフィック制御 → スケーリング → 監視 → ヘルスチェック → (必要に応じて)ロールバック → 削除
 ```
 
 この設計は:
+
 - ✅ 包括的
 - ✅ 本番環境対応
 - ✅ ベストプラクティスに準拠
@@ -329,7 +347,7 @@ def delete_endpoint(
 
 ## パフォーマンス考察
 
-### 強み
+### 強み（パフォーマンス）
 
 1. **デプロイ完了待機のオプション化** ([deploy_to_sagemaker.py:76-78](../../mcp_server/capabilities/model_deployment/tools/deploy_to_sagemaker.py#L76-L78))
    - wait_for_completion=Falseで非同期デプロイ可能
@@ -373,7 +391,7 @@ def delete_endpoint(
 
 ## セキュリティ分析
 
-### 強み
+### 強み（セキュリティ）
 
 1. **S3 URI検証** ✅
    - デプロイ前にS3 URIを検証
@@ -441,6 +459,7 @@ except ImportError as e:
 ```
 
 **評価**: ✅ 完璧な統合
+
 - 他のcapabilityと同じパターンに従う
 - インポート失敗時の優雅な劣化
 - 適切な名前空間（`model_deployment.tool_name`）
@@ -564,29 +583,29 @@ except ImportError as e:
 
 ### 中優先度
 
-3. **デプロイ進捗通知の追加** ℹ️ あると良い
+1. **デプロイ進捗通知の追加** ℹ️ あると良い
    - エンドポイント待機中の詳細ステータス
    - 予想残り時間の表示
    - **メリット**: より良いユーザー体験
 
-4. **メトリクスダッシュボード生成** ℹ️ あると良い
+2. **メトリクスダッシュボード生成** ℹ️ あると良い
    - CloudWatch Dashboardの自動作成
    - 主要メトリクスの可視化
    - **メリット**: 運用効率向上
 
-5. **ブルー/グリーンデプロイメントサポート** ℹ️ あると良い
+3. **ブルー/グリーンデプロイメントサポート** ℹ️ あると良い
    - 2つのエンドポイント間の自動切り替え
    - ゼロダウンタイムデプロイ
    - **メリット**: より高度なデプロイ戦略
 
 ### 低優先度
 
-6. **マルチリージョンデプロイ** ℹ️ 将来の機能拡張
+1. **マルチリージョンデプロイ** ℹ️ 将来の機能拡張
    - 複数リージョンへの同時デプロイ
    - グローバルトラフィック管理
    - **メリット**: グローバル展開対応
 
-7. **コスト最適化レポート** ℹ️ 将来の機能拡張
+2. **コスト最適化レポート** ℹ️ 将来の機能拡張
    - インスタンス使用率の分析
    - コスト削減の提案
    - **メリット**: TCO削減
@@ -634,21 +653,25 @@ except ImportError as e:
 ## 類似システムとの比較
 
 ### SageMaker Python SDK
+
 - **類似点**: どちらもSageMakerエンドポイント管理
 - **相違点**: 本実装はMCP標準準拠でマルチツール
 - **利点**: よりモジュール化、LLM統合、統一API
 
 ### AWS CDK SageMaker Constructs
+
 - **類似点**: どちらもインフラストラクチャコード
 - **相違点**: CDKは宣言的、本実装は命令的
 - **利点**: 動的な運用操作に適している
 
 ### Kubeflow Serving
+
 - **類似点**: どちらもMLモデルデプロイ管理
 - **相違点**: KubeflowはKubernetes特化
 - **利点**: SageMakerネイティブ、マネージドサービス
 
 ### MLflow Deployments
+
 - **類似点**: どちらもマルチプラットフォーム対応
 - **相違点**: MLflowはモデルレジストリ統合重視
 - **利点**: より細かいSageMaker制御、MCP標準
@@ -682,6 +705,7 @@ isort --check-only mcp_server/capabilities/model_deployment/ tests/unit/test_mod
 ## ファイル変更サマリー
 
 ### 作成されたファイル (6個)
+
 1. `mcp_server/capabilities/model_deployment/tools/deploy_to_sagemaker.py` (+204行)
 2. `mcp_server/capabilities/model_deployment/tools/update_endpoint.py` (+148行)
 3. `mcp_server/capabilities/model_deployment/tools/configure_autoscaling.py` (+179行)
@@ -690,6 +714,7 @@ isort --check-only mcp_server/capabilities/model_deployment/ tests/unit/test_mod
 6. `tests/unit/test_model_deployment.py` (+890行)
 
 ### 変更されたファイル (3個)
+
 1. `mcp_server/capabilities/model_deployment/capability.py` (+261行, -93行)
 2. `mcp_server/server.py` (+16行)
 3. `tests/integration/test_mcp_server.py` (+24行, -1行)

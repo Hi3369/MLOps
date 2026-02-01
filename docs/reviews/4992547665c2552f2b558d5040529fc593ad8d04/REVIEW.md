@@ -46,7 +46,7 @@
 
 **変更ファイル**: [docs/designs/mcp_design.md](../../designs/mcp_design.md#L655-L678)
 
-#### ✅ 良い点
+#### ✅ 良い点（MCP通信方式）
 
 1. **明確な推奨方式の提示**
    - SSEモードを本番環境推奨として明記
@@ -74,7 +74,7 @@
 
    → 誤用を防ぐ明確な警告
 
-#### 📌 改善提案
+#### 📌 改善提案（MCP通信方式）
 
 **提案1: SSE実装例の追加**
 
@@ -128,7 +128,7 @@ graph TD
 
 **変更ファイル**: [docs/designs/mcp_design.md](../../designs/mcp_design.md#L1685-L2165)
 
-#### ✅ 良い点
+#### ✅ 良い点（自動運転ユースケース）
 
 1. **包括的なユースケースカバレッジ**
    - YOLOX物体検出（2D Bounding Box）
@@ -182,7 +182,7 @@ graph TD
    - Simulator Integration Capability、Online Learning & Active Learning Capabilityを Phase 4 オプション機能として整理
    - 工数見積もり（各3週間）と優先度を明記
 
-#### 📌 改善提案
+#### 📌 改善提案（自動運転ユースケース）
 
 **提案1: ワークフロー図の追加**
 
@@ -339,7 +339,7 @@ test_case_vad_001:
 - ✅ YOLOX、KITTI、VAD、CARLA等の用語が用語集に定義済み
 - ✅ LiDAR、Point Cloud、BEV等の自動運転用語が追加済み
 
-#### 📌 改善提案
+#### 📌 改善提案（ドキュメント整合性）
 
 **提案1: 実装ガイドへの反映**
 

@@ -35,7 +35,7 @@ developブランチへのマージを推奨します。
 
 ### Capability構成
 
-```
+```text
 mcp_server/capabilities/workflow_optimization/
 ├── __init__.py
 ├── capability.py              # Capabilityメインクラス
@@ -55,6 +55,7 @@ mcp_server/capabilities/workflow_optimization/
 **目的**: モデルとデータセットの特性を分析し、最適化の基礎データを生成
 
 **主要機能**:
+
 - アルゴリズム識別（linear, ensemble, deep_learning, other）
 - データセットサイズカテゴリ化（small/medium/large/very_large）
 - 複雑度計算
@@ -63,6 +64,7 @@ mcp_server/capabilities/workflow_optimization/
 - 最適化機会の自動特定
 
 **入力パラメータ**:
+
 ```python
 def analyze_model_characteristics(
     model_config: Dict[str, Any],      # 必須: アルゴリズム、ハイパーパラメータ
@@ -71,6 +73,7 @@ def analyze_model_characteristics(
 ```
 
 **出力例**:
+
 ```json
 {
   "status": "success",
@@ -98,6 +101,7 @@ def analyze_model_characteristics(
 **目的**: モデル特性に基づいて最適化提案を生成
 
 **主要機能**:
+
 - ハイパーパラメータチューニング提案
 - リソース最適化提案（GPU活用、スポットインスタンス）
 - データ最適化提案（サンプリング、キャッシング）
@@ -106,6 +110,7 @@ def analyze_model_characteristics(
 - 提案の優先度付け
 
 **提案タイプ**:
+
 | タイプ | 説明 | 期待効果 |
 |--------|------|----------|
 | hyperparameter_tuning | HP最適化 | 5-15%精度向上 |
@@ -118,6 +123,7 @@ def analyze_model_characteristics(
 **目的**: 類似モデルの過去実行履歴を取得し、学習に活用
 
 **主要機能**:
+
 - DynamoDB連携（本番環境）
 - モックデータ返却（開発・テスト環境）
 - データセットサイズによるフィルタリング（±50%範囲）
@@ -133,6 +139,7 @@ def analyze_model_characteristics(
 **目的**: 生成された最適化提案を設定に適用
 
 **主要機能**:
+
 - 元設定のディープコピー（非破壊的）
 - タイプ別適用処理
   - ハイパーパラメータ: リストの中央値を選択
@@ -147,6 +154,7 @@ def analyze_model_characteristics(
 **目的**: 最適化実行結果を履歴として記録
 
 **主要機能**:
+
 - DynamoDB連携（本番環境）
 - モック追跡結果（開発・テスト環境）
 - メトリクス抽出
@@ -182,7 +190,7 @@ def analyze_model_characteristics(
 
 ### テスト実行ログ
 
-```
+```text
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-7.4.4
 collected 46 items
@@ -239,7 +247,7 @@ except ClientError as e:
 
 ### 最適化ワークフロー
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Workflow Optimization Flow                    │
 └─────────────────────────────────────────────────────────────────┘
@@ -348,7 +356,7 @@ _categorize_model(algorithm, dataset_characteristics):
 | ファイル | 変更内容 |
 |----------|----------|
 | capability.py | BaseCapability継承からスタンドアロンクラスへ書き換え |
-| tools/__init__.py | 5ツールのエクスポート追加 |
+| tools/**init**.py | 5ツールのエクスポート追加 |
 | mcp_server/server.py | Workflow Optimization Capability登録追加 |
 | tests/integration/test_mcp_server.py | Capability数・ツール数更新 |
 

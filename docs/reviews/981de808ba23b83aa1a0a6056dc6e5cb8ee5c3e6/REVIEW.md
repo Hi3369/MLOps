@@ -146,7 +146,7 @@ graph LR
 
 **変更ファイル**: [docs/specifications/system_specification.md](../../specifications/system_specification.md)
 
-#### ✅ 良い点
+#### ✅ 良い点（Workflow Optimization）
 
 1. **明確な機能要件定義**
 
@@ -168,7 +168,7 @@ graph LR
    - コスト最適化（Spot Instance、ライフサイクル管理）
    - 並列化提案（タスク依存関係分析）
 
-#### 📌 改善提案
+#### 📌 改善提案（Workflow Optimization）
 
 **提案1: 非機能要件の追加**
 
@@ -226,7 +226,7 @@ cost_optimization:
 
 **変更ファイル**: [docs/others/glossary.md](../../others/glossary.md)
 
-#### ✅ 良い点
+#### ✅ 良い点（用語集）
 
 1. **包括的な用語定義**
    - Capability: 11個の機能群を列挙
@@ -239,7 +239,7 @@ cost_optimization:
    - Capability Routingでツール名プレフィックス例を記載
    - MCP stdio/SSE modeの使い分けを明確化
 
-#### 📌 改善提案
+#### 📌 改善提案（用語集）
 
 **提案1: 用語間の相互参照**
 
@@ -311,7 +311,7 @@ cost_optimization:
 - ✅ 主要用語が定義済み
 - ✅ 11 Capabilityが列挙
 
-#### 📌 改善提案
+#### 📌 改善提案（整合性）
 
 **提案1: バージョン管理の統一**
 

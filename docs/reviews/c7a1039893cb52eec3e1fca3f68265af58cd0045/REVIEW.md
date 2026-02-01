@@ -76,6 +76,7 @@ ML Training Capabilityの実装が完了し、統合MCPサーバーに正常に�
    - Neural Network: hidden_layer_sizes, activation等のハイパーパラメータ対応
 
 2. **詳細な学習結果**:
+
    ```python
    {
        "algorithm": "random_forest",
@@ -116,6 +117,7 @@ ML Training Capabilityの実装が完了し、統合MCPサーバーに正常に�
    - メタデータに保存して後で検証可能
 
 3. **特徴量とターゲットの分離**:
+
    ```python
    X_train = df.iloc[:, :-1]  # 最後の列以外を特徴量
    y_train = df.iloc[:, -1]   # 最後の列をターゲット
@@ -133,6 +135,7 @@ ML Training Capabilityの実装が完了し、統合MCPサーバーに正常に�
    - PCA: n_components等
 
 2. **クラスタ分布の記録**:
+
    ```python
    "cluster_distribution": {
        0: 5,  # クラスタ0に5サンプル
@@ -161,6 +164,7 @@ ML Training Capabilityの実装が完了し、統合MCPサーバーに正常に�
    - `get_tool_schemas()` でツールスキーマを提供
 
 2. **ツール登録の明確性**:
+
    ```python
    def _register_tools(self) -> Dict[str, Callable]:
        return {
@@ -182,6 +186,7 @@ ML Training Capabilityの実装が完了し、統合MCPサーバーに正常に�
 **優れている点**:
 
 1. **Data Preparationと同一パターン**:
+
    ```python
    # ML Training Capability
    try:
@@ -218,7 +223,7 @@ ML Training Capabilityの実装が完了し、統合MCPサーバーに正常に�
 
 **テスト構成**:
 
-```
+```text
 TestTrainClassification (4 tests)
 ├── test_train_classification_random_forest
 ├── test_train_classification_logistic_regression
@@ -266,18 +271,21 @@ TestTrainClustering (3 tests)
 **更新内容**:
 
 1. **Capability数の更新**:
+
    ```python
    # Data Preparation と ML Training が登録されている
    assert len(server.capabilities) == 2
    ```
 
 2. **ツール数の更新**:
+
    ```python
    # toolsには6つのツールが登録されている (Data Prep: 3 + ML Training: 3)
    assert len(server.tools) == 6
    ```
 
 3. **ML Training ツールの登録確認**:
+
    ```python
    expected_ml_training_tools = [
        "ml_training.train_classification",
@@ -301,6 +309,7 @@ TestTrainClustering (3 tests)
 **実装されているエラーハンドリング**:
 
 1. **S3 URI検証**:
+
    ```python
    if not train_data_s3_uri.startswith("s3://"):
        raise ValueError("Invalid S3 URI: must start with 's3://'")
@@ -311,6 +320,7 @@ TestTrainClustering (3 tests)
    ```
 
 2. **ファイルフォーマット検証**:
+
    ```python
    if file_format.lower() == "csv":
        df = pd.read_csv(io.BytesIO(file_content))
@@ -321,6 +331,7 @@ TestTrainClustering (3 tests)
    ```
 
 3. **アルゴリズム検証**:
+
    ```python
    if algorithm == "random_forest":
        model = RandomForestClassifier(...)
@@ -332,6 +343,7 @@ TestTrainClustering (3 tests)
    ```
 
 4. **S3アクセスエラー**:
+
    ```python
    try:
        response = s3_client.get_object(Bucket=bucket, Key=key)
@@ -348,23 +360,27 @@ TestTrainClustering (3 tests)
 **ロギング戦略**:
 
 1. **初期化ログ**:
+
    ```python
    logger.info("Initializing ML Training Capability")
    ```
 
 2. **学習開始ログ**:
+
    ```python
    logger.info(f"Training {algorithm} model with algorithm: {algorithm}")
    logger.info(f"Loaded training data: {len(df)} samples, {len(df.columns)} features")
    ```
 
 3. **学習完了ログ**:
+
    ```python
    logger.info(f"Training accuracy: {train_score:.4f}")
    logger.info(f"Saved model to {model_output_s3_uri}")
    ```
 
 4. **エラーログ**:
+
    ```python
    logger.error(f"S3 access error: {e}")
    ```
@@ -382,17 +398,20 @@ TestTrainClustering (3 tests)
 **解決した問題**:
 
 1. **F841 (未使用変数)**:
+
    ```python
    _transformed = model.fit_transform(X_train)  # noqa: F841
    ```
 
 2. **F821 (未定義名)**:
+
    ```python
    n_clusters = hyperparameters.get("n_components", 2)
    logger.info(f"PCA transformed data to {n_clusters} components")
    ```
 
 3. **E261 (コメントスペース)**:
+
    ```python
    _transformed = model.fit_transform(X_train)  # noqa: F841  # 2スペース
    ```
@@ -432,6 +451,7 @@ TestTrainClustering (3 tests)
    - 名前空間の衝突なし
 
 3. **サーバー情報の正確性**:
+
    ```python
    {
        "name": "MLOps Integrated MCP Server",
@@ -452,6 +472,7 @@ TestTrainClustering (3 tests)
 **Docstringの品質**:
 
 1. **関数レベルのdocstring**:
+
    ```python
    def train_classification(
        train_data_s3_uri: str,
@@ -476,12 +497,14 @@ TestTrainClustering (3 tests)
    ```
 
 2. **クラスレベルのdocstring**:
+
    ```python
    class MLTrainingCapability:
        """機械学習モデル学習"""
    ```
 
 3. **モジュールレベルのdocstring**:
+
    ```python
    """
    Train Classification Model Tool
@@ -550,6 +573,7 @@ TestTrainClustering (3 tests)
 **効率的な実装**:
 
 1. **ストリーミングローディング**:
+
    ```python
    response = s3_client.get_object(Bucket=bucket, Key=key)
    file_content = response["Body"].read()
@@ -662,7 +686,7 @@ TestTrainClustering (3 tests)
 
 **コミットメッセージ**:
 
-```
+```text
 fix: Register ML Training Capability in server and update integration tests
 
 - Simplified ML Training Capability to match Data Preparation pattern

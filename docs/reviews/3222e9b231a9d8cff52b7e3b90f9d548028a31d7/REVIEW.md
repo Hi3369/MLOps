@@ -88,7 +88,7 @@ def mock_s3_client(self, sample_csv_data):
 
 **テスト結果**:
 
-```
+```text
 test_load_dataset_csv_success PASSED [ 10%]
 test_load_dataset_invalid_s3_uri PASSED [ 20%]
 test_load_dataset_unsupported_format PASSED [ 30%]
@@ -127,7 +127,7 @@ def sample_data_with_issues(self):
 
 **テスト結果**:
 
-```
+```text
 test_validate_data_with_warnings PASSED [ 40%]
 test_validate_data_missing_required_columns PASSED [ 50%]
 test_validate_data_empty_dataset PASSED [ 60%]
@@ -201,7 +201,7 @@ def test_preprocess_supervised_basic(self, mock_s3_for_preprocessing):
 
 **テスト結果**:
 
-```
+```text
 test_preprocess_supervised_basic PASSED [ 70%]
 test_preprocess_supervised_missing_target_column PASSED [ 80%]
 test_preprocess_supervised_with_missing_values PASSED [ 90%]

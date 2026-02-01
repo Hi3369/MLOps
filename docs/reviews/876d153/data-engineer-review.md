@@ -19,25 +19,25 @@
 
 ## 依存関係レビュー
 
-### 対象ファイル
+### 対象ファイル（依存関係レビュー）
 
 - pyproject.toml
 
-### 指摘事項
+### 指摘事項（依存関係レビュー）
 
 1. **[警告] Python依存パッケージが未定義**: pyproject.tomlにはツール設定（black, isort, pytest等）のみで、pandasやboto3などのランタイム依存が定義されていない
 2. **[推奨] requirements.txtまたはpyproject.toml [project.dependencies] の追加**: 依存パッケージを明示的に管理すべき
 
 ## 実装レビュー
 
-### 対象ファイル
+### 対象ファイル（実装レビュー）
 
 - mcp_server/capabilities/data_preparation/capability.py
 - mcp_server/capabilities/data_preparation/tools/load_dataset.py
 - mcp_server/capabilities/data_preparation/tools/validate_data.py
 - mcp_server/capabilities/data_preparation/tools/preprocess_supervised.py
 
-### 指摘事項
+### 指摘事項（実装レビュー）
 
 1. **[良好] Dict-basedパターンに準拠**: capability.pyはCLAUDE.mdのパターンに従っている
 2. **[良好] エラーハンドリング実装**: S3アクセスエラー、無効なURIなどの例外処理が適切
@@ -47,11 +47,11 @@
 
 ## テストレビュー
 
-### 対象ファイル
+### 対象ファイル（テストレビュー）
 
 - tests/unit/test_data_preparation.py
 
-### 指摘事項
+### 指摘事項（テストレビュー）
 
 1. **[良好] テストカバレッジ**: 17テストケースで正常系・異常系を網羅
 2. **[良好] モック活用**: boto3クライアントを適切にモック化

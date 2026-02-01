@@ -16,6 +16,7 @@ GitHub Integration Capability を実装しました。この Capability は GitH
 ### 1. 新規ツール（4つ）
 
 #### detect_mlops_issue
+
 - **機能**: MLOps用Issueを検知
 - **パラメータ**:
   - `repo_owner`: リポジトリオーナー
@@ -28,17 +29,19 @@ GitHub Integration Capability を実装しました。この Capability は GitH
   - 開発・テスト環境用のモックデータ返却
 
 #### parse_issue_config
+
 - **機能**: Issue本文からYAML/JSON設定をパース
 - **パラメータ**:
   - `issue_body`: Issue本文
   - `config_format`: 設定フォーマット（auto/yaml/json）
 - **特徴**:
-  - フェンスドコードブロック（```yaml, ```json）からの抽出
+  - フェンスドコードブロック（```yaml,```json）からの抽出
   - インラインJSONの検出
   - 設定の正規化（キー名の統一）
   - PyYAMLが無い場合の簡易YAMLパーサー
 
 #### validate_training_params
+
 - **機能**: 学習パラメータをバリデーション
 - **パラメータ**:
   - `training_config`: 学習設定
@@ -56,6 +59,7 @@ GitHub Integration Capability を実装しました。この Capability は GitH
   - デフォルト値の自動設定
 
 #### start_workflow
+
 - **機能**: Step Functionsワークフローを起動
 - **パラメータ**:
   - `workflow_type`: ワークフロータイプ
@@ -76,12 +80,14 @@ GitHub Integration Capability を実装しました。この Capability は GitH
 ### 2. Capability クラス
 
 `GitHubIntegrationCapability` クラスを新パターン（BaseCapabilityを継承しない独立クラス）で実装。
+
 - `get_tools()`: ツール関数の辞書を返却
 - `get_tool_schemas()`: ツールスキーマの辞書を返却
 
 ### 3. サーバー登録
 
 `mcp_server/server.py` に GitHub Integration Capability の登録を追加。
+
 - Capability数: 8 → 9
 - ツール数: 43 → 47
 
@@ -133,7 +139,7 @@ AWS サービス（SSM、Step Functions、DynamoDB）が利用できない環境
 
 ## テスト結果
 
-```
+```text
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-7.4.4
 ================= 227 passed, 86 warnings in 181.38s (0:03:01) =================
@@ -144,6 +150,7 @@ platform linux -- Python 3.12.3, pytest-7.4.4
 ## ファイル変更一覧
 
 ### 新規作成
+
 - `mcp_server/capabilities/github_integration/tools/detect_mlops_issue.py`
 - `mcp_server/capabilities/github_integration/tools/parse_issue_config.py`
 - `mcp_server/capabilities/github_integration/tools/validate_training_params.py`
@@ -151,6 +158,7 @@ platform linux -- Python 3.12.3, pytest-7.4.4
 - `tests/unit/test_github_integration.py`
 
 ### 変更
+
 - `mcp_server/capabilities/github_integration/capability.py` - 新パターンで書き直し
 - `mcp_server/capabilities/github_integration/tools/__init__.py` - ツールエクスポート追加
 - `mcp_server/server.py` - GitHub Integration Capability 登録追加
