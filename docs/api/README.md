@@ -14,8 +14,8 @@ MLOps MCP Server は 14 の Capability、57 のツールを提供する統合 MC
 
 ## Capability 一覧
 
-| # | Capability | ツール数 | 説明 | 詳細 |
-|---|-----------|---------|------|------|
+| # | Capability | ツール数 | 説明 |
+|---|-----------|---------|------|
 | 1 | [github_integration](github_integration.md) | 4 | Issue検知・ワークフロー起動 |
 | 2 | [workflow_optimization](workflow_optimization.md) | 5 | モデル特性分析・最適化提案 |
 | 3 | [data_preparation](data_preparation.md) | 3 | データ前処理・特徴量エンジニアリング |

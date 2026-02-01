@@ -20,23 +20,23 @@
 
 ## 依存関係レビュー
 
-### 対象ファイル
+### 対象ファイル（依存関係レビュー）
 
 - pyproject.toml
 
-### 指摘事項
+### 指摘事項（依存関係レビュー）
 
 1. **[警告] 分析系パッケージが未定義**: pandas, numpy, matplotlib等が明示されていない
 2. **[推奨] scikit-learnバージョン固定**: アルゴリズムの挙動一貫性のため
 
 ## 実装レビュー
 
-### 対象ファイル
+### 対象ファイル（実装レビュー）
 
 - mcp_server/capabilities/workflow_optimization/ (5ツール)
 - mcp_server/capabilities/data_preparation/tools/preprocess_supervised.py
 
-### 指摘事項
+### 指摘事項（実装レビュー）
 
 1. **[良好] 特徴量エンジニアリング実装**: 正規化、カテゴリエンコーディング、欠損値処理
 2. **[良好] モデル特性分析**: analyze_model_characteristicsでモデル特性を分析
@@ -45,12 +45,12 @@
 
 ## テストレビュー
 
-### 対象ファイル
+### 対象ファイル（テストレビュー）
 
 - tests/unit/test_workflow_optimization.py (59テスト)
 - tests/unit/test_data_preparation.py (17テスト)
 
-### 指摘事項
+### 指摘事項（テストレビュー）
 
 1. **[良好] 特徴量処理テスト**: 正規化、エンコーディングのテストを実装
 2. **[良好] 分析機能テスト**: 特性分析、提案生成のテストを実装

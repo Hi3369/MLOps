@@ -20,24 +20,24 @@
 
 ## 依存関係レビュー
 
-### 対象ファイル
+### 対象ファイル（依存関係レビュー）
 
 - pyproject.toml
 
-### 指摘事項
+### 指摘事項（依存関係レビュー）
 
 1. **[警告] AWS SDK依存が未定義**: boto3, sagemakerパッケージが明示されていない
 2. **[推奨] IAM権限ドキュメント**: 必要なIAM権限の一覧ドキュメントを追加推奨
 
 ## 実装レビュー
 
-### 対象ファイル
+### 対象ファイル（実装レビュー）
 
 - mcp_server/capabilities/model_deployment/ (5ファイル)
 - mcp_server/capabilities/retrain_management/ (5ツール)
 - mcp_server/capabilities/model_registry/ (5ツール)
 
-### 指摘事項
+### 指摘事項（実装レビュー）
 
 1. **[良好] Dict-basedパターンに準拠**: 全capability.pyが統一パターン
 2. **[良好] 環境別動作**: MLOPS_ENV環境変数でmock/real切り替え
@@ -47,13 +47,13 @@
 
 ## テストレビュー
 
-### 対象ファイル
+### 対象ファイル（テストレビュー）
 
 - tests/unit/test_model_deployment.py (49テスト)
 - tests/unit/test_retrain_management.py (37テスト)
 - tests/unit/test_model_registry.py (21テスト)
 
-### 指摘事項
+### 指摘事項（テストレビュー）
 
 1. **[良好] 高いテストカバレッジ**: 計107テストケース
 2. **[良好] エラーハンドリングテスト**: 各種エラーパターンを網羅

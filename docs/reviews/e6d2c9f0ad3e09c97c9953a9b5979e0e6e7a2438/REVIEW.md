@@ -20,6 +20,7 @@ Model Registry Capability の実装が完了しました。S3ベースのモデ�
 ### 1.1 Implemented Tools
 
 #### register_model
+
 - **目的**: モデルをレジストリに登録し、メタデータを管理
 - **主要機能**:
   - モデルの存在確認（head_object）
@@ -29,6 +30,7 @@ Model Registry Capability の実装が完了しました。S3ベースのモデ�
 - **ファイル**: `mcp_server/capabilities/model_registry/tools/register_model.py` (114 lines)
 
 #### list_models
+
 - **目的**: 登録されているモデルを一覧表示
 - **主要機能**:
   - S3からレジストリメタデータを検索
@@ -38,6 +40,7 @@ Model Registry Capability の実装が完了しました。S3ベースのモデ�
 - **ファイル**: `mcp_server/capabilities/model_registry/tools/list_models.py` (92 lines)
 
 #### get_model
+
 - **目的**: モデル情報を取得
 - **主要機能**:
   - モデルファイルの情報取得（サイズ、最終更新日時）
@@ -46,6 +49,7 @@ Model Registry Capability の実装が完了しました。S3ベースのモデ�
 - **ファイル**: `mcp_server/capabilities/model_registry/tools/get_model.py` (74 lines)
 
 #### update_model_status
+
 - **目的**: モデルのステータスを更新
 - **主要機能**:
   - ステータス検証（registered, staging, production, archived）
@@ -54,6 +58,7 @@ Model Registry Capability の実装が完了しました。S3ベースのモデ�
 - **ファイル**: `mcp_server/capabilities/model_registry/tools/update_model_status.py` (97 lines)
 
 #### delete_model
+
 - **目的**: モデルを削除
 - **主要機能**:
   - モデルファイルの削除
@@ -64,7 +69,7 @@ Model Registry Capability の実装が完了しました。S3ベースのモデ�
 
 ### 1.2 Code Structure
 
-```
+```text
 mcp_server/capabilities/model_registry/
 ├── capability.py (140 lines) - Capability管理クラス
 └── tools/
@@ -120,6 +125,7 @@ mcp_server/capabilities/model_registry/
 #### Test Quality Highlights
 
 1. **モック戦略の一貫性**
+
    ```python
    @pytest.fixture
    def mock_s3_register(self):
@@ -138,6 +144,7 @@ mcp_server/capabilities/model_registry/
    - Missing metadata (graceful handling)
 
 3. **副作用の検証**
+
    ```python
    # S3呼び出しの確認
    mock_s3_register.head_object.assert_called_once()
@@ -151,11 +158,13 @@ mcp_server/capabilities/model_registry/
 #### Updates Made
 
 1. **Capability登録確認**
+
    ```python
    assert "model_registry" in server.capabilities
    ```
 
 2. **ツール登録確認**
+
    ```python
    expected_model_registry_tools = [
        "model_registry.register_model",
@@ -167,6 +176,7 @@ mcp_server/capabilities/model_registry/
    ```
 
 3. **総ツール数の更新**
+
    ```python
    # 14ツール (Data Prep: 3 + ML Training: 3 + ML Evaluation: 3 + Model Registry: 5)
    assert len(server.tools) == 14
@@ -174,7 +184,7 @@ mcp_server/capabilities/model_registry/
 
 ### 2.3 Test Results
 
-```
+```text
 tests/unit/test_model_registry.py::TestRegisterModel::test_register_model_success PASSED
 tests/unit/test_model_registry.py::TestRegisterModel::test_register_model_auto_version PASSED
 tests/unit/test_model_registry.py::TestRegisterModel::test_register_model_invalid_uri PASSED
@@ -204,6 +214,7 @@ tests/integration/test_mcp_server.py - 13 passed in 11.85s
 ### 3.1 Lint Compliance
 
 #### Flake8
+
 - **結果**: 0 errors, 0 warnings
 - **初期問題**: 2件のF401 (unused import)
   - `delete_model.py`: `import json` 未使用
@@ -211,12 +222,14 @@ tests/integration/test_mcp_server.py - 13 passed in 11.85s
 - **修正**: 不要なインポートを削除
 
 #### Black
+
 - **結果**: All files formatted
 - **修正ファイル**:
   - `update_model_status.py`
   - `test_model_registry.py`
 
 #### Isort
+
 - **結果**: No changes needed
 - すべてのインポートが正しくソートされている
 
@@ -255,6 +268,7 @@ tests/integration/test_mcp_server.py - 13 passed in 11.85s
 #### Pattern Adherence
 
 1. **Capability クラス構造** ✅
+
    ```python
    class ModelRegistryCapability:
        def __init__(self):
@@ -272,6 +286,7 @@ tests/integration/test_mcp_server.py - 13 passed in 11.85s
    - 直接的な関数登録方式
 
 3. **早期URI検証** ✅
+
    ```python
    # S3 URIのバリデーション（先に全てチェック）
    if not model_s3_uri.startswith("s3://"):
@@ -356,6 +371,7 @@ if len(model_parts) != 2:
 ```
 
 **カバレッジ**:
+
 - ✅ プロトコルチェック（s3://）
 - ✅ フォーマットチェック（bucket/key構造）
 - ✅ 早期バリデーション（S3呼び出し前）
@@ -373,6 +389,7 @@ except ClientError as e:
 ```
 
 **カバレッジ**:
+
 - ✅ 404 Not Found
 - ✅ 403 Access Denied
 - ✅ その他のClientError
@@ -443,6 +460,7 @@ except ImportError as e:
 ```
 
 **評価**:
+
 - ✅ 他のCapabilityと一貫したパターン
 - ✅ ImportErrorのグレースフルハンドリング
 - ✅ ロギングの適切な使用
@@ -508,28 +526,33 @@ Model Registryに固有の機能:
 
 ### 8.1 S3 API Calls
 
-#### register_model
+#### register_model（API Calls）
+
 - `head_object`: 1回（モデル存在確認）
 - `put_object`: 1回（メタデータ保存）
 - **Total**: 2 API calls
 
-#### list_models
+#### list_models（API Calls）
+
 - `list_objects_v2`: ページ数に応じて（ページネーション）
 - `get_object`: モデル数に応じて（各メタデータ読み込み）
 - **Total**: O(n) where n = number of models
 - **懸念**: 大量モデル時のパフォーマンス
 
-#### get_model
+#### get_model（API Calls）
+
 - `head_object`: 1回（モデル情報取得）
 - `get_object`: 1回（メタデータ取得）
 - **Total**: 2 API calls
 
-#### update_model_status
+#### update_model_status（API Calls）
+
 - `get_object`: 1回（現在のメタデータ取得）
 - `put_object`: 1回（更新後のメタデータ保存）
 - **Total**: 2 API calls
 
-#### delete_model
+#### delete_model（API Calls）
+
 - `delete_object`: 1〜3回（モデル、レジストリ、学習メタデータ）
 - `head_object`: 0〜1回（学習メタデータ存在確認）
 - **Total**: 1-4 API calls
@@ -555,12 +578,14 @@ Model Registryに固有の機能:
 ### 9.1 Input Validation
 
 **URI検証**: ✅
+
 ```python
 if not model_s3_uri.startswith("s3://"):
     raise ValueError("Invalid S3 URI: must start with 's3://'")
 ```
 
 **ステータス検証**: ✅
+
 ```python
 valid_statuses = ["registered", "staging", "production", "archived"]
 if status not in valid_statuses:
@@ -570,17 +595,20 @@ if status not in valid_statuses:
 ### 9.2 S3 Access Control
 
 **推奨設定**:
+
 1. IAMロールによるS3アクセス制御
 2. バケットポリシーで読み書き権限の分離
 3. KMS暗号化の使用（機密モデルの場合）
 
 **現在の実装**: boto3デフォルト認証情報を使用
+
 - ✅ AWSベストプラクティスに準拠
 - ⚠️ 環境変数・IAMロールでの権限管理が必須
 
 ### 9.3 Metadata Security
 
 **機密情報の扱い**:
+
 - メタデータにはモデルパフォーマンス等を保存
 - ⚠️ 機密情報（個人情報等）は保存しないよう注意
 - 📝 ドキュメントでガイドライン提供を推奨
@@ -705,13 +733,14 @@ if status not in valid_statuses:
 
 ### 12.1 Unit Tests
 
-```
+```text
 venv/bin/pytest tests/unit/test_model_registry.py -v
 
 ======================== 16 passed, 6 warnings in 0.70s ========================
 ```
 
 **Details**:
+
 - TestRegisterModel: 4 tests ✅
 - TestListModels: 3 tests ✅
 - TestGetModel: 3 tests ✅
@@ -720,13 +749,14 @@ venv/bin/pytest tests/unit/test_model_registry.py -v
 
 ### 12.2 Integration Tests
 
-```
+```text
 venv/bin/pytest tests/integration/test_mcp_server.py -v
 
 ======================== 13 passed in 11.85s ========================
 ```
 
 **Updates**:
+
 - Model Registry capability登録確認 ✅
 - 5つのツール登録確認 ✅
 - 総ツール数14個の確認 ✅
@@ -743,7 +773,8 @@ venv/bin/pytest tests/integration/test_mcp_server.py -v
 
 **Commit Hash**: e6d2c9f0ad3e09c97c9953a9b5979e0e6e7a2438
 **Commit Message**:
-```
+
+```text
 feat: Implement Model Registry Capability with comprehensive testing
 
 Model Registry Capability追加:
@@ -768,8 +799,9 @@ Model Registry Capability追加:
 ```
 
 **Files Changed**: 10 files
+
 - Added: 6 files (5 tools + 1 test file)
-- Modified: 4 files (capability, __init__, server, integration test)
+- Modified: 4 files (capability, **init**, server, integration test)
 - Total: +1071 lines, -64 lines
 
 ---

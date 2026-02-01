@@ -84,7 +84,7 @@ def test_server_initialization(self):
 
 **テスト結果**:
 
-```
+```text
 test_server_initialization PASSED [  7%]
 test_tools_registration PASSED [ 15%]
 test_list_tools PASSED [ 23%]
@@ -131,7 +131,7 @@ def test_call_load_dataset(self, server, mock_s3):
 
 **テスト結果**:
 
-```
+```text
 test_call_load_dataset PASSED [ 30%]
 test_call_validate_data PASSED [ 38%]
 test_call_preprocess_supervised PASSED [ 46%]
@@ -212,7 +212,7 @@ def mock_s3_workflow(self, sample_workflow_data):
 
 **テスト結果**:
 
-```
+```text
 test_data_preparation_workflow PASSED [ 69%]
 test_workflow_with_validation_failure PASSED [ 76%]
 ```
@@ -250,7 +250,7 @@ def test_capability_tools_mapping(self):
 
 **テスト結果**:
 
-```
+```text
 test_capabilities_registration PASSED [ 84%]
 test_capability_tools_mapping PASSED [ 92%]
 test_server_extensibility PASSED [100%]
@@ -557,6 +557,7 @@ MCP Server統合テストの実装は**最高品質**です。特に以下の点
 **テストカバレッジ向上**:
 
 1. 💡 **pytest-covによるカバレッジ測定**
+
    ```bash
    pytest --cov=mcp_server --cov-report=html
    ```

@@ -54,6 +54,7 @@ cdk deploy --all
 モデル評価結果の判定と次アクション決定を行う Judge Agent
 
 **リソース:**
+
 - Lambda 関数: `mlops-judge-agent`
   - Runtime: Python 3.12
   - Memory: 256 MB
@@ -61,6 +62,7 @@ cdk deploy --all
   - Log Retention: 1 month
 
 **権限:**
+
 - S3 読み取り: `s3://mlops-bucket/evaluations/*`
 - CloudWatch Metrics 書き込み: `MLOps/JudgeAgent` namespace
 - CloudWatch Logs 書き込み
@@ -99,11 +101,12 @@ cdk destroy --all
 
 ### Bootstrap が必要なエラー
 
-```
+```text
 This stack uses assets, so the toolkit stack must be deployed to the environment
 ```
 
 **解決策:**
+
 ```bash
 cdk bootstrap aws://ACCOUNT-ID/REGION
 ```
@@ -115,6 +118,7 @@ Judge Agent の依存関係が大きい場合は、Lambda Layer の使用を検�
 ### IAM 権限エラー
 
 デプロイには適切な AWS 権限が必要です:
+
 - CloudFormation スタック作成/更新/削除
 - Lambda 関数作成/更新
 - IAM ロール作成

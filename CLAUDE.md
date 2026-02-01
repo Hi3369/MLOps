@@ -91,11 +91,12 @@ GitHub Issueをトリガーとして、機械学習モデルの学習・評価�
 ## AWS情報の取得
 
 AWS関連の情報はAWS MCP Serversから取得すること:
+
 - ドキュメント: `awslabs.aws-documentation-mcp-server`
 - API操作: `awslabs.aws-api-mcp-server`
 - ナレッジ: `awslabs.aws-knowledge-mcp-server`
 
-詳細: https://awslabs.github.io/mcp/
+詳細: <https://awslabs.github.io/mcp/>
 
 ## Git ワークフロー
 

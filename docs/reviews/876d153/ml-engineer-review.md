@@ -19,18 +19,18 @@
 
 ## 依存関係レビュー
 
-### 対象ファイル
+### 対象ファイル（依存関係レビュー）
 
 - pyproject.toml
 
-### 指摘事項
+### 指摘事項（依存関係レビュー）
 
 1. **[警告] ML系パッケージが未定義**: scikit-learn, tensorflowなどのML依存が明示されていない
 2. **[推奨] バージョン固定の検討**: ML系パッケージはバージョン間で挙動が変わる可能性があるため、バージョン固定を推奨
 
 ## 実装レビュー
 
-### 対象ファイル
+### 対象ファイル（実装レビュー）
 
 - mcp_server/capabilities/ml_training/capability.py
 - mcp_server/capabilities/ml_training/tools/train_classification.py
@@ -41,7 +41,7 @@
 - mcp_server/capabilities/ml_evaluation/tools/evaluate_regression.py
 - mcp_server/capabilities/ml_evaluation/tools/evaluate_clustering.py
 
-### 指摘事項
+### 指摘事項（実装レビュー）
 
 1. **[良好] Dict-basedパターンに準拠**: capability.pyはCLAUDE.mdのパターンに従っている
 2. **[良好] 複数アルゴリズム対応**: 分類（Random Forest, Logistic Regression, Neural Network）、回帰（Random Forest, Linear, Ridge, Neural Network）、クラスタリング（KMeans, DBSCAN, PCA）
@@ -51,12 +51,12 @@
 
 ## テストレビュー
 
-### 対象ファイル
+### 対象ファイル（テストレビュー）
 
 - tests/unit/test_ml_training.py
 - tests/unit/test_ml_evaluation.py
 
-### 指摘事項
+### 指摘事項（テストレビュー）
 
 1. **[良好] アルゴリズム別テスト**: 各アルゴリズムに対するテストを実装
 2. **[良好] エラーハンドリングテスト**: 無効なS3 URI、未サポートアルゴリズムのテストを実装

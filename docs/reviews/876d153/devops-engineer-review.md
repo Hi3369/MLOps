@@ -20,26 +20,26 @@
 
 ## 依存関係レビュー
 
-### 対象ファイル
+### 対象ファイル（依存関係レビュー）
 
 - pyproject.toml
 - .mcp.json
 
-### 指摘事項
+### 指摘事項（依存関係レビュー）
 
 1. **[良好] MCP Server設定あり**: AWS Documentation MCP Serverが設定済み
 2. **[警告] GitHub API依存が未定義**: PyGithub等のパッケージが明示されていない
 
 ## 実装レビュー
 
-### 対象ファイル
+### 対象ファイル（実装レビュー）
 
 - mcp_server/capabilities/model_packaging/ (5ツール)
 - mcp_server/capabilities/notification/ (4ツール)
 - mcp_server/capabilities/github_integration/ (4ツール)
 - mcp_server/capabilities/history_management/ (4ツール)
 
-### 指摘事項
+### 指摘事項（実装レビュー）
 
 1. **[良好] Dict-basedパターンに準拠**: 全capability.pyが統一パターン
 2. **[良好] GitHub API連携**: Issue検知、コメント投稿が適切に実装
@@ -49,14 +49,14 @@
 
 ## テストレビュー
 
-### 対象ファイル
+### 対象ファイル（テストレビュー）
 
 - tests/unit/test_model_packaging.py (18テスト)
 - tests/unit/test_notification.py (49テスト)
 - tests/unit/test_github_integration.py (51テスト)
 - tests/unit/test_history_management.py (31テスト)
 
-### 指摘事項
+### 指摘事項（テストレビュー）
 
 1. **[良好] 高いテストカバレッジ**: 計149テストケース
 2. **[良好] GitHub API モック化**: 適切にモック化してテスト

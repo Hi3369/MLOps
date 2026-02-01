@@ -13,6 +13,7 @@ MLOps MCP Serverの運用で発生しうる問題と解決策。
 **原因**: ImportError が発生している（依存パッケージ不足、構文エラー等）。
 
 **対処**:
+
 ```python
 import logging
 logging.basicConfig(level=logging.WARNING)
@@ -23,6 +24,7 @@ server = MLOpsServer()
 ```
 
 **確認**:
+
 ```python
 info = server.get_server_info()
 print(f"登録済み: {info['capabilities']}")
@@ -40,6 +42,7 @@ print(f"ツール数: {info['total_tools']}")
 **原因**: `MLOPS_ENV` が設定されていない（デフォルトは `development` だが、一部のコードパスで未チェック）。
 
 **対処**:
+
 ```bash
 export MLOPS_ENV=development
 ```
@@ -49,6 +52,7 @@ export MLOPS_ENV=development
 **症状**: `botocore.exceptions.ClientError: AccessDenied`
 
 **対処**:
+
 1. IAM ポリシーを確認: `docs/designs/iam_permissions.md`
 2. 必要な権限が付与されているか確認
 3. STS で一時認証を使用している場合、有効期限を確認
@@ -62,6 +66,7 @@ export MLOPS_ENV=development
 **症状**: `ValueError: s3_uri must start with 's3://'`
 
 **対処**: URI が `s3://` で始まることを確認。
+
 ```python
 # 正しい
 "s3://my-bucket/data/train.csv"
@@ -76,6 +81,7 @@ export MLOPS_ENV=development
 **症状**: `target_column` が存在しないエラー。
 
 **対処**: `validate_data` で事前にカラムを確認する。
+
 ```python
 result = server.call_tool(
     "data_preparation.validate_data",
@@ -108,6 +114,7 @@ result = server.call_tool(
 **症状**: `deploy_to_sagemaker` がエラーを返す。
 
 **確認事項**:
+
 1. モデルの S3 URI が正しいか
 2. インスタンスタイプが有効か（`ml.t3.medium` 等）
 3. SageMaker のサービスクォータに達していないか
@@ -117,6 +124,7 @@ result = server.call_tool(
 **症状**: `rollback_deployment` で `previous_config_name` が見つからない。
 
 **対処**: 明示的に前回の設定名を指定する。
+
 ```python
 server.call_tool(
     "model_deployment.rollback_deployment",
@@ -136,6 +144,7 @@ server.call_tool(
 **症状**: `detect_data_drift` が常に drift_detected=True を返す。
 
 **対処**:
+
 1. `drift_threshold` を調整（デフォルト: 0.05）
 2. ベースラインデータのサンプルサイズを増やす
 3. 外れ値を除外してから検定を実行
@@ -155,6 +164,7 @@ result = server.call_tool(
 ### アラームが発火しない
 
 **確認事項**:
+
 1. `actions_enabled` が `True` か
 2. `evaluation_periods` と `period_seconds` の設定が適切か
 3. CloudWatch にメトリクスデータが送信されているか
@@ -168,6 +178,7 @@ result = server.call_tool(
 **症状**: `ValueError: experiment_name must contain only alphanumeric characters, hyphens, underscores, and dots`
 
 **対処**: 実験名には英数字・ハイフン・アンダースコア・ドットのみ使用可能（256文字以内）。
+
 ```python
 # 正しい
 "iris-classification-v1.0"
@@ -217,6 +228,7 @@ pytest tests/integration/ -v
 ### モック環境でテストが失敗する
 
 **確認事項**:
+
 1. `MLOPS_ENV` が `test` または `development` か
 2. `unittest.mock` で適切にパッチしているか
 3. boto3 クライアントのモックが正しいか
@@ -232,6 +244,7 @@ A: 不要です。`MLOPS_ENV=development`（デフォルト）ではモックデ
 ### Q: 新しいCapabilityを追加するには？
 
 A: 以下の手順に従います:
+
 1. `mcp_server/capabilities/<name>/` にディレクトリ作成
 2. `capability.py` で Dict-based パターンを実装
 3. `tools/` にツール関数を配置

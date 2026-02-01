@@ -22,6 +22,7 @@
 ### Phase 1 Week 1-2 実装範囲
 
 現在実装されているのは:
+
 - MCPサーバーの基本構造
 - Data Preparation Capability（骨格のみ）
   - `load_dataset`: S3からデータセット読み込み
@@ -30,7 +31,7 @@
 
 ## ディレクトリ構造
 
-```
+```text
 mcp_server/
 ├── __init__.py              # パッケージ初期化
 ├── __main__.py              # エントリーポイント
@@ -156,6 +157,7 @@ pytest --cov=mcp_server
 単一のMCPサーバーが複数のCapabilityをホストし、ツール名を`{capability}.{tool}`形式で提供します。
 
 **利点:**
+
 - 単一プロセスで全機能を管理
 - Capability間のコード共有が容易
 - 統一されたログ・監視
@@ -163,7 +165,7 @@ pytest --cov=mcp_server
 
 ### Tool Naming Convention
 
-```
+```text
 {capability_name}.{tool_name}
 
 例:

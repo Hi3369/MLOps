@@ -21,6 +21,7 @@
 **目的**: レビューで指摘されたSHAP/LIME機能の実装
 
 #### 1.1 SHAP値計算ツール
+
 - **ファイル**: `mcp_server/capabilities/ml_evaluation/tools/calculate_shap_values.py`
 - **機能**:
   - TreeExplainer（決定木・アンサンブル用）
@@ -29,6 +30,7 @@
 - **テスト**: 30件以上
 
 #### 1.2 LIME説明ツール
+
 - **ファイル**: `mcp_server/capabilities/ml_evaluation/tools/calculate_lime_explanation.py`
 - **機能**:
   - タビュラーデータ対応
@@ -36,6 +38,7 @@
 - **テスト**: 20件以上
 
 #### 1.3 設計書更新
+
 - `docs/designs/mcp_design.md` のCapability 5セクションを詳細化
 
 ---
@@ -45,7 +48,8 @@
 **目的**: エンドツーエンドの品質保証
 
 #### 2.1 追加すべきテストファイル
-```
+
+```text
 tests/integration/
 ├── test_end_to_end_pipeline.py    # フルパイプラインテスト
 ├── test_capability_dependencies.py # Capability間依存テスト
@@ -53,6 +57,7 @@ tests/integration/
 ```
 
 #### 2.2 カバレッジ目標
+
 - 現在: 約70%（推定）
 - 目標: 80%以上
 - コマンド: `pytest --cov --cov-report=html`
@@ -64,6 +69,7 @@ tests/integration/
 **目的**: 実験管理の自動化
 
 #### 3.1 新規Capability: experiment_tracking
+
 - **ツール**:
   - `start_experiment`: 実験開始
   - `log_parameters`: パラメータ記録
@@ -71,6 +77,7 @@ tests/integration/
   - `compare_experiments`: 実験比較
 
 #### 3.2 統合候補
+
 - MLflow
 - Weights & Biases
 - SageMaker Experiments
@@ -82,12 +89,14 @@ tests/integration/
 **目的**: データ系譜の追跡
 
 #### 4.1 新規Capability: data_versioning
+
 - **ツール**:
   - `version_dataset`: データセットバージョン登録
   - `get_dataset_lineage`: データ系譜取得
   - `compare_datasets`: データセット比較
 
 #### 4.2 統合候補
+
 - DVC (Data Version Control)
 - Delta Lake
 
@@ -96,6 +105,7 @@ tests/integration/
 ### Phase 5: ドキュメント拡充（優先度: 低）
 
 #### 5.1 追加すべきドキュメント
+
 - `docs/api/` - API仕様書（OpenAPI形式）
 - `docs/tutorials/` - チュートリアル
 - `docs/troubleshooting.md` - トラブルシューティング

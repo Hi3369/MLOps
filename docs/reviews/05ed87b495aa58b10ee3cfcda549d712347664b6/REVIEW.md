@@ -79,15 +79,18 @@ ML Evaluation Capabilityの実装が完了し、統合MCPサーバーに正常�
    - Classification Report: クラスごとの詳細レポート
 
 2. **マルチクラス対応**:
+
    ```python
    precision = precision_score(y_test, y_pred, average=average, zero_division=0)
    recall = recall_score(y_test, y_pred, average=average, zero_division=0)
    f1 = f1_score(y_test, y_pred, average=average, zero_division=0)
    ```
+
    - `average` パラメータ: weighted (デフォルト), macro, micro
    - `zero_division=0`: ゼロ除算エラーの回避
 
 3. **詳細な評価結果**:
+
    ```python
    {
        "accuracy": 0.95,
@@ -105,6 +108,7 @@ ML Evaluation Capabilityの実装が完了し、統合MCPサーバーに正常�
    ```
 
 4. **早期URIバリデーション**:
+
    ```python
    # S3 URIのバリデーション（先に全てチェック）
    if not model_s3_uri.startswith("s3://"):
@@ -130,6 +134,7 @@ ML Evaluation Capabilityの実装が完了し、統合MCPサーバーに正常�
    - RMSE: 平均二乗誤差の平方根（元のスケールに戻す）
 
 2. **RMSEの計算**:
+
    ```python
    mse = mean_squared_error(y_test, y_pred)
    rmse = mse**0.5
@@ -151,6 +156,7 @@ ML Evaluation Capabilityの実装が完了し、統合MCPサーバーに正常�
    - Cluster Distribution: 各クラスタのサンプル数
 
 2. **ノイズ点の処理**:
+
    ```python
    # シルエットスコア（-1が含まれる場合は計算できない）
    if -1 not in labels and n_clusters > 1:
@@ -161,16 +167,20 @@ ML Evaluation Capabilityの実装が完了し、統合MCPサーバーに正常�
        davies_bouldin = None
        logger.warning("Silhouette score cannot be computed (noise points present or single cluster)")
    ```
+
    - DBSCANのノイズ点（-1）の考慮
    - 単一クラスタの場合の処理
 
 3. **クラスタ数の計算**:
+
    ```python
    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
    ```
+
    - ノイズ点を除外してクラスタ数を計算
 
 4. **条件付きメトリクス追加**:
+
    ```python
    # メトリクスを追加（計算可能な場合のみ）
    if silhouette is not None:
@@ -186,6 +196,7 @@ ML Evaluation Capabilityの実装が完了し、統合MCPサーバーに正常�
 **優れている点**:
 
 1. **ML Trainingパターンに準拠**:
+
    ```python
    class MLEvaluationCapability:
        def __init__(self):
@@ -212,6 +223,7 @@ ML Evaluation Capabilityの実装が完了し、統合MCPサーバーに正常�
 **優れている点**:
 
 1. **他のCapabilityと同一パターン**:
+
    ```python
    # ML Evaluation Capability
    try:
@@ -244,7 +256,7 @@ ML Evaluation Capabilityの実装が完了し、統合MCPサーバーに正常�
 
 **テスト構成**:
 
-```
+```text
 TestEvaluateClassification (3 tests)
 ├── test_evaluate_classification_success
 ├── test_evaluate_classification_invalid_model_uri
@@ -264,6 +276,7 @@ TestEvaluateClustering (2 tests)
 **優れている点**:
 
 1. **学習済みモデルのモック**:
+
    ```python
    @pytest.fixture
    def trained_classification_model(self, sample_classification_data):
@@ -273,11 +286,13 @@ TestEvaluateClustering (2 tests)
        model.fit(X, y)
        return model
    ```
+
    - 実際に学習したモデルを使用
    - joblib.dumpでシリアライズ
    - モックS3経由で提供
 
 2. **モックS3戦略（2段階）**:
+
    ```python
    def get_object_side_effect(Bucket, Key):
        if "model.pkl" in Key:
@@ -287,6 +302,7 @@ TestEvaluateClustering (2 tests)
 
    mock_s3.get_object.side_effect = get_object_side_effect
    ```
+
    - モデルとデータの両方をモック
    - side_effectでKeyに応じた返却値を切り替え
 
@@ -306,18 +322,21 @@ TestEvaluateClustering (2 tests)
 **更新内容**:
 
 1. **Capability数の更新**:
+
    ```python
    # Data Preparation, ML Training, ML Evaluation が登録されている
    assert len(server.capabilities) == 3
    ```
 
 2. **ツール数の更新**:
+
    ```python
    # toolsには9つのツールが登録されている (Data Prep: 3 + ML Training: 3 + ML Evaluation: 3)
    assert len(server.tools) == 9
    ```
 
 3. **ML Evaluation ツールの登録確認**:
+
    ```python
    expected_ml_evaluation_tools = [
        "ml_evaluation.evaluate_classification",
@@ -341,6 +360,7 @@ TestEvaluateClustering (2 tests)
 **実装されているエラーハンドリング**:
 
 1. **S3 URI検証（早期バリデーション）**:
+
    ```python
    # S3 URIのバリデーション（先に全てチェック）
    if not model_s3_uri.startswith("s3://"):
@@ -349,10 +369,12 @@ TestEvaluateClustering (2 tests)
    if not test_data_s3_uri.startswith("s3://"):
        raise ValueError("Invalid S3 URI: must start with 's3://'")
    ```
+
    - S3クライアント作成前に全URIをバリデーション
    - エラーメッセージが明確
 
 2. **ファイルフォーマット検証**:
+
    ```python
    if file_format.lower() == "csv":
        df = pd.read_csv(io.BytesIO(data_content))
@@ -363,6 +385,7 @@ TestEvaluateClustering (2 tests)
    ```
 
 3. **S3アクセスエラー**:
+
    ```python
    try:
        model_response = s3_client.get_object(Bucket=model_bucket, Key=model_key)
@@ -373,11 +396,13 @@ TestEvaluateClustering (2 tests)
    ```
 
 4. **ゼロ除算エラー（分類）**:
+
    ```python
    precision = precision_score(y_test, y_pred, average=average, zero_division=0)
    ```
 
 5. **ノイズ点対応（クラスタリング）**:
+
    ```python
    if -1 not in labels and n_clusters > 1:
        silhouette = silhouette_score(X_test, labels)
@@ -393,11 +418,13 @@ TestEvaluateClustering (2 tests)
 **ロギング戦略**:
 
 1. **初期化ログ**:
+
    ```python
    logger.info("Initializing ML Evaluation Capability")
    ```
 
 2. **評価開始ログ**:
+
    ```python
    logger.info(f"Evaluating classification model from {model_s3_uri}")
    logger.info(f"Loaded model from {model_s3_uri}")
@@ -405,6 +432,7 @@ TestEvaluateClustering (2 tests)
    ```
 
 3. **評価完了ログ**:
+
    ```python
    logger.info(f"Evaluation completed: Accuracy={accuracy:.4f}, F1={f1:.4f}")
    logger.info(f"Evaluation completed: R²={r2:.4f}, RMSE={rmse:.4f}")
@@ -412,11 +440,13 @@ TestEvaluateClustering (2 tests)
    ```
 
 4. **警告ログ**:
+
    ```python
    logger.warning("Silhouette score cannot be computed (noise points present or single cluster)")
    ```
 
 5. **エラーログ**:
+
    ```python
    logger.error(f"S3 access error for model: {e}")
    ```
@@ -434,6 +464,7 @@ TestEvaluateClustering (2 tests)
 **解決した問題**:
 
 1. **F401 (未使用import)**:
+
    ```python
    # 削除前
    import json
@@ -481,6 +512,7 @@ TestEvaluateClustering (2 tests)
    - 名前空間の衝突なし
 
 3. **サーバー情報の正確性**:
+
    ```python
    {
        "name": "MLOps Integrated MCP Server",
@@ -501,6 +533,7 @@ TestEvaluateClustering (2 tests)
 **Docstringの品質**:
 
 1. **関数レベルのdocstring**:
+
    ```python
    def evaluate_classification(
        model_s3_uri: str,
@@ -523,12 +556,14 @@ TestEvaluateClustering (2 tests)
    ```
 
 2. **クラスレベルのdocstring**:
+
    ```python
    class MLEvaluationCapability:
        """機械学習モデル評価"""
    ```
 
 3. **モジュールレベルのdocstring**:
+
    ```python
    """
    Evaluate Classification Model Tool
@@ -594,6 +629,7 @@ TestEvaluateClustering (2 tests)
 **パフォーマンス改善**:
 
 1. **無駄なS3アクセスの回避**:
+
    ```python
    # URIバリデーション（S3アクセス前）
    if not model_s3_uri.startswith("s3://"):
@@ -605,6 +641,7 @@ TestEvaluateClustering (2 tests)
    # S3クライアント作成（バリデーション後）
    s3_client = boto3.client("s3")
    ```
+
    - 無効なURIの場合、S3クライアント作成前にエラー
    - ネットワーク遅延の回避
 
@@ -631,9 +668,10 @@ TestEvaluateClustering (2 tests)
 **コミット**:
 
 **05ed87b**: `feat: Implement ML Evaluation Capability with 3 core tools`
-   - 実装コミット
-   - 142-151行の3つの評価ツール実装
-   - 7ユニットテスト、13統合テスト追加
+
+- 実装コミット
+- 142-151行の3つの評価ツール実装
+- 7ユニットテスト、13統合テスト追加
 
 **優れている点**:
 
@@ -707,7 +745,7 @@ TestEvaluateClustering (2 tests)
 
 **コミットメッセージ**:
 
-```
+```text
 feat: Implement ML Evaluation Capability with 3 core tools
 
 ## Implementation
