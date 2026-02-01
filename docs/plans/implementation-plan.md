@@ -15,7 +15,7 @@
 | 2.3 | AWS統合テスト（LocalStack） | ✅ 完了 | MLOps Engineer |
 | 3 | エクスペリメント追跡 | ✅ 完了 | ML Engineer |
 | 4 | データバージョニング | ✅ 完了 | Data Engineer |
-| 5 | ドキュメント拡充 | 🔄 未着手 | 全員 |
+| 5 | ドキュメント拡充 | ✅ 完了 | Quality Engineer / Data Scientist / MLOps Engineer |
 
 ---
 
@@ -250,6 +250,50 @@
 
 ---
 
+## Phase 5: ドキュメント拡充 ✅ 完了
+
+**担当**: Quality Engineer / Data Scientist / MLOps Engineer
+**優先度**: 中
+
+### 作成物
+
+#### API仕様書（docs/api/）- Quality Engineer担当
+
+| # | ファイル | 内容 |
+|---|---------|------|
+| 1 | `README.md` | API概要・共通レスポンス形式・AWS依存一覧 |
+| 2 | `github_integration.md` | 4ツール: detect_issues, parse_issue, create_workflow, start_workflow |
+| 3 | `data_preparation.md` | 3ツール: load_dataset, validate_data, preprocess_supervised |
+| 4 | `ml_training.md` | 3ツール: train_classification, train_regression, train_clustering |
+| 5 | `ml_evaluation.md` | 5ツール: evaluate_*, calculate_shap/lime |
+| 6 | `model_packaging.md` | 5ツール: extract_metadata, create_dockerfile/package, generate_config, validate |
+| 7 | `model_deployment.md` | 9ツール: deploy, traffic, capacity, autoscaling等 |
+| 8 | `model_monitoring.md` | 10ツール: metrics, drift, alarms, dashboards |
+| 9 | `model_registry.md` | 5ツール: register, list, get, update_status, delete |
+| 10 | `workflow_optimization.md` | 5ツール: analyze, generate, retrieve_history, apply, track |
+| 11 | `notification.md` | 5ツール: slack, email, github, template, list_templates |
+| 12 | `retrain_management.md` | 5ツール: check_triggers, evaluate_conditions等 |
+| 13 | `history_management.md` | 4ツール: format, save, post_comment, track_version |
+| 14 | `experiment_tracking.md` | 4ツール: start_experiment, log_parameters/metrics, compare |
+| 15 | `data_versioning.md` | 3ツール: version_dataset, get_lineage, compare_datasets |
+
+#### チュートリアル（docs/tutorials/）- Data Scientist担当
+
+| # | ファイル | 内容 |
+|---|---------|------|
+| 1 | `README.md` | チュートリアル一覧・前提条件・セットアップ |
+| 2 | `quickstart.md` | サーバー起動・ツール呼び出し・環境説明 |
+| 3 | `training-pipeline.md` | 7ステップ: load→validate→preprocess→train→evaluate→track→register |
+| 4 | `monitoring-operations.md` | 7ステップ: deploy→health→monitor→drift→notify→retrain→rollback |
+
+#### トラブルシューティング - MLOps Engineer担当
+
+| # | ファイル | 内容 |
+|---|---------|------|
+| 1 | `troubleshooting.md` | 10セクション: 起動・AWS・データ・学習・デプロイ・監視・実験追跡・バージョニング・テスト・FAQ |
+
+---
+
 ## 実装ルール
 
 ### TDDプロセス
@@ -290,3 +334,4 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 | 2026-01-31 | Phase 2.3 AWS統合テスト完了（34 passed） |
 | 2026-01-31 | Phase 3 エクスペリメント追跡Capability実装完了（58 passed） |
 | 2026-01-31 | Phase 4 データバージョニングCapability実装完了（54 passed） |
+| 2026-02-01 | Phase 5 ドキュメント拡充完了（API仕様書15件、チュートリアル4件、トラブルシューティング1件） |
