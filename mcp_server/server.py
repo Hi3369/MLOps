@@ -198,6 +198,24 @@ class MLOpsServer:
         except ImportError as e:
             logger.warning(f"Notification Capability not available: {e}")
 
+        # Experiment Tracking Capability
+        try:
+            from .capabilities.experiment_tracking.capability import (
+                ExperimentTrackingCapability,
+            )
+
+            experiment_tracking = ExperimentTrackingCapability()
+            self.capabilities["experiment_tracking"] = experiment_tracking
+
+            # ツールをグローバルツールリストに登録
+            for tool_name, tool_func in experiment_tracking.get_tools().items():
+                full_tool_name = f"experiment_tracking.{tool_name}"
+                self.tools[full_tool_name] = tool_func
+                logger.info(f"Registered tool: {full_tool_name}")
+
+        except ImportError as e:
+            logger.warning(f"Experiment Tracking Capability not available: {e}")
+
         logger.info(f"Total {len(self.tools)} tools registered")
 
     def list_tools(self) -> List[Dict[str, Any]]:
