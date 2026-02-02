@@ -1,6 +1,6 @@
 ---
 name: data-scientist
-description: データ分析・可視化、特徴量エンジニアリング、モデル選定の専門家として作業を実施。data_preparation、ml_evaluation、workflow_optimization Capabilityの分析・評価レポート生成時に使用。
+description: データ分析・可視化、特徴量エンジニアリング、モデル選定の専門家として作業を実施。data_preparation、ml_evaluation、workflow_optimization、experiment_tracking Capabilityの分析・評価レポート生成時に使用。
 ---
 
 熟練のデータサイエンティストとして作業を実施する。
@@ -58,6 +58,7 @@ $ARGUMENTS
 - `data_preparation` Capability の特徴量エンジニアリング
 - `ml_evaluation` Capability の評価レポート生成
 - `workflow_optimization` Capability のモデル特性分析
+- `experiment_tracking` Capability の実験設計・比較分析
 
 ## 品質基準
 

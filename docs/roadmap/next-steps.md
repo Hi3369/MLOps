@@ -2,163 +2,180 @@
 
 ## 現在の状態
 
-**ステータス**: 基盤実装完了
+**ステータス**: Phase 1-5 完了、安定化・本番準備フェーズ
 
 | 項目 | 状況 |
 |------|------|
-| 12 Capabilities | 全て実装完了 |
-| テストケース | 約448件 |
+| 14 Capabilities | 全て実装完了（60ツール） |
+| テストケース | 599件パス / 1件要修正 |
+| テストカバレッジ | 72.5% |
 | 専門家レビュー | 完了（876d153） |
 | セキュリティ修正 | 完了 |
-| 依存関係管理 | pyproject.toml完備 |
+| ドキュメント | API仕様書・チュートリアル・トラブルシューティング完備 |
+| markdownlint | 全ファイル0エラー |
+
+### 完了済みPhase
+
+| Phase | 内容 | コミット |
+|-------|------|---------|
+| Phase 1 | SHAP/LIME モデル解釈性 | `0f1d08e` |
+| Phase 2 | 統合テスト強化（E2E, 依存, AWS） | 統合テスト3ファイル |
+| Phase 3 | エクスペリメント追跡 | `d8f66b4` |
+| Phase 4 | データバージョニング | `9960785` |
+| Phase 5 | ドキュメント拡充 | `6e74d86` |
 
 ---
 
 ## 次のステップ（優先度順）
 
-### Phase 1: モデル解釈性機能（優先度: 高）
+### Phase 6: テスト修正・カバレッジ向上（優先度: 高）
 
-**目的**: レビューで指摘されたSHAP/LIME機能の実装
+**目的**: 既知の不具合修正とカバレッジ80%達成
 
-#### 1.1 SHAP値計算ツール
+#### 6.1 失敗テスト修正
 
-- **ファイル**: `mcp_server/capabilities/ml_evaluation/tools/calculate_shap_values.py`
-- **機能**:
-  - TreeExplainer（決定木・アンサンブル用）
-  - KernelExplainer（汎用）
-  - DeepExplainer（ニューラルネット用）
-- **テスト**: 30件以上
+- **ファイル**: `tests/integration/test_mcp_server.py::test_server_extensibility`
+- **原因**: Capability数が10→12、ツール数が53→60に増加したがテスト期待値が未更新
+- **対処**: アサーション値を更新
 
-#### 1.2 LIME説明ツール
+#### 6.2 カバレッジ向上（72.5% → 80%+）
 
-- **ファイル**: `mcp_server/capabilities/ml_evaluation/tools/calculate_lime_explanation.py`
-- **機能**:
-  - タビュラーデータ対応
-  - 局所的解釈可能性分析
-- **テスト**: 20件以上
+低カバレッジモジュールを重点的にテスト追加:
 
-#### 1.3 設計書更新
+| モジュール | 現在カバレッジ | 目標 |
+|-----------|--------------|------|
+| notification | 49% | 80% |
+| workflow_optimization | 56% | 80% |
+| retrain_management | 要確認 | 80% |
+| common/s3_utils | 要確認 | 80% |
 
-- `docs/designs/mcp_design.md` のCapability 5セクションを詳細化
+#### 6.3 TODO項目の解消
+
+- `mcp_server/common/s3_utils.py` のTODOコメント
+- `docs/specifications/system_specification.md` のTODO
 
 ---
 
-### Phase 2: 統合テスト強化（優先度: 高）
+### Phase 7: コード品質強化（優先度: 高）
 
-**目的**: エンドツーエンドの品質保証
+**目的**: 静的解析・型チェックの完全パス
 
-#### 2.1 追加すべきテストファイル
+#### 7.1 flake8
 
-```text
-tests/integration/
-├── test_end_to_end_pipeline.py    # フルパイプラインテスト
-├── test_capability_dependencies.py # Capability間依存テスト
-└── test_aws_integration.py         # AWS統合テスト（LocalStack）
+```bash
+flake8 mcp_server/ tests/ --max-line-length=100
 ```
 
-#### 2.2 カバレッジ目標
+#### 7.2 mypy型チェック
 
-- 現在: 約70%（推定）
-- 目標: 80%以上
-- コマンド: `pytest --cov --cov-report=html`
+```bash
+mypy mcp_server/ --ignore-missing-imports
+```
 
----
+#### 7.3 banditセキュリティチェック
 
-### Phase 3: エクスペリメント追跡（優先度: 中）
+```bash
+bandit -r mcp_server/ -c pyproject.toml
+```
 
-**目的**: 実験管理の自動化
+#### 7.4 isort/blackフォーマット確認
 
-#### 3.1 新規Capability: experiment_tracking
-
-- **ツール**:
-  - `start_experiment`: 実験開始
-  - `log_parameters`: パラメータ記録
-  - `log_metrics`: メトリクス記録
-  - `compare_experiments`: 実験比較
-
-#### 3.2 統合候補
-
-- MLflow
-- Weights & Biases
-- SageMaker Experiments
+```bash
+isort --check-only --profile black mcp_server/ tests/
+black --check mcp_server/ tests/
+```
 
 ---
 
-### Phase 4: データバージョニング（優先度: 中）
+### Phase 8: CI/CD パイプライン構築（優先度: 中）
 
-**目的**: データ系譜の追跡
+**目的**: GitHub Actionsによる自動品質保証
 
-#### 4.1 新規Capability: data_versioning
+#### 8.1 GitHub Actions ワークフロー
 
-- **ツール**:
-  - `version_dataset`: データセットバージョン登録
-  - `get_dataset_lineage`: データ系譜取得
-  - `compare_datasets`: データセット比較
+- **ファイル**: `.github/workflows/ci.yml`
+- **トリガー**: push, pull_request
+- **ジョブ**:
+  - lint: flake8, mypy, bandit, markdownlint
+  - test: pytest with coverage
+  - coverage-gate: 80%未満で失敗
 
-#### 4.2 統合候補
+#### 8.2 Pre-commit hooks
 
-- DVC (Data Version Control)
-- Delta Lake
+- **ファイル**: `.pre-commit-config.yaml`
+- **フック**: black, isort, flake8, mypy
 
----
+#### 8.3 PR テンプレート
 
-### Phase 5: ドキュメント拡充（優先度: 低）
-
-#### 5.1 追加すべきドキュメント
-
-- `docs/api/` - API仕様書（OpenAPI形式）
-- `docs/tutorials/` - チュートリアル
-- `docs/troubleshooting.md` - トラブルシューティング
+- **ファイル**: `.github/pull_request_template.md`
 
 ---
 
-## 実装ファイル一覧
+### Phase 9: 本番デプロイ準備（優先度: 中）
 
-### Phase 1で作成するファイル
+**目的**: 本番AWS環境でのデプロイ準備
 
-| ファイル | 説明 |
-|---------|------|
-| `mcp_server/capabilities/ml_evaluation/tools/calculate_shap_values.py` | SHAP値計算 |
-| `mcp_server/capabilities/ml_evaluation/tools/calculate_lime_explanation.py` | LIME説明 |
-| `tests/unit/test_shap_lime.py` | SHAP/LIMEテスト |
+#### 9.1 CDK スタック整備
 
-### Phase 2で作成するファイル
+- `cdk/` ディレクトリの既存コードを確認・更新
+- S3バケット、SageMaker、Step Functions等のリソース定義
 
-| ファイル | 説明 |
-|---------|------|
-| `tests/integration/test_end_to_end_pipeline.py` | E2Eテスト |
-| `tests/integration/test_capability_dependencies.py` | 依存テスト |
-| `tests/integration/test_aws_integration.py` | AWS統合テスト |
+#### 9.2 環境設定
+
+- 本番用 `.env.production` テンプレート
+- IAM ロール・ポリシーの最終確認
+- VPC・セキュリティグループ設計
+
+#### 9.3 負荷テスト
+
+- 同時学習ジョブの負荷テスト
+- エンドポイント推論のレイテンシテスト
+
+---
+
+### Phase 10: 運用機能強化（優先度: 低）
+
+**目的**: 本番運用時の利便性向上
+
+#### 10.1 ダッシュボード
+
+- CloudWatch ダッシュボードテンプレート
+- モデルパフォーマンス可視化
+
+#### 10.2 外部ツール連携
+
+- MLflow / Weights & Biases 統合
+- DVC (Data Version Control) 統合
+
+#### 10.3 マルチリージョン対応
+
+- クロスリージョンレプリケーション
+- DR（災害復旧）計画
 
 ---
 
 ## 検証コマンド
 
 ```bash
-# テスト実行
-pytest tests/ -v --cov
+# テスト実行（カバレッジ付き）
+pytest tests/ -v --cov=mcp_server --cov-report=html
 
 # Lint
 flake8 mcp_server/ tests/ --max-line-length=100
 
+# 型チェック
+mypy mcp_server/ --ignore-missing-imports
+
 # セキュリティチェック
 bandit -r mcp_server/ -c pyproject.toml
 
-# 型チェック
-mypy mcp_server/ --ignore-missing-imports
+# フォーマット確認
+black --check mcp_server/ tests/
+isort --check-only --profile black mcp_server/ tests/
+
+# Markdownlint
+npx markdownlint-cli2 "**/*.md" "#node_modules" "#.venv" "#venv"
 ```
-
----
-
-## 推奨スケジュール
-
-| Phase | 内容 | 期間目安 |
-|-------|------|---------|
-| Phase 1 | SHAP/LIME実装 | 1-2週間 |
-| Phase 2 | 統合テスト強化 | 1週間 |
-| Phase 3 | エクスペリメント追跡 | 2週間 |
-| Phase 4 | データバージョニング | 1週間 |
-| Phase 5 | ドキュメント拡充 | 継続的 |
 
 ---
 
@@ -167,4 +184,8 @@ mypy mcp_server/ --ignore-missing-imports
 - [設計書](../designs/mcp_design.md)
 - [実装ガイド](../designs/implementation_guide.md)
 - [IAM権限](../designs/iam_permissions.md)
+- [API仕様書](../api/README.md)
+- [チュートリアル - 学習パイプライン](../tutorials/training-pipeline.md)
+- [チュートリアル - 監視・運用](../tutorials/monitoring-operations.md)
+- [トラブルシューティング](../troubleshooting.md)
 - [専門家レビュー結果](../reviews/876d153/)

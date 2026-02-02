@@ -199,22 +199,24 @@ def tool_function(
 - 実装ガイド: [docs/designs/implementation_guide.md](docs/designs/implementation_guide.md)
 - エージェント設計: [docs/designs/agent_design.md](docs/designs/agent_design.md)
 
-### 12 Capabilities
+### 14 Capabilities（60ツール）
 
-| # | Capability | 責務 | 主要AWSサービス |
-|---|-----------|------|----------------|
-| 1 | github_integration | Issue検知・ワークフロー起動 | Step Functions |
-| 2 | workflow_optimization | モデル特性分析・最適化提案 | - |
-| 3 | data_preparation | データ前処理・特徴量エンジニアリング | S3 |
-| 4 | ml_training | モデル学習・ハイパーパラメータ最適化 | SageMaker |
-| 5 | ml_evaluation | モデル評価・メトリクス計算 | SageMaker Clarify |
-| 6 | model_packaging | コンテナ化・ECR登録 | ECR |
-| 7 | model_deployment | エンドポイントデプロイ | SageMaker Endpoints |
-| 8 | model_monitoring | パフォーマンス監視・ドリフト検出 | CloudWatch, SageMaker Model Monitor |
-| 9 | retrain_management | 再学習トリガー管理 | Step Functions, EventBridge |
-| 10 | notification | 通知送信 | SNS, GitHub API |
-| 11 | history_management | 学習履歴記録・GitHub連携 | S3, GitHub API |
-| 12 | model_registry | モデルバージョン管理 | SageMaker Model Registry |
+| # | Capability | ツール数 | 責務 | 主要AWSサービス |
+|---|-----------|---------|------|----------------|
+| 1 | github_integration | 4 | Issue検知・ワークフロー起動 | Step Functions |
+| 2 | workflow_optimization | 5 | モデル特性分析・最適化提案 | S3 |
+| 3 | data_preparation | 3 | データ前処理・特徴量エンジニアリング | S3 |
+| 4 | ml_training | 3 | モデル学習・ハイパーパラメータ最適化 | SageMaker |
+| 5 | ml_evaluation | 5 | モデル評価・SHAP/LIME解釈性分析 | SageMaker |
+| 6 | model_packaging | 5 | コンテナ化・ECR登録 | ECR |
+| 7 | model_deployment | 9 | エンドポイントデプロイ | SageMaker Endpoints |
+| 8 | model_monitoring | 10 | パフォーマンス監視・ドリフト検出 | CloudWatch, SageMaker Model Monitor |
+| 9 | retrain_management | 5 | 再学習トリガー管理 | Step Functions, EventBridge |
+| 10 | notification | 4 | 通知送信（Slack/Email/GitHub） | SES, SSM |
+| 11 | history_management | 4 | 学習履歴記録・GitHub連携 | S3, GitHub API |
+| 12 | model_registry | 5 | モデルバージョン管理 | SageMaker, S3 |
+| 13 | experiment_tracking | 4 | 実験追跡・パラメータ/メトリクス管理 | S3, SageMaker, CloudWatch |
+| 14 | data_versioning | 3 | データセットバージョニング・系譜追跡 | S3 |
 
 ### テストファイル配置
 
@@ -285,11 +287,11 @@ Claudeが作業内容に応じて自動的に適切なスキルを選択、ま�
 
 | スキル | コマンド | 専門領域 | 担当Capability |
 |--------|---------|----------|----------------|
-| Data Engineer | `/data-engineer` | データパイプライン、ETL、データ品質 | data_preparation |
-| ML Engineer | `/ml-engineer` | モデル開発、学習、評価 | ml_training, ml_evaluation |
+| Data Engineer | `/data-engineer` | データパイプライン、ETL、データ品質 | data_preparation, data_versioning |
+| ML Engineer | `/ml-engineer` | モデル開発、学習、評価 | ml_training, ml_evaluation, experiment_tracking |
 | MLOps Engineer | `/mlops-engineer` | インフラ、デプロイ、監視 | model_packaging, model_deployment, model_monitoring, retrain_management |
 | Quality Engineer | `/quality-engineer` | テスト、静的解析、コードレビュー | 全Capability |
-| Data Scientist | `/data-scientist` | 分析、特徴量エンジニアリング | data_preparation, workflow_optimization |
+| Data Scientist | `/data-scientist` | 分析、特徴量エンジニアリング | data_preparation, workflow_optimization, experiment_tracking |
 | DevOps Engineer | `/devops-engineer` | GitHub連携、ワークフロー、通知 | github_integration, notification, history_management |
 
 ### スキル構造
