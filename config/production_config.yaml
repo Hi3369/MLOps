@@ -1,0 +1,61 @@
+# 本番環境設定
+
+environment: prod
+
+aws:
+  region: ap-northeast-1
+  account_id: "123456789012"  # 要変更
+
+s3:
+  bucket_name: mlops-prod-data
+  datasets_prefix: datasets/
+  models_prefix: models/
+  evaluations_prefix: evaluations/
+
+sagemaker:
+  execution_role_arn: "arn:aws:iam::123456789012:role/mlops-prod-sagemaker-execution-role"  # 要変更
+  default_instance_type: ml.m5.xlarge
+  max_runtime_seconds: 14400
+  volume_size_gb: 100
+
+step_functions:
+  state_machine_arn: "arn:aws:states:ap-northeast-1:123456789012:stateMachine:mlops-prod-pipeline"  # 要変更
+  max_parallel_executions: 5
+
+github:
+  repository: "your-org/mlops-pipeline"  # 要変更
+  webhook_secret_name: github-webhook-secret
+  token_secret_name: github-token
+
+notification:
+  slack_webhook_secret_name: slack-webhook-url
+  email_from: noreply@example.com  # 要変更
+  email_to: team@example.com  # 要変更
+
+model_registry:
+  model_package_group_name: mlops-prod-models
+
+monitoring:
+  cloudwatch_namespace: MLOps/Prod
+  log_retention_days: 90
+  alarm_actions:
+    - "arn:aws:sns:ap-northeast-1:123456789012:mlops-prod-alerts"  # 要変更
+
+training:
+  default_max_retry: 2
+  default_evaluation_threshold: 0.85
+
+# 本番固有設定
+production:
+  # エンドポイントオートスケーリング
+  autoscaling:
+    min_capacity: 1
+    max_capacity: 4
+    target_invocations_per_instance: 100
+  # データ保持
+  retention:
+    model_artifacts_days: 365
+    training_logs_days: 90
+    monitoring_data_days: 180
+  # 再学習スケジュール（毎週月曜2:00 UTC）
+  retrain_schedule: "cron(0 2 ? * MON *)"
