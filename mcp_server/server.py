@@ -30,9 +30,7 @@ class MLOpsServer:
 
     def _register_capabilities(self):
         """
-        全capabilityを登録
-
-        Phase 1 Week 1-2では Data Preparation のみ登録
+        全14 Capabilityを登録（69ツール）
         """
         # Data Preparation Capability
         try:
@@ -197,6 +195,42 @@ class MLOpsServer:
 
         except ImportError as e:
             logger.warning(f"Notification Capability not available: {e}")
+
+        # Retrain Management Capability
+        try:
+            from .capabilities.retrain_management.capability import (
+                RetrainManagementCapability,
+            )
+
+            retrain_management = RetrainManagementCapability()
+            self.capabilities["retrain_management"] = retrain_management
+
+            # ツールをグローバルツールリストに登録
+            for tool_name, tool_func in retrain_management.get_tools().items():
+                full_tool_name = f"retrain_management.{tool_name}"
+                self.tools[full_tool_name] = tool_func
+                logger.info(f"Registered tool: {full_tool_name}")
+
+        except ImportError as e:
+            logger.warning(f"Retrain Management Capability not available: {e}")
+
+        # History Management Capability
+        try:
+            from .capabilities.history_management.capability import (
+                HistoryManagementCapability,
+            )
+
+            history_management = HistoryManagementCapability()
+            self.capabilities["history_management"] = history_management
+
+            # ツールをグローバルツールリストに登録
+            for tool_name, tool_func in history_management.get_tools().items():
+                full_tool_name = f"history_management.{tool_name}"
+                self.tools[full_tool_name] = tool_func
+                logger.info(f"Registered tool: {full_tool_name}")
+
+        except ImportError as e:
+            logger.warning(f"History Management Capability not available: {e}")
 
         # Experiment Tracking Capability
         try:

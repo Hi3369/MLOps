@@ -29,3 +29,7 @@ def setup_logger(name: str, level: int = logging.INFO) -> logging.Logger:
         logger.addHandler(handler)
 
     return logger
+
+
+# setup_loggerのエイリアス（後方互換性）
+get_logger = setup_logger
