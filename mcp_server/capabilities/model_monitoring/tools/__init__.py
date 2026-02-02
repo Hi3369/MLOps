@@ -7,6 +7,7 @@ from .create_cloudwatch_alarm import (
     delete_cloudwatch_alarm,
     get_alarm_state,
 )
+from .dashboard_templates import create_dashboard_from_template, list_dashboard_templates
 from .detect_concept_drift import detect_concept_drift
 from .detect_data_drift import detect_data_drift
 from .update_dashboard import create_monitoring_dashboard, delete_dashboard, update_dashboard
@@ -22,4 +23,6 @@ __all__ = [
     "update_dashboard",
     "create_monitoring_dashboard",
     "delete_dashboard",
+    "list_dashboard_templates",
+    "create_dashboard_from_template",
 ]

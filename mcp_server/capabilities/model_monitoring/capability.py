@@ -7,12 +7,14 @@ from .tools import (
     collect_model_metrics,
     collect_system_metrics,
     create_cloudwatch_alarm,
+    create_dashboard_from_template,
     create_monitoring_dashboard,
     delete_cloudwatch_alarm,
     delete_dashboard,
     detect_concept_drift,
     detect_data_drift,
     get_alarm_state,
+    list_dashboard_templates,
     update_dashboard,
 )
 
@@ -40,6 +42,8 @@ class ModelMonitoringCapability:
             "update_dashboard": update_dashboard,
             "create_monitoring_dashboard": create_monitoring_dashboard,
             "delete_dashboard": delete_dashboard,
+            "list_dashboard_templates": list_dashboard_templates,
+            "create_dashboard_from_template": create_dashboard_from_template,
         }
 
     def get_tools(self) -> Dict[str, Callable]:
@@ -142,6 +146,23 @@ class ModelMonitoringCapability:
                 "description": "CloudWatchダッシュボードを削除",
                 "parameters": {
                     "dashboard_name": "ダッシュボード名",
+                },
+            },
+            "list_dashboard_templates": {
+                "name": "list_dashboard_templates",
+                "description": "利用可能なダッシュボードテンプレート一覧を取得",
+                "parameters": {},
+            },
+            "create_dashboard_from_template": {
+                "name": "create_dashboard_from_template",
+                "description": "テンプレートからCloudWatchダッシュボードを作成",
+                "parameters": {
+                    "template_name": "テンプレート名",
+                    "dashboard_name": "ダッシュボード名",
+                    "endpoint_name": "エンドポイント名",
+                    "region": "AWSリージョン（オプション）",
+                    "namespace": "CloudWatch名前空間（オプション）",
+                    "custom_widgets": "追加ウィジェット（オプション）",
                 },
             },
         }
