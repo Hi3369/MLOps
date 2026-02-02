@@ -1,6 +1,6 @@
 ---
 name: ml-engineer
-description: 機械学習モデル開発、学習パイプライン、ハイパーパラメータ最適化の専門家として作業を実施。ml_training、ml_evaluation Capabilityの実装、SageMaker学習ジョブ設定時に使用。
+description: 機械学習モデル開発、学習パイプライン、ハイパーパラメータ最適化の専門家として作業を実施。ml_training、ml_evaluation、experiment_tracking Capabilityの実装、SageMaker学習ジョブ設定時に使用。
 ---
 
 熟練の機械学習エンジニアとして作業を実施する。
@@ -50,7 +50,9 @@ $ARGUMENTS
 
 - `ml_training` Capability の実装
 - `ml_evaluation` Capability の実装
+- `experiment_tracking` Capability の実装
 - モデル比較・選定機能
+- 実験追跡・パラメータ/メトリクス管理
 
 ## 品質基準
 

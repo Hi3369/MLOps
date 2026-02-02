@@ -2,7 +2,7 @@
 
 ## Overview
 
-MLOps MCP Server は 14 の Capability、57 のツールを提供する統合 MCP サーバーです。
+MLOps MCP Server は 14 の Capability、60 のツールを提供する統合 MCP サーバーです。
 各ツールは `Dict[str, Any]` を返し、`status`, `message`, 結果データを含みます。
 
 ## 環境設定
@@ -25,7 +25,7 @@ MLOps MCP Server は 14 の Capability、57 のツールを提供する統合 MC
 | 7 | [model_deployment](model_deployment.md) | 9 | エンドポイントデプロイ |
 | 8 | [model_monitoring](model_monitoring.md) | 10 | ドリフト検出・アラート |
 | 9 | [retrain_management](retrain_management.md) | 5 | 再学習トリガー管理 |
-| 10 | [notification](notification.md) | 5 | 通知送信 |
+| 10 | [notification](notification.md) | 4 | 通知送信 |
 | 11 | [history_management](history_management.md) | 4 | 学習履歴記録 |
 | 12 | [model_registry](model_registry.md) | 5 | モデルバージョン管理 |
 | 13 | [experiment_tracking](experiment_tracking.md) | 4 | 実験追跡・比較 |

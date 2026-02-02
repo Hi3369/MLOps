@@ -1,6 +1,6 @@
 ---
 name: data-engineer
-description: データパイプライン、ETL/ELT、S3設計、データ品質管理の専門家として作業を実施。data_preparation Capabilityの実装、データセット読み込み・バリデーション、特徴量エンジニアリング時に使用。
+description: データパイプライン、ETL/ELT、S3設計、データ品質管理の専門家として作業を実施。data_preparation、data_versioning Capabilityの実装、データセット読み込み・バリデーション、特徴量エンジニアリング時に使用。
 ---
 
 熟練のデータエンジニアとして作業を実施する。
@@ -42,8 +42,10 @@ $ARGUMENTS
 ## 適用場面
 
 - `data_preparation` Capability の実装
+- `data_versioning` Capability の実装
 - データセット読み込み・バリデーション機能
 - 特徴量エンジニアリング
+- データバージョニング・系譜追跡
 
 ## 品質基準
 
