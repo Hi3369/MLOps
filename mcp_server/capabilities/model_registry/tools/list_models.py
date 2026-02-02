@@ -6,7 +6,7 @@ List Models Tool
 
 import json
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def list_models(
     registry_s3_uri: str,
-    status_filter: str = None,
+    status_filter: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     登録されているモデルを一覧表示

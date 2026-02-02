@@ -1,7 +1,7 @@
 """CloudWatch Metrics統合"""
 
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import boto3
 
@@ -23,7 +23,7 @@ class MetricsPublisher:
         metric_name: str,
         value: float,
         unit: str = "None",
-        dimensions: List[Dict[str, str]] = None,
+        dimensions: Optional[List[Dict[str, str]]] = None,
     ):
         """メトリクスを送信"""
         try:

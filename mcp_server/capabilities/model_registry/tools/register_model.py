@@ -7,7 +7,7 @@ Register Model Tool
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 def register_model(
     model_s3_uri: str,
     model_name: str,
-    model_version: str = None,
-    metadata: Dict[str, Any] = None,
-    tags: Dict[str, str] = None,
+    model_version: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    tags: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """
     モデルをレジストリに登録

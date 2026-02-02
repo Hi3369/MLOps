@@ -10,7 +10,7 @@ import tarfile
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -23,8 +23,8 @@ def create_model_package(
     package_name: str,
     framework: str = "sklearn",
     python_version: str = "3.11",
-    dependencies: Dict[str, str] = None,
-    output_s3_uri: str = None,
+    dependencies: Optional[Dict[str, str]] = None,
+    output_s3_uri: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     モデルパッケージを作成

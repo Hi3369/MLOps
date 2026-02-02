@@ -6,7 +6,7 @@ MLOps用Issue検知ツール
 
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 def detect_mlops_issue(
     repo_owner: str,
     repo_name: str,
-    issue_number: int = None,
-    labels: List[str] = None,
+    issue_number: Optional[int] = None,
+    labels: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """
     MLOps用Issueを検知
@@ -59,7 +59,7 @@ def detect_mlops_issue(
         return _get_mock_issue_data(repo_owner, repo_name, issue_number, labels)
 
 
-def _get_github_token() -> str:
+def _get_github_token() -> Optional[str]:
     """SSMからGitHub tokenを取得"""
     try:
         ssm = boto3.client("ssm")
@@ -67,7 +67,8 @@ def _get_github_token() -> str:
             Name="/mlops/github/token",
             WithDecryption=True,
         )
-        return response["Parameter"]["Value"]
+        token: str = response["Parameter"]["Value"]
+        return token
     except ClientError as e:
         logger.warning(f"Failed to get GitHub token from SSM: {e}")
         return None
@@ -79,8 +80,8 @@ def _get_github_token() -> str:
 def _detect_via_github_api(
     repo_owner: str,
     repo_name: str,
-    issue_number: int,
-    labels: List[str],
+    issue_number: Optional[int],
+    labels: Optional[List[str]],
     github_token: str,
 ) -> Dict[str, Any]:
     """GitHub APIを使用してIssueを検知"""
@@ -153,7 +154,7 @@ def _parse_github_issue(issue_data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _filter_mlops_issues(
-    issues: List[Dict[str, Any]], labels: List[str] = None
+    issues: List[Dict[str, Any]], labels: Optional[List[str]] = None
 ) -> List[Dict[str, Any]]:
     """MLOps関連のIssueをフィルタリング"""
     mlops_labels = labels or ["mlops", "training", "model", "ml-training"]
@@ -208,8 +209,8 @@ def _detect_config_block(body: str) -> bool:
 def _get_mock_issue_data(
     repo_owner: str,
     repo_name: str,
-    issue_number: int,
-    labels: List[str],
+    issue_number: Optional[int],
+    labels: Optional[List[str]],
 ) -> Dict[str, Any]:
     """モックデータを返す（開発・テスト用）"""
     logger.info("Returning mock MLOps issue data")

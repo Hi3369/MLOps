@@ -26,7 +26,7 @@ class MLTrainingCapability:
 
     def get_tools(self) -> Dict[str, Callable]:
         """登録されているツールを返す"""
-        return self._tools
+        return dict(self._tools)
 
     def get_tool_schemas(self) -> Dict[str, Dict[str, Any]]:
         """

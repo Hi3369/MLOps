@@ -6,7 +6,7 @@ SageMakerエンドポイントへのデプロイツール
 
 import logging
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -19,7 +19,7 @@ def deploy_to_sagemaker(
     endpoint_name: str,
     instance_type: str = "ml.t3.medium",
     instance_count: int = 1,
-    model_name: str = None,
+    model_name: Optional[str] = None,
     wait_for_completion: bool = True,
 ) -> Dict[str, Any]:
     """
@@ -131,7 +131,8 @@ def _create_model(
         ExecutionRoleArn=execution_role,
     )
 
-    return response["ModelArn"]
+    model_arn: str = response["ModelArn"]
+    return model_arn
 
 
 def _create_endpoint_config(
@@ -155,7 +156,8 @@ def _create_endpoint_config(
         ],
     )
 
-    return response["EndpointConfigArn"]
+    endpoint_config_arn: str = response["EndpointConfigArn"]
+    return endpoint_config_arn
 
 
 def _create_or_update_endpoint(

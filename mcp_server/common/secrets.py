@@ -33,7 +33,7 @@ class SecretsManager:
 
         try:
             response = self.client.get_secret_value(SecretId=full_secret_name)
-            secret_value = json.loads(response["SecretString"])
+            secret_value: dict = json.loads(response["SecretString"])
             logger.info(f"Retrieved secret: {full_secret_name}")
             return secret_value
 
@@ -52,13 +52,13 @@ class SecretsManager:
     def get_github_token(self) -> str:
         """GitHub Personal Access Tokenを取得"""
         secret = self.get_secret("github")
-        return secret.get("token", "")
+        return str(secret.get("token", ""))
 
     def get_slack_webhook_url(self) -> str:
         """Slack Webhook URLを取得"""
         secret = self.get_secret("slack")
-        return secret.get("webhook_url", "")
+        return str(secret.get("webhook_url", ""))
 
     def get_email_credentials(self) -> dict:
         """Email送信用の認証情報を取得"""
-        return self.get_secret("email")
+        return self.get_secret("email")  # type: ignore[no-any-return]

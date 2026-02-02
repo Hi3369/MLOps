@@ -11,7 +11,7 @@ from typing import Any, Dict, Optional
 logger = logging.getLogger(__name__)
 
 # 組み込みテンプレート
-BUILTIN_TEMPLATES = {
+BUILTIN_TEMPLATES: Dict[str, Dict[str, Any]] = {
     "training_started": {
         "subject": "[MLOps] Training Started: {model_name}",
         "body": """Training job has started.
@@ -166,7 +166,7 @@ Please consider retraining the model with recent data.""",
 def apply_notification_template(
     template_name: str,
     variables: Dict[str, Any],
-    custom_template: Optional[Dict[str, str]] = None,
+    custom_template: Optional[Dict[str, Any]] = None,
     output_format: str = "all",
 ) -> Dict[str, Any]:
     """
@@ -211,33 +211,35 @@ def apply_notification_template(
         applied = _apply_variables(template, variables)
 
         # 出力フォーマットに応じてフィルタリング
-        result = {
-            "status": "success",
-            "message": f"Template '{template_name}' applied successfully",
-            "template_result": {
-                "template_name": template_name,
-                "applied_variables": list(variables.keys()),
-                "output_format": output_format,
-            },
+        template_result: Dict[str, Any] = {
+            "template_name": template_name,
+            "applied_variables": list(variables.keys()),
+            "output_format": output_format,
         }
 
         if output_format in ["all", "email"]:
-            result["template_result"]["email"] = {
+            template_result["email"] = {
                 "subject": applied.get("subject", ""),
                 "body": applied.get("body", ""),
             }
 
         if output_format in ["all", "slack"]:
-            result["template_result"]["slack"] = {
+            template_result["slack"] = {
                 "text": applied.get("body", ""),
                 "blocks": applied.get("slack_blocks"),
             }
 
         if output_format in ["all", "github"]:
-            result["template_result"]["github"] = {
+            template_result["github"] = {
                 "title": applied.get("subject", ""),
                 "body": applied.get("body", ""),
             }
+
+        result: Dict[str, Any] = {
+            "status": "success",
+            "message": f"Template '{template_name}' applied successfully",
+            "template_result": template_result,
+        }
 
         logger.info(f"Template applied with {len(variables)} variables")
         return result
@@ -249,7 +251,7 @@ def apply_notification_template(
 
 def _apply_variables(template: Dict[str, Any], variables: Dict[str, Any]) -> Dict[str, Any]:
     """テンプレートに変数を適用"""
-    applied = {}
+    applied: Dict[str, Any] = {}
 
     for key, value in template.items():
         if isinstance(value, str):
@@ -267,9 +269,9 @@ def _apply_variables(template: Dict[str, Any], variables: Dict[str, Any]) -> Dic
     return applied
 
 
-def _apply_variables_to_list(items: list, variables: Dict[str, Any]) -> list:
+def _apply_variables_to_list(items: list, variables: Dict[str, Any]) -> list[Any]:
     """リスト内の要素に変数を適用"""
-    result = []
+    result: list[Any] = []
     for item in items:
         if isinstance(item, str):
             result.append(_substitute_variables(item, variables))

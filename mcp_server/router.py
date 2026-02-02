@@ -48,4 +48,4 @@ class ToolRouter:
 
         # ツールを実行
         logger.debug(f"Routing {tool_name} to {capability_name}")
-        return await capability.execute_tool(tool_name, arguments)
+        return await capability.execute_tool(tool_name, arguments)  # type: ignore[no-any-return]

@@ -107,7 +107,7 @@ def track_optimization_history(
 
 def _extract_metrics(results: Dict[str, Any]) -> Dict[str, Any]:
     """結果からメトリクスを抽出"""
-    metrics = {}
+    metrics: Dict[str, Any] = {}
 
     optimization_result = results.get("optimization_result", {})
 
@@ -116,7 +116,7 @@ def _extract_metrics(results: Dict[str, Any]) -> Dict[str, Any]:
     metrics["total_optimizations_applied"] = len(applied_optimizations)
 
     # 最適化タイプ別の数
-    optimization_types = {}
+    optimization_types: Dict[str, int] = {}
     for opt in applied_optimizations:
         opt_type = opt.get("type", "unknown")
         optimization_types[opt_type] = optimization_types.get(opt_type, 0) + 1

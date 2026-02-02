@@ -7,7 +7,7 @@ Train Classification Model Tool
 import io
 import json
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 import joblib
@@ -23,10 +23,10 @@ logger = logging.getLogger(__name__)
 def train_classification(
     train_data_s3_uri: str,
     algorithm: str = "random_forest",
-    hyperparameters: Dict[str, Any] = None,
-    model_output_s3_uri: str = None,
+    hyperparameters: Optional[Dict[str, Any]] = None,
+    model_output_s3_uri: Optional[str] = None,
     file_format: str = "csv",
-    validation_data_s3_uri: str = None,
+    validation_data_s3_uri: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     分類モデルを学習
@@ -206,29 +206,29 @@ def train_classification(
 
         logger.info(f"Saved model to {model_output_s3_uri}")
 
-    result = {
-        "status": "success",
-        "message": f"Classification model trained successfully with {algorithm}",
-        "training_results": {
-            "algorithm": algorithm,
-            "train_accuracy": float(train_score),
-            "n_samples": len(X_train),
-            "n_features": len(X_train.columns),
-            "feature_names": X_train.columns.tolist(),
-            "n_classes": len(model.classes_),
-            "classes": (
-                model.classes_.tolist()
-                if hasattr(model.classes_[0], "item")
-                else [str(c) for c in model.classes_]
-            ),
-            "hyperparameters": hyperparameters,
-            "model_s3_uri": model_output_s3_uri,
-        },
+    training_results: Dict[str, Any] = {
+        "algorithm": algorithm,
+        "train_accuracy": float(train_score),
+        "n_samples": len(X_train),
+        "n_features": len(X_train.columns),
+        "feature_names": X_train.columns.tolist(),
+        "n_classes": len(model.classes_),
+        "classes": (
+            model.classes_.tolist()
+            if hasattr(model.classes_[0], "item")
+            else [str(c) for c in model.classes_]
+        ),
+        "hyperparameters": hyperparameters,
+        "model_s3_uri": model_output_s3_uri,
     }
 
     if validation_score is not None:
-        result["training_results"]["validation_accuracy"] = float(validation_score)
+        training_results["validation_accuracy"] = float(validation_score)
     if overfitting_warning:
-        result["training_results"]["overfitting_warning"] = overfitting_warning
+        training_results["overfitting_warning"] = overfitting_warning
 
-    return result
+    return {
+        "status": "success",
+        "message": f"Classification model trained successfully with {algorithm}",
+        "training_results": training_results,
+    }

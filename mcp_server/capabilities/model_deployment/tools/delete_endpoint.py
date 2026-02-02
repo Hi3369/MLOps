@@ -5,7 +5,7 @@ Delete Endpoint Tool
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -116,7 +116,7 @@ def delete_endpoint(
 
 def rollback_deployment(
     endpoint_name: str,
-    previous_config_name: str = None,
+    previous_config_name: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     デプロイメントをロールバック

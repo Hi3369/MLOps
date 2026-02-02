@@ -93,7 +93,7 @@ def _build_mock_lineage_chain(
     current_version = version or "v1.2.0"
 
     for i in range(min(depth, 3)):
-        node = {
+        node: Dict[str, Any] = {
             "dataset_name": dataset_name,
             "version": current_version,
             "s3_uri": f"s3://mlops-data/{dataset_name}/{current_version}/data.csv",

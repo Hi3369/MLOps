@@ -181,7 +181,8 @@ def create_monitoring_dashboard(
     }
 
     # 各ウィジェットにディメンションを追加
-    for widget in dashboard_body["widgets"]:
+    widgets: list[Dict[str, Any]] = dashboard_body["widgets"]
+    for widget in widgets:
         if widget["type"] == "metric":
             for metric in widget["properties"]["metrics"]:
                 if len(metric) > 2 and isinstance(metric[2], dict):

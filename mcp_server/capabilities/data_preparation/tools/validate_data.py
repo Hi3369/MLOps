@@ -5,7 +5,7 @@ Validate Data Tool
 """
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def validate_data(
     s3_uri: str,
     file_format: str = "csv",
-    required_columns: List[str] = None,
+    required_columns: Optional[List[str]] = None,
     max_missing_ratio: float = 0.5,
 ) -> Dict[str, Any]:
     """
@@ -39,7 +39,7 @@ def validate_data(
     load_result = load_dataset(s3_uri=s3_uri, file_format=file_format)
     dataset_info = load_result["dataset_info"]
 
-    validation_results = {
+    validation_results: Dict[str, Any] = {
         "is_valid": True,
         "errors": [],
         "warnings": [],

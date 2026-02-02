@@ -212,7 +212,7 @@ def _apply_algorithm_optimization(
 
 def _calculate_config_diff(original: Dict[str, Any], optimized: Dict[str, Any]) -> Dict[str, Any]:
     """設定の差分を計算"""
-    diff = {
+    diff: Dict[str, Any] = {
         "added": {},
         "modified": {},
         "removed": {},

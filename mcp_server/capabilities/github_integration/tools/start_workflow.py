@@ -8,7 +8,7 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def start_workflow(
     workflow_type: str,
     input_params: Dict[str, Any],
-    execution_name: str = None,
+    execution_name: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Step Functionsワークフローを起動
@@ -130,7 +130,7 @@ def start_workflow(
         raise ValueError(f"Failed to start workflow: {e}")
 
 
-def _get_state_machine_arn(state_machine_name: str) -> str:
+def _get_state_machine_arn(state_machine_name: str) -> Optional[str]:
     """State Machine ARNを取得"""
     try:
         sfn = boto3.client("stepfunctions")
@@ -141,7 +141,8 @@ def _get_state_machine_arn(state_machine_name: str) -> str:
         for page in paginator.paginate():
             for sm in page.get("stateMachines", []):
                 if sm["name"] == state_machine_name:
-                    return sm["stateMachineArn"]
+                    arn: str = sm["stateMachineArn"]
+                    return arn
 
         return None
 
@@ -213,7 +214,7 @@ def _prepare_workflow_input(workflow_type: str, input_params: Dict[str, Any]) ->
 def _get_mock_workflow_result(
     workflow_type: str,
     input_params: Dict[str, Any],
-    execution_name: str,
+    execution_name: Optional[str],
 ) -> Dict[str, Any]:
     """モックワークフロー結果を返す（開発・テスト用）"""
     logger.info("Returning mock workflow result")

@@ -106,7 +106,12 @@ def compare_datasets(
 
 def _generate_mock_version_info(dataset_name: str, version: str) -> Dict[str, Any]:
     """モックバージョン情報を生成"""
-    seed = int(hashlib.md5(f"{dataset_name}:{version}".encode()).hexdigest()[:8], 16)
+    seed = int(
+        hashlib.md5(  # nosec B324
+            f"{dataset_name}:{version}".encode(), usedforsecurity=False
+        ).hexdigest()[:8],
+        16,
+    )
 
     base_columns = ["id", "feature1", "feature2", "feature3", "target"]
     column_types = ["int64", "float64", "float64", "float64", "int64"]
@@ -208,34 +213,34 @@ def _mock_compare_datasets(
     info_a = _generate_mock_version_info(dataset_name, version_a)
     info_b = _generate_mock_version_info(dataset_name, version_b)
 
-    result = {
-        "status": "success",
-        "message": f"Compared {dataset_name}: {version_a} vs {version_b}",
-        "comparison_info": {
-            "comparison_id": f"dc-{comparison_id}",
-            "dataset_name": dataset_name,
-            "version_a": info_a,
-            "version_b": info_b,
-            "compared_at": timestamp,
-            "mock": True,
-        },
+    comparison_info: Dict[str, Any] = {
+        "comparison_id": f"dc-{comparison_id}",
+        "dataset_name": dataset_name,
+        "version_a": info_a,
+        "version_b": info_b,
+        "compared_at": timestamp,
+        "mock": True,
     }
 
     if compare_schema:
-        result["comparison_info"]["schema_diff"] = _compute_schema_diff(info_a, info_b)
+        comparison_info["schema_diff"] = _compute_schema_diff(info_a, info_b)
 
     if compare_statistics:
-        result["comparison_info"]["statistics_diff"] = _compute_statistics_diff(info_a, info_b)
+        comparison_info["statistics_diff"] = _compute_statistics_diff(info_a, info_b)
 
     if compare_sample:
-        result["comparison_info"]["sample_comparison"] = {
+        comparison_info["sample_comparison"] = {
             "sample_size": sample_size,
             "matching_rows": sample_size - (sample_size // 10),
             "different_rows": sample_size // 10,
             "match_rate": round(1.0 - (sample_size // 10) / sample_size, 4),
         }
 
-    return result
+    return {
+        "status": "success",
+        "message": f"Compared {dataset_name}: {version_a} vs {version_b}",
+        "comparison_info": comparison_info,
+    }
 
 
 def _real_compare_datasets(
@@ -268,23 +273,25 @@ def _real_compare_datasets(
     info_a = versions_data[version_a]
     info_b = versions_data[version_b]
 
-    result = {
-        "status": "success",
-        "message": f"Compared {dataset_name}: {version_a} vs {version_b}",
-        "comparison_info": {
-            "comparison_id": f"dc-{comparison_id}",
-            "dataset_name": dataset_name,
-            "version_a": info_a,
-            "version_b": info_b,
-            "compared_at": timestamp,
-        },
+    comparison_info: Dict[str, Any] = {
+        "comparison_id": f"dc-{comparison_id}",
+        "dataset_name": dataset_name,
+        "version_a": info_a,
+        "version_b": info_b,
+        "compared_at": timestamp,
     }
 
     if compare_schema and "schema" in info_a and "schema" in info_b:
-        result["comparison_info"]["schema_diff"] = _compute_schema_diff(info_a, info_b)
+        comparison_info["schema_diff"] = _compute_schema_diff(info_a, info_b)
 
     if compare_statistics:
-        result["comparison_info"]["statistics_diff"] = _compute_statistics_diff(info_a, info_b)
+        comparison_info["statistics_diff"] = _compute_statistics_diff(info_a, info_b)
+
+    result: Dict[str, Any] = {
+        "status": "success",
+        "message": f"Compared {dataset_name}: {version_a} vs {version_b}",
+        "comparison_info": comparison_info,
+    }
 
     # 比較結果をS3に保存
     s3_key = f"comparisons/datasets/{comparison_id}.json"

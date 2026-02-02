@@ -117,37 +117,41 @@ def detect_concept_drift(
         min_accuracy = np.min(window_accuracies) if window_accuracies else baseline_accuracy
         max_accuracy = np.max(window_accuracies) if window_accuracies else baseline_accuracy
 
-        result = {
-            "status": "success",
-            "message": "Concept drift detection completed",
-            "drift_info": {
-                "overall_drift_detected": overall_drift_detected,
-                "total_samples": len(predictions),
-                "window_size": window_size,
-                "total_windows": total_windows,
-                "drift_threshold": drift_threshold,
-                "drifted_windows_count": len(drift_detected_windows),
-                "baseline": {
-                    "accuracy": baseline_accuracy,
-                    "f1_score": baseline_f1,
-                    "sample_count": window_size,
-                },
-                "overall_statistics": {
-                    "average_accuracy": avg_accuracy,
-                    "min_accuracy": min_accuracy,
-                    "max_accuracy": max_accuracy,
-                    "accuracy_variance": np.var(window_accuracies) if window_accuracies else 0,
-                },
-                "drifted_windows": drift_detected_windows,
-                "window_accuracies": window_accuracies,
+        overall_statistics: Dict[str, Any] = {
+            "average_accuracy": avg_accuracy,
+            "min_accuracy": min_accuracy,
+            "max_accuracy": max_accuracy,
+            "accuracy_variance": np.var(window_accuracies) if window_accuracies else 0,
+        }
+
+        drift_info: Dict[str, Any] = {
+            "overall_drift_detected": overall_drift_detected,
+            "total_samples": len(predictions),
+            "window_size": window_size,
+            "total_windows": total_windows,
+            "drift_threshold": drift_threshold,
+            "drifted_windows_count": len(drift_detected_windows),
+            "baseline": {
+                "accuracy": baseline_accuracy,
+                "f1_score": baseline_f1,
+                "sample_count": window_size,
             },
+            "overall_statistics": overall_statistics,
+            "drifted_windows": drift_detected_windows,
+            "window_accuracies": window_accuracies,
         }
 
         if is_classification:
-            result["drift_info"]["overall_statistics"]["average_f1_score"] = (
+            overall_statistics["average_f1_score"] = (
                 np.mean(window_f1_scores) if window_f1_scores else baseline_f1
             )
-            result["drift_info"]["window_f1_scores"] = window_f1_scores
+            drift_info["window_f1_scores"] = window_f1_scores
+
+        result: Dict[str, Any] = {
+            "status": "success",
+            "message": "Concept drift detection completed",
+            "drift_info": drift_info,
+        }
 
         logger.info(
             f"Concept drift detection completed: {len(drift_detected_windows)}/{total_windows - 1} windows drifted"
