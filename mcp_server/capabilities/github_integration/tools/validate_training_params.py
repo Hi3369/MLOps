@@ -156,7 +156,7 @@ def validate_training_params(
             validated_config["model_type"] = model_type
 
         # データセットの検証
-        dataset = training_config.get("dataset", {})
+        dataset: Dict[str, Any] = training_config.get("dataset", {})
         dataset_validation = _validate_dataset(dataset)
         errors.extend(dataset_validation["errors"])
         warnings.extend(dataset_validation["warnings"])
@@ -206,9 +206,9 @@ def validate_training_params(
 
 def _validate_dataset(dataset: Dict[str, Any]) -> Dict[str, Any]:
     """データセット設定を検証"""
-    errors = []
-    warnings = []
-    validated = {}
+    errors: list[Dict[str, Any]] = []
+    warnings: list[Dict[str, Any]] = []
+    validated: Dict[str, Any] = {}
 
     if not dataset:
         errors.append(
@@ -282,9 +282,9 @@ def _validate_hyperparameters(
     warnings = []
     validated = {}
 
-    model_spec = SUPPORTED_MODEL_TYPES.get(model_type, {})
-    hp_specs = model_spec.get("hyperparameters", {})
-    required_params = model_spec.get("required", [])
+    model_spec: Dict[str, Any] = SUPPORTED_MODEL_TYPES.get(model_type, {})
+    hp_specs: Dict[str, Any] = model_spec.get("hyperparameters", {})
+    required_params: list = model_spec.get("required", [])
 
     # 必須パラメータのチェック
     for param in required_params:

@@ -5,14 +5,14 @@ Analyze Model Characteristics Tool
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
 
 def analyze_model_characteristics(
     model_config: Dict[str, Any],
-    dataset_info: Dict[str, Any] = None,
+    dataset_info: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     モデル特性を分析
@@ -134,7 +134,9 @@ def _estimate_resource_requirements(
         "unknown": {"cpu": 2, "memory_gb": 8, "gpu": False},
     }
 
-    requirements = base_requirements.get(algorithm, base_requirements["unknown"]).copy()
+    requirements: Dict[str, Any] = base_requirements.get(
+        algorithm, base_requirements["unknown"]
+    ).copy()
 
     # データサイズに応じてスケール
     if dataset_size > 100000:
@@ -168,7 +170,7 @@ def _estimate_training_time(
         "unknown": 10,
     }
 
-    base_time = base_time_minutes.get(algorithm, base_time_minutes["unknown"])
+    base_time: float = base_time_minutes.get(algorithm, base_time_minutes["unknown"])
 
     # データサイズに応じてスケール
     if dataset_size > 1000:

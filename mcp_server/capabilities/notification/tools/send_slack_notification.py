@@ -119,7 +119,7 @@ def _send_real_slack_notification(
 ) -> Dict[str, Any]:
     """実際のSlack通知送信"""
     # ペイロード構築
-    payload = {
+    payload: Dict[str, Any] = {
         "text": message,
         "channel": channel,
         "username": username,

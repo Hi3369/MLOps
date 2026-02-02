@@ -100,7 +100,10 @@ def _generate_mock_experiment_data(
     import hashlib
 
     # 実験IDからシード値を生成（再現性のため）
-    seed = int(hashlib.md5(experiment_id.encode()).hexdigest()[:8], 16)
+    seed = int(
+        hashlib.md5(experiment_id.encode(), usedforsecurity=False).hexdigest()[:8],  # nosec B324
+        16,
+    )
 
     # デフォルトメトリクス
     default_metrics = ["accuracy", "f1_score", "precision", "recall", "loss"]

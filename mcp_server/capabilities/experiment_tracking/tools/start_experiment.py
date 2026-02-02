@@ -133,7 +133,7 @@ def _real_start_experiment(
     sagemaker_client = boto3.client("sagemaker")
 
     # SageMaker Experiment作成
-    create_params = {
+    create_params: Dict[str, Any] = {
         "ExperimentName": f"{experiment_name}-{experiment_id}",
         "Description": description or f"MLOps experiment: {experiment_name}",
     }

@@ -7,7 +7,7 @@ Train Clustering Model Tool
 import io
 import json
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 import joblib
@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 def train_clustering(
     train_data_s3_uri: str,
     algorithm: str = "kmeans",
-    hyperparameters: Dict[str, Any] = None,
-    model_output_s3_uri: str = None,
+    hyperparameters: Optional[Dict[str, Any]] = None,
+    model_output_s3_uri: Optional[str] = None,
     file_format: str = "csv",
 ) -> Dict[str, Any]:
     """
@@ -164,18 +164,14 @@ def train_clustering(
 
         logger.info(f"Saved model to {model_output_s3_uri}")
 
-    result = {
-        "status": "success",
-        "message": f"Clustering model trained successfully with {algorithm}",
-        "training_results": {
-            "algorithm": algorithm,
-            "n_samples": len(X_train),
-            "n_features": len(X_train.columns),
-            "feature_names": X_train.columns.tolist(),
-            "n_clusters": int(n_clusters),
-            "hyperparameters": hyperparameters,
-            "model_s3_uri": model_output_s3_uri,
-        },
+    training_results: Dict[str, Any] = {
+        "algorithm": algorithm,
+        "n_samples": len(X_train),
+        "n_features": len(X_train.columns),
+        "feature_names": X_train.columns.tolist(),
+        "n_clusters": int(n_clusters),
+        "hyperparameters": hyperparameters,
+        "model_s3_uri": model_output_s3_uri,
     }
 
     if labels is not None:
@@ -183,8 +179,12 @@ def train_clustering(
             pd.Series(labels).value_counts().sort_index().index,
             pd.Series(labels).value_counts().sort_index().values,
         )
-        result["training_results"]["cluster_distribution"] = {
+        training_results["cluster_distribution"] = {
             int(cluster): int(count) for cluster, count in zip(unique, counts)
         }
 
-    return result
+    return {
+        "status": "success",
+        "message": f"Clustering model trained successfully with {algorithm}",
+        "training_results": training_results,
+    }

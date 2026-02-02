@@ -109,35 +109,33 @@ def _mock_github_notification(
     """モックGitHub通知"""
     notification_id = str(uuid4())[:8]
 
-    result = {
-        "status": "success",
-        "message": f"GitHub {notification_type} sent (mock)",
-        "notification_result": {
-            "notification_id": f"mock-gh-{notification_id}",
-            "repo": f"{repo_owner}/{repo_name}",
-            "notification_type": notification_type,
-            "message_preview": message[:100] + "..." if len(message) > 100 else message,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "mock": True,
-        },
+    notification_result: Dict[str, Any] = {
+        "notification_id": f"mock-gh-{notification_id}",
+        "repo": f"{repo_owner}/{repo_name}",
+        "notification_type": notification_type,
+        "message_preview": message[:100] + "..." if len(message) > 100 else message,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "mock": True,
     }
 
     if notification_type == "issue_create":
-        result["notification_result"]["issue_number"] = 999  # mock issue number
-        result["notification_result"][
-            "issue_url"
-        ] = f"https://github.com/{repo_owner}/{repo_name}/issues/999"
+        notification_result["issue_number"] = 999  # mock issue number
+        notification_result["issue_url"] = f"https://github.com/{repo_owner}/{repo_name}/issues/999"
         if labels:
-            result["notification_result"]["labels"] = labels
+            notification_result["labels"] = labels
         if assignees:
-            result["notification_result"]["assignees"] = assignees
+            notification_result["assignees"] = assignees
     else:
-        result["notification_result"]["target_number"] = target_number
-        result["notification_result"][
-            "comment_url"
-        ] = f"https://github.com/{repo_owner}/{repo_name}/issues/{target_number}#issuecomment-mock"
+        notification_result["target_number"] = target_number
+        notification_result["comment_url"] = (
+            f"https://github.com/{repo_owner}/{repo_name}/issues/{target_number}#issuecomment-mock"
+        )
 
-    return result
+    return {
+        "status": "success",
+        "message": f"GitHub {notification_type} sent (mock)",
+        "notification_result": notification_result,
+    }
 
 
 def _send_real_github_notification(
@@ -160,7 +158,7 @@ def _send_real_github_notification(
 
     if notification_type == "issue_comment":
         url = f"{base_url}/issues/{target_number}/comments"
-        payload = {"body": message}
+        payload: Dict[str, Any] = {"body": message}
     elif notification_type == "pr_comment":
         url = f"{base_url}/issues/{target_number}/comments"  # PRコメントもissues APIを使用
         payload = {"body": message}
@@ -186,25 +184,25 @@ def _send_real_github_notification(
         with urllib.request.urlopen(req, timeout=30) as response:  # nosec B310
             response_data = json.loads(response.read().decode("utf-8"))
 
-            result = {
-                "status": "success",
-                "message": f"GitHub {notification_type} sent successfully",
-                "notification_result": {
-                    "repo": f"{repo_owner}/{repo_name}",
-                    "notification_type": notification_type,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                },
+            notification_result: Dict[str, Any] = {
+                "repo": f"{repo_owner}/{repo_name}",
+                "notification_type": notification_type,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
             if notification_type == "issue_create":
-                result["notification_result"]["issue_number"] = response_data["number"]
-                result["notification_result"]["issue_url"] = response_data["html_url"]
+                notification_result["issue_number"] = response_data["number"]
+                notification_result["issue_url"] = response_data["html_url"]
             else:
-                result["notification_result"]["comment_id"] = response_data["id"]
-                result["notification_result"]["comment_url"] = response_data["html_url"]
-                result["notification_result"]["target_number"] = target_number
+                notification_result["comment_id"] = response_data["id"]
+                notification_result["comment_url"] = response_data["html_url"]
+                notification_result["target_number"] = target_number
 
-            return result
+            return {
+                "status": "success",
+                "message": f"GitHub {notification_type} sent successfully",
+                "notification_result": notification_result,
+            }
 
     except urllib.error.HTTPError as e:
         error_body = e.read().decode("utf-8")

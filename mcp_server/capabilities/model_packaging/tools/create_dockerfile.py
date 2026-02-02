@@ -5,7 +5,7 @@ Dockerfile作成ツール
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ def create_dockerfile(
     model_s3_uri: str,
     framework: str = "sklearn",
     python_version: str = "3.11",
-    base_image: str = None,
+    base_image: Optional[str] = None,
     optimize: bool = True,
 ) -> Dict[str, Any]:
     """
@@ -78,7 +78,6 @@ def _generate_optimized_dockerfile(
     base_image: str, framework: str, model_s3_uri: str, python_version: str
 ) -> str:
     """最適化されたDockerfileを生成（マルチステージビルド）"""
-    # nosec B608 - This is Dockerfile content generation, not SQL
     dockerfile = f"""# Multi-stage build for optimized image size
 # Stage 1: Builder
 FROM {base_image} AS builder

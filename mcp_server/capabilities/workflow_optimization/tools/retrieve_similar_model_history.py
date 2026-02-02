@@ -5,7 +5,7 @@ Retrieve Similar Model History Tool
 """
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def retrieve_similar_model_history(
     model_type: str,
-    dataset_size: int = None,
+    dataset_size: Optional[int] = None,
     limit: int = 10,
 ) -> Dict[str, Any]:
     """
@@ -132,7 +132,7 @@ def _calculate_statistics(items: List[Dict]) -> Dict[str, Any]:
     avg_cost = sum(costs) / len(costs) if costs else 0
 
     # 最頻ハイパーパラメータ
-    hyperparameter_counts = {}
+    hyperparameter_counts: Dict[str, Dict[str, int]] = {}
     for item in items:
         hyperparams = item.get("hyperparameters", {})
         for key, value in hyperparams.items():
@@ -141,10 +141,10 @@ def _calculate_statistics(items: List[Dict]) -> Dict[str, Any]:
             value_str = str(value)
             hyperparameter_counts[key][value_str] = hyperparameter_counts[key].get(value_str, 0) + 1
 
-    most_common_hyperparameters = {}
+    most_common_hyperparameters: Dict[str, Any] = {}
     for key, value_counts in hyperparameter_counts.items():
         if value_counts:
-            most_common_value = max(value_counts, key=value_counts.get)
+            most_common_value: str = max(value_counts, key=lambda k: value_counts[k])
             most_common_hyperparameters[key] = most_common_value
 
     return {
@@ -171,7 +171,7 @@ def _find_best_model(items: List[Dict]) -> Dict[str, Any]:
     }
 
 
-def _get_mock_history(model_type: str, dataset_size: int, limit: int) -> Dict[str, Any]:
+def _get_mock_history(model_type: str, dataset_size: Optional[int], limit: int) -> Dict[str, Any]:
     """モックデータを返す（開発・テスト用）"""
     logger.info("Returning mock similar model history")
 

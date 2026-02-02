@@ -91,7 +91,7 @@ def extract_model_metadata(
 
 def _extract_metadata_from_model(model: Any) -> Dict[str, Any]:
     """モデルオブジェクトからメタデータを抽出"""
-    metadata = {
+    metadata: Dict[str, Any] = {
         "model_type": type(model).__name__,
         "module": type(model).__module__,
     }
@@ -100,8 +100,8 @@ def _extract_metadata_from_model(model: Any) -> Dict[str, Any]:
     if hasattr(model, "get_params"):
         try:
             metadata["parameters"] = model.get_params()
-        except Exception:
-            pass
+        except Exception:  # nosec B110
+            pass  # get_params() failure is non-critical for metadata extraction
 
     # 特徴量数の取得
     if hasattr(model, "n_features_in_"):
@@ -133,7 +133,7 @@ def _extract_metadata_from_model(model: Any) -> Dict[str, Any]:
         import sys
 
         metadata["estimated_memory_bytes"] = sys.getsizeof(model)
-    except Exception:
-        pass
+    except Exception:  # nosec B110
+        pass  # Memory estimation failure is non-critical
 
     return metadata

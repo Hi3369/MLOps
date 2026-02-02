@@ -102,7 +102,7 @@ def calculate_shap_values(
         "n_features": len(X.columns),
         "feature_names": X.columns.tolist(),
         "shap_values": _serialize_shap_values(shap_values),
-        "base_value": float(base_value) if np.isscalar(base_value) else base_value.tolist(),
+        "base_value": float(base_value) if np.isscalar(base_value) else base_value.tolist(),  # type: ignore[arg-type]
         "feature_importance": feature_importance,
         "summary": {
             "mean_abs_shap": _calculate_mean_abs_shap(shap_values, X.columns.tolist()),

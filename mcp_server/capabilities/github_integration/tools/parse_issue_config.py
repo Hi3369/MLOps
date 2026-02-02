@@ -177,9 +177,10 @@ def _parse_config_block(block: Dict[str, Any]) -> Dict[str, Any]:
 def _parse_yaml(content: str) -> Dict[str, Any]:
     """YAML文字列をパース"""
     try:
-        import yaml
+        import yaml  # type: ignore[import-untyped]
 
-        return yaml.safe_load(content)
+        result: Dict[str, Any] = yaml.safe_load(content)
+        return result
     except ImportError:
         # yamlモジュールがない場合は簡易パース
         logger.warning("PyYAML not available, using simple parser")
@@ -190,8 +191,8 @@ def _parse_yaml(content: str) -> Dict[str, Any]:
 
 def _simple_yaml_parse(content: str) -> Dict[str, Any]:
     """簡易YAMLパーサー（基本的なキー:値のみ対応）"""
-    result = {}
-    stack = [(result, 0)]
+    result: Dict[str, Any] = {}
+    stack: list[tuple[Dict[str, Any], int]] = [(result, 0)]
 
     lines = content.strip().split("\n")
 
@@ -256,7 +257,8 @@ def _parse_yaml_value(value: str) -> Any:
 def _parse_json(content: str) -> Dict[str, Any]:
     """JSON文字列をパース"""
     try:
-        return json.loads(content)
+        result: Dict[str, Any] = json.loads(content)
+        return result
     except json.JSONDecodeError as e:
         raise ValueError(f"JSON parse error: {e}")
 

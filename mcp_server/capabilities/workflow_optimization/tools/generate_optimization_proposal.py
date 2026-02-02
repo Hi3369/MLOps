@@ -5,14 +5,14 @@ Generate Optimization Proposal Tool
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
 
 def generate_optimization_proposal(
     model_characteristics: Dict[str, Any],
-    constraints: Dict[str, Any] = None,
+    constraints: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     最適化提案を生成
@@ -104,7 +104,7 @@ def generate_optimization_proposal(
 
 def _generate_hyperparameter_proposal(
     algorithm: str, estimated_time: float, max_time: float
-) -> Dict[str, Any]:
+) -> Optional[Dict[str, Any]]:
     """ハイパーパラメータチューニング提案を生成"""
     if estimated_time > max_time:
         return None
@@ -146,8 +146,8 @@ def _generate_hyperparameter_proposal(
 
 
 def _generate_resource_proposal(
-    resource_requirements: Dict[str, Any], require_gpu: bool, max_cost: float
-) -> Dict[str, Any]:
+    resource_requirements: Dict[str, Any], require_gpu: Optional[bool], max_cost: float
+) -> Optional[Dict[str, Any]]:
     """リソース最適化提案を生成"""
     current_gpu = resource_requirements.get("gpu", False)
 
@@ -182,7 +182,7 @@ def _generate_resource_proposal(
     return None
 
 
-def _generate_data_proposal(model_characteristics: Dict[str, Any]) -> Dict[str, Any]:
+def _generate_data_proposal(model_characteristics: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """データ最適化提案を生成"""
     dataset_chars = model_characteristics.get("dataset_characteristics", {})
     size_category = dataset_chars.get("size_category", "unknown")
@@ -206,7 +206,7 @@ def _generate_data_proposal(model_characteristics: Dict[str, Any]) -> Dict[str, 
 
 def _generate_algorithm_proposal(
     algorithm: str, model_characteristics: Dict[str, Any]
-) -> Dict[str, Any]:
+) -> Optional[Dict[str, Any]]:
     """アルゴリズム選択提案を生成"""
     dataset_chars = model_characteristics.get("dataset_characteristics", {})
     size_category = dataset_chars.get("size_category", "unknown")
@@ -294,4 +294,4 @@ def _check_constraints(total_cost: float, total_time: float, constraints: Dict[s
     max_cost = constraints.get("max_cost_usd", float("inf"))
     max_time = constraints.get("max_training_time_minutes", float("inf"))
 
-    return total_cost <= max_cost and total_time <= max_time
+    return bool(total_cost <= max_cost and total_time <= max_time)

@@ -95,9 +95,9 @@ def validate_package(
 
 def _validate_package_contents(package_dir: Path) -> Dict[str, Any]:
     """パッケージ内容を検証"""
-    errors = []
-    warnings = []
-    files_found = []
+    errors: list[str] = []
+    warnings: list[str] = []
+    files_found: list[str] = []
 
     # パッケージ内のディレクトリを探す
     subdirs = [d for d in package_dir.iterdir() if d.is_dir()]

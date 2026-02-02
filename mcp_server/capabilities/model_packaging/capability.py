@@ -3,13 +3,11 @@
 import logging
 from typing import Any, Callable, Dict
 
-from .tools import (
-    create_dockerfile,
-    create_model_package,
-    extract_model_metadata,
-    generate_deployment_config,
-    validate_package,
-)
+from .tools.create_dockerfile import create_dockerfile
+from .tools.create_model_package import create_model_package
+from .tools.extract_model_metadata import extract_model_metadata
+from .tools.generate_deployment_config import generate_deployment_config
+from .tools.validate_package import validate_package
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +32,7 @@ class ModelPackagingCapability:
 
     def get_tools(self) -> Dict[str, Callable]:
         """登録されているツールを返す"""
-        return self._tools
+        return dict(self._tools)
 
     def get_tool_schemas(self) -> Dict[str, Dict[str, Any]]:
         """

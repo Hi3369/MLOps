@@ -7,7 +7,7 @@ Monitor Endpoint Tool
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -88,7 +88,7 @@ def monitor_endpoint(
 
 def health_check_endpoint(
     endpoint_name: str,
-    test_payload: Dict[str, Any] = None,
+    test_payload: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     エンドポイントのヘルスチェックを実行

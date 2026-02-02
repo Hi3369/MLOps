@@ -118,7 +118,7 @@ exclude = [
 [tool.bandit]
 # bandit configuration for security static analysis
 exclude_dirs = ["tests", ".venv", "venv", "build", "dist"]
-skips = ["B101"]  # Skip assert_used check (allowed in tests)
+skips = ["B101", "B608"]  # B101: assert in tests, B608: false positive on Dockerfile f-strings
 
 [tool.coverage.run]
 # Coverage configuration
