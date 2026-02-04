@@ -16,6 +16,8 @@
 | `create_monitoring_dashboard` | 監視ダッシュボードを作成 |
 | `update_dashboard` | ダッシュボードを更新 |
 | `delete_dashboard` | ダッシュボードを削除 |
+| `list_dashboard_templates` | テンプレート一覧を取得 |
+| `create_dashboard_from_template` | テンプレートからダッシュボードを作成 |
 
 ## ツール詳細
 
@@ -150,3 +152,48 @@ update_dashboard(
 
 delete_dashboard(dashboard_name: str) -> Dict[str, Any]
 ```
+
+---
+
+### list_dashboard_templates
+
+利用可能なダッシュボードテンプレート一覧を返す。
+
+```python
+list_dashboard_templates() -> Dict[str, Any]
+```
+
+テンプレート種別:
+
+| テンプレート名 | 説明 | ウィジェット数 |
+|--------------|------|:----------:|
+| `pipeline_overview` | MLOpsパイプライン全体の概要 | 8 |
+| `model_performance` | モデルパフォーマンス詳細 | 6 |
+| `drift_monitoring` | データ/コンセプトドリフト監視 | 6 |
+| `training_metrics` | 学習ジョブメトリクス | 6 |
+
+---
+
+### create_dashboard_from_template
+
+テンプレートからCloudWatchダッシュボードを作成する。
+
+```python
+create_dashboard_from_template(
+    template_name: str,
+    dashboard_name: str,
+    endpoint_name: str,
+    region: Optional[str] = None,
+    namespace: Optional[str] = None,
+    custom_widgets: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]
+```
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|-----------|---|:---:|----------|------|
+| template_name | str | o | - | テンプレート名 |
+| dashboard_name | str | o | - | ダッシュボード名 |
+| endpoint_name | str | o | - | SageMakerエンドポイント名 |
+| region | str | | None | AWSリージョン |
+| namespace | str | | None | CloudWatch名前空間 |
+| custom_widgets | List[Dict] | | None | 追加カスタムウィジェット |

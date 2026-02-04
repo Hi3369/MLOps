@@ -4,7 +4,7 @@
 
 ## 概要
 
-このMCPサーバーは、14個のCapability（60ツール）を統合し、Claude Desktop/Claude APIから利用可能にします。
+このMCPサーバーは、14個のCapability（71ツール）を統合し、Claude Desktop/Claude APIから利用可能にします。
 
 | # | Capability | ツール数 | 説明 |
 |---|-----------|---------|------|
@@ -14,7 +14,7 @@
 | 4 | model_registry | 5 | モデル登録・バージョン管理 |
 | 5 | model_packaging | 5 | コンテナ化・ECR登録 |
 | 6 | model_deployment | 9 | エンドポイントデプロイ・オートスケーリング |
-| 7 | model_monitoring | 10 | メトリクス収集・ドリフト検出・アラーム |
+| 7 | model_monitoring | 12 | メトリクス収集・ドリフト検出・アラーム・ダッシュボード |
 | 8 | workflow_optimization | 5 | モデル特性分析・最適化提案 |
 | 9 | github_integration | 4 | Issue検知・ワークフロー起動 |
 | 10 | notification | 4 | 通知管理（Slack/Email/GitHub） |
@@ -35,6 +35,9 @@ mcp_server/
 │   ├── logger.py            # ロギング設定
 │   ├── s3_utils.py          # S3操作ユーティリティ
 │   └── config.py            # 設定管理
+├── integrations/            # 外部ツール統合
+│   ├── __init__.py
+│   └── mlflow_adapter.py    # MLflow / W&B / DVC アダプタ
 └── capabilities/            # 14 Capability実装
     ├── data_preparation/
     ├── ml_training/
@@ -167,6 +170,16 @@ pytest tests/ --cov=mcp_server --cov-report=html
 | 開発 | `development` | モックデータを返却（AWSサービス不要） |
 | テスト | `test` | モックデータを返却 |
 | 本番 | `production` | 実際のAWSサービスを呼び出し |
+
+## 外部ツール統合
+
+`integrations/` モジュールで外部MLツールとの連携をサポートします。
+
+| アダプタ | 連携先 | 主な機能 |
+|---------|-------|---------|
+| `MLflowAdapter` | MLflow | 実験同期・モデルレジストリ連携 |
+| `WandbAdapter` | Weights & Biases | 実験追跡・メトリクス同期 |
+| `DVCAdapter` | DVC | データセットバージョン同期 |
 
 ## ライセンス
 

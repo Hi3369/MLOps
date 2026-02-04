@@ -199,7 +199,7 @@ def tool_function(
 - 実装ガイド: [docs/designs/implementation_guide.md](docs/designs/implementation_guide.md)
 - エージェント設計: [docs/designs/agent_design.md](docs/designs/agent_design.md)
 
-### 14 Capabilities（60ツール）
+### 14 Capabilities（71ツール）
 
 | # | Capability | ツール数 | 責務 | 主要AWSサービス |
 |---|-----------|---------|------|----------------|
@@ -210,13 +210,21 @@ def tool_function(
 | 5 | ml_evaluation | 5 | モデル評価・SHAP/LIME解釈性分析 | SageMaker |
 | 6 | model_packaging | 5 | コンテナ化・ECR登録 | ECR |
 | 7 | model_deployment | 9 | エンドポイントデプロイ | SageMaker Endpoints |
-| 8 | model_monitoring | 10 | パフォーマンス監視・ドリフト検出 | CloudWatch, SageMaker Model Monitor |
+| 8 | model_monitoring | 12 | パフォーマンス監視・ドリフト検出・ダッシュボード | CloudWatch, SageMaker Model Monitor |
 | 9 | retrain_management | 5 | 再学習トリガー管理 | Step Functions, EventBridge |
 | 10 | notification | 4 | 通知送信（Slack/Email/GitHub） | SES, SSM |
 | 11 | history_management | 4 | 学習履歴記録・GitHub連携 | S3, GitHub API |
 | 12 | model_registry | 5 | モデルバージョン管理 | SageMaker, S3 |
 | 13 | experiment_tracking | 4 | 実験追跡・パラメータ/メトリクス管理 | S3, SageMaker, CloudWatch |
 | 14 | data_versioning | 3 | データセットバージョニング・系譜追跡 | S3 |
+
+### 外部ツール統合
+
+| 統合先 | アダプタ | 用途 |
+|--------|---------|------|
+| MLflow | `MLflowAdapter` | 実験追跡・モデルレジストリ同期 |
+| Weights & Biases | `WandbAdapter` | 実験追跡同期 |
+| DVC | `DVCAdapter` | データセットバージョニング同期 |
 
 ### テストファイル配置
 
@@ -264,6 +272,15 @@ black <path>
 
 # flake8（静的解析）
 flake8 <path> --max-line-length=100
+
+# mypy（型チェック）
+mypy mcp_server/ --ignore-missing-imports
+
+# bandit（セキュリティ）
+bandit -r mcp_server/ -c pyproject.toml
+
+# markdownlint
+npx markdownlint-cli2 "**/*.md" "#node_modules" "#.venv" "#venv"
 ```
 
 ### コミットメッセージ規約
