@@ -2,7 +2,7 @@
 
 ## Overview
 
-MLOps MCP Server は 14 の Capability、60 のツールを提供する統合 MCP サーバーです。
+MLOps MCP Server は 14 の Capability、71 のツールを提供する統合 MCP サーバーです。
 各ツールは `Dict[str, Any]` を返し、`status`, `message`, 結果データを含みます。
 
 ## 環境設定
@@ -23,7 +23,7 @@ MLOps MCP Server は 14 の Capability、60 のツールを提供する統合 MC
 | 5 | [ml_evaluation](ml_evaluation.md) | 5 | モデル評価・SHAP/LIME |
 | 6 | [model_packaging](model_packaging.md) | 5 | コンテナ化・ECR登録 |
 | 7 | [model_deployment](model_deployment.md) | 9 | エンドポイントデプロイ |
-| 8 | [model_monitoring](model_monitoring.md) | 10 | ドリフト検出・アラート |
+| 8 | [model_monitoring](model_monitoring.md) | 12 | ドリフト検出・アラート・ダッシュボード |
 | 9 | [retrain_management](retrain_management.md) | 5 | 再学習トリガー管理 |
 | 10 | [notification](notification.md) | 4 | 通知送信 |
 | 11 | [history_management](history_management.md) | 4 | 学習履歴記録 |
@@ -71,3 +71,13 @@ result = server.call_tool(
 | data_versioning | o | | | | | |
 | github_integration | | | | o | | o |
 | workflow_optimization | o | | | | | |
+
+## 外部ツール統合
+
+`mcp_server/integrations/` モジュールで外部MLツールとの連携をサポートします。
+
+| アダプタ | 連携先 | 主な機能 |
+|---------|-------|---------|
+| `MLflowAdapter` | MLflow | 実験同期・モデルレジストリ連携 |
+| `WandbAdapter` | Weights & Biases | 実験追跡・メトリクス同期 |
+| `DVCAdapter` | DVC | データセットバージョン同期 |
