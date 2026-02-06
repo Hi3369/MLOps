@@ -437,3 +437,325 @@ class TestExtractModelMetadata:
         """
         with pytest.raises(ValueError, match="Invalid S3 URI"):
             extract_model_metadata(model_s3_uri="invalid://bucket/model.pkl")
+
+    def test_extract_model_metadata_uri_without_key(self):
+        """S3 URIにキーがない場合のエラーテスト"""
+        with pytest.raises(ValueError, match="Invalid S3 URI format"):
+            extract_model_metadata(model_s3_uri="s3://bucket-only")
+
+    def test_extract_model_metadata_model_not_found(self):
+        """モデルが存在しない場合のエラーテスト"""
+        with patch("boto3.client") as mock_client:
+            from botocore.exceptions import ClientError
+
+            mock_s3 = Mock()
+            mock_s3.get_object.side_effect = ClientError(
+                {"Error": {"Code": "NoSuchKey", "Message": "Not Found"}},
+                "GetObject",
+            )
+            mock_client.return_value = mock_s3
+
+            with pytest.raises(ValueError, match="Model not found"):
+                extract_model_metadata(model_s3_uri="s3://bucket/missing.pkl")
+
+    def test_extract_metadata_from_fitted_model(self):
+        """学習済みモデルからのメタデータ抽出テスト"""
+        import numpy as np
+        from sklearn.ensemble import RandomForestClassifier
+
+        model = RandomForestClassifier(n_estimators=5, random_state=42)
+        X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+        y = np.array([0, 1, 0, 1])
+        model.fit(X, y)
+
+        model_buffer = io.BytesIO()
+        import joblib
+
+        joblib.dump(model, model_buffer)
+        model_buffer.seek(0)
+
+        with patch("boto3.client") as mock_client:
+            from datetime import datetime
+
+            mock_s3 = Mock()
+            mock_s3.get_object.return_value = {"Body": io.BytesIO(model_buffer.getvalue())}
+            mock_s3.head_object.return_value = {
+                "ContentLength": 4096,
+                "LastModified": datetime(2025, 1, 1),
+                "ContentType": "application/octet-stream",
+            }
+            mock_client.return_value = mock_s3
+
+            result = extract_model_metadata(model_s3_uri="s3://bucket/fitted.pkl")
+
+        assert result["status"] == "success"
+        model_info = result["metadata"]["model_info"]
+        assert model_info["model_type"] == "RandomForestClassifier"
+        assert "parameters" in model_info
+        assert "n_features_in" in model_info
+        assert model_info["n_features_in"] == 2
+        assert "n_estimators" in model_info
+        assert model_info["n_estimators"] == 5
+        assert "feature_importances" in model_info
+        assert "classes" in model_info
+        assert "estimated_memory_bytes" in model_info
+
+    def test_extract_metadata_s3_metadata_failure(self):
+        """S3メタデータ取得失敗時のグレースフルフォールバックテスト"""
+        from sklearn.ensemble import RandomForestClassifier
+
+        model = RandomForestClassifier(n_estimators=5)
+        model_buffer = io.BytesIO()
+        import joblib
+
+        joblib.dump(model, model_buffer)
+        model_buffer.seek(0)
+
+        with patch("boto3.client") as mock_client:
+            mock_s3 = Mock()
+            mock_s3.get_object.return_value = {"Body": io.BytesIO(model_buffer.getvalue())}
+            mock_s3.head_object.side_effect = Exception("Access denied")
+            mock_client.return_value = mock_s3
+
+            result = extract_model_metadata(model_s3_uri="s3://bucket/model.pkl")
+
+        assert result["status"] == "success"
+        assert result["metadata"]["s3_metadata"] == {}
+
+
+class TestValidatePackageExtended:
+    """validate_package の拡張テスト（カバレッジ向上）"""
+
+    def _create_package(self, tmp_dir, files=None):
+        """テスト用パッケージを作成するヘルパー"""
+        pkg_dir = Path(tmp_dir) / "test_pkg"
+        pkg_dir.mkdir()
+
+        default_files = {
+            "requirements.txt": "scikit-learn==1.3.2\n",
+            "config.json": json.dumps(
+                {
+                    "model_s3_uri": "s3://bucket/model.pkl",
+                    "framework": "sklearn",
+                    "entrypoint": "inference.py",
+                }
+            ),
+            "inference.py": "def load_model(): pass\ndef predict(model, data): pass\n",
+        }
+
+        for name, content in (files or default_files).items():
+            (pkg_dir / name).write_text(content)
+
+        pkg_file = Path(tmp_dir) / "package.tar.gz"
+        with tarfile.open(pkg_file, "w:gz") as tar:
+            tar.add(pkg_dir, arcname=pkg_dir.name)
+
+        return pkg_file.read_bytes()
+
+    def test_validate_missing_requirements(self):
+        """requirements.txt欠損のテスト"""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            content = self._create_package(
+                tmp_dir,
+                {
+                    "config.json": json.dumps(
+                        {
+                            "model_s3_uri": "s3://bucket/model.pkl",
+                            "framework": "sklearn",
+                            "entrypoint": "inference.py",
+                        }
+                    ),
+                    "inference.py": "def load_model(): pass\ndef predict(): pass\n",
+                },
+            )
+
+            with patch("boto3.client") as mock_client:
+                mock_s3 = Mock()
+                mock_s3.get_object.return_value = {"Body": io.BytesIO(content)}
+                mock_client.return_value = mock_s3
+
+                result = validate_package(package_s3_uri="s3://bucket/pkg.tar.gz")
+
+        validation = result["validation_results"]
+        assert validation["is_valid"] is False
+        assert any("requirements.txt" in e for e in validation["errors"])
+
+    def test_validate_missing_inference(self):
+        """inference.py欠損のテスト"""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            content = self._create_package(
+                tmp_dir,
+                {
+                    "requirements.txt": "scikit-learn==1.3.2\n",
+                    "config.json": json.dumps(
+                        {
+                            "model_s3_uri": "s3://bucket/model.pkl",
+                            "framework": "sklearn",
+                            "entrypoint": "inference.py",
+                        }
+                    ),
+                },
+            )
+
+            with patch("boto3.client") as mock_client:
+                mock_s3 = Mock()
+                mock_s3.get_object.return_value = {"Body": io.BytesIO(content)}
+                mock_client.return_value = mock_s3
+
+                result = validate_package(package_s3_uri="s3://bucket/pkg.tar.gz")
+
+        validation = result["validation_results"]
+        assert validation["is_valid"] is False
+        assert any("inference.py" in e for e in validation["errors"])
+
+    def test_validate_invalid_config_json(self):
+        """不正なconfig.jsonのテスト"""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            content = self._create_package(
+                tmp_dir,
+                {
+                    "requirements.txt": "scikit-learn==1.3.2\n",
+                    "config.json": "not valid json{{{",
+                    "inference.py": "def load_model(): pass\ndef predict(): pass\n",
+                },
+            )
+
+            with patch("boto3.client") as mock_client:
+                mock_s3 = Mock()
+                mock_s3.get_object.return_value = {"Body": io.BytesIO(content)}
+                mock_client.return_value = mock_s3
+
+                result = validate_package(package_s3_uri="s3://bucket/pkg.tar.gz")
+
+        validation = result["validation_results"]
+        assert validation["is_valid"] is False
+        assert any("Invalid JSON" in e for e in validation["errors"])
+
+    def test_validate_missing_config_fields(self):
+        """config.jsonに必須フィールドがないテスト"""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            content = self._create_package(
+                tmp_dir,
+                {
+                    "requirements.txt": "scikit-learn==1.3.2\n",
+                    "config.json": json.dumps({"name": "test"}),
+                    "inference.py": "def load_model(): pass\ndef predict(): pass\n",
+                },
+            )
+
+            with patch("boto3.client") as mock_client:
+                mock_s3 = Mock()
+                mock_s3.get_object.return_value = {"Body": io.BytesIO(content)}
+                mock_client.return_value = mock_s3
+
+                result = validate_package(package_s3_uri="s3://bucket/pkg.tar.gz")
+
+        validation = result["validation_results"]
+        assert validation["is_valid"] is False
+        assert any("model_s3_uri" in e for e in validation["errors"])
+
+    def test_validate_invalid_model_uri_in_config(self):
+        """config.json内のmodel_s3_uriが不正なテスト"""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            content = self._create_package(
+                tmp_dir,
+                {
+                    "requirements.txt": "scikit-learn==1.3.2\n",
+                    "config.json": json.dumps(
+                        {
+                            "model_s3_uri": "http://invalid",
+                            "framework": "sklearn",
+                            "entrypoint": "inference.py",
+                        }
+                    ),
+                    "inference.py": "def load_model(): pass\ndef predict(): pass\n",
+                },
+            )
+
+            with patch("boto3.client") as mock_client:
+                mock_s3 = Mock()
+                mock_s3.get_object.return_value = {"Body": io.BytesIO(content)}
+                mock_client.return_value = mock_s3
+
+                result = validate_package(package_s3_uri="s3://bucket/pkg.tar.gz")
+
+        validation = result["validation_results"]
+        assert validation["is_valid"] is False
+        assert any("Invalid model_s3_uri" in e for e in validation["errors"])
+
+    def test_validate_empty_requirements(self):
+        """空のrequirements.txtのテスト（警告）"""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            content = self._create_package(
+                tmp_dir,
+                {
+                    "requirements.txt": "",
+                    "config.json": json.dumps(
+                        {
+                            "model_s3_uri": "s3://bucket/model.pkl",
+                            "framework": "sklearn",
+                            "entrypoint": "inference.py",
+                        }
+                    ),
+                    "inference.py": "def load_model(): pass\ndef predict(): pass\n",
+                },
+            )
+
+            with patch("boto3.client") as mock_client:
+                mock_s3 = Mock()
+                mock_s3.get_object.return_value = {"Body": io.BytesIO(content)}
+                mock_client.return_value = mock_s3
+
+                result = validate_package(package_s3_uri="s3://bucket/pkg.tar.gz")
+
+        validation = result["validation_results"]
+        assert any("empty" in w for w in validation["warnings"])
+
+    def test_validate_inference_missing_functions(self):
+        """inference.pyにload_model/predictがないテスト（警告）"""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            content = self._create_package(
+                tmp_dir,
+                {
+                    "requirements.txt": "scikit-learn==1.3.2\n",
+                    "config.json": json.dumps(
+                        {
+                            "model_s3_uri": "s3://bucket/model.pkl",
+                            "framework": "sklearn",
+                            "entrypoint": "inference.py",
+                        }
+                    ),
+                    "inference.py": "def main(): pass\n",
+                },
+            )
+
+            with patch("boto3.client") as mock_client:
+                mock_s3 = Mock()
+                mock_s3.get_object.return_value = {"Body": io.BytesIO(content)}
+                mock_client.return_value = mock_s3
+
+                result = validate_package(package_s3_uri="s3://bucket/pkg.tar.gz")
+
+        validation = result["validation_results"]
+        assert any("load_model" in w for w in validation["warnings"])
+        assert any("predict" in w for w in validation["warnings"])
+
+    def test_validate_s3_not_found(self):
+        """パッケージが存在しない場合のエラーテスト"""
+        with patch("boto3.client") as mock_client:
+            from botocore.exceptions import ClientError
+
+            mock_s3 = Mock()
+            mock_s3.get_object.side_effect = ClientError(
+                {"Error": {"Code": "NoSuchKey", "Message": "Not Found"}},
+                "GetObject",
+            )
+            mock_client.return_value = mock_s3
+
+            with pytest.raises(ValueError, match="Package not found"):
+                validate_package(package_s3_uri="s3://bucket/missing.tar.gz")
+
+    def test_validate_uri_without_key(self):
+        """S3 URIにキーがないエラーテスト"""
+        with pytest.raises(ValueError, match="Invalid S3 URI format"):
+            validate_package(package_s3_uri="s3://bucket-only")

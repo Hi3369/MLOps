@@ -467,6 +467,185 @@ class TestTrackOptimizationHistory:
             track_optimization_history("opt-12345", "invalid")
 
 
+class TestTrackOptimizationHistoryExtended:
+    """track_optimization_history の拡張テスト（カバレッジ向上）"""
+
+    def test_tracking_with_no_applied_optimizations(self):
+        """適用最適化なしの場合のメトリクス抽出テスト"""
+        result = track_optimization_history(
+            "opt-empty",
+            {"status": "success", "optimization_result": {}},
+        )
+
+        assert result["status"] == "success"
+        metrics = result["tracking_info"]["metrics"]
+        assert metrics["total_optimizations_applied"] == 0
+        assert metrics["optimization_types"] == {}
+
+    def test_tracking_with_mixed_optimization_types(self):
+        """複数種類の最適化タイプが混在する場合のテスト"""
+        results = {
+            "status": "success",
+            "optimization_result": {
+                "total_optimizations_applied": 4,
+                "applied_optimizations": [
+                    {"type": "hyperparameter_tuning"},
+                    {"type": "resource_optimization"},
+                    {"type": "hyperparameter_tuning"},
+                    {"type": "data_optimization"},
+                ],
+                "config_diff": {
+                    "added": {"a": 1, "b": 2},
+                    "modified": {"c": {"old": 1, "new": 2}},
+                    "removed": {"d": 3},
+                },
+            },
+        }
+
+        result = track_optimization_history("opt-mixed", results)
+
+        metrics = result["tracking_info"]["metrics"]
+        assert metrics["optimization_types"]["hyperparameter_tuning"] == 2
+        assert metrics["optimization_types"]["resource_optimization"] == 1
+        assert metrics["optimization_types"]["data_optimization"] == 1
+        assert metrics["config_changes"]["added"] == 2
+        assert metrics["config_changes"]["modified"] == 1
+        assert metrics["config_changes"]["removed"] == 1
+
+    def test_tracking_with_unknown_optimization_type(self):
+        """不明な最適化タイプがある場合のテスト"""
+        results = {
+            "status": "success",
+            "optimization_result": {
+                "applied_optimizations": [
+                    {"type": "unknown"},
+                    {},
+                ],
+                "config_diff": {"added": {}, "modified": {}, "removed": {}},
+            },
+        }
+
+        result = track_optimization_history("opt-unknown", results)
+
+        metrics = result["tracking_info"]["metrics"]
+        assert metrics["optimization_types"]["unknown"] == 2
+
+    def test_tracking_statistics_in_mock(self):
+        """モック結果に統計情報が含まれるテスト"""
+        results = {
+            "status": "success",
+            "optimization_result": {
+                "applied_optimizations": [{"type": "hyperparameter_tuning"}],
+                "config_diff": {"added": {}, "modified": {}, "removed": {}},
+            },
+        }
+
+        result = track_optimization_history("opt-stats", results)
+
+        assert "statistics" in result["tracking_info"]
+        stats = result["tracking_info"]["statistics"]
+        assert "total_records" in stats
+        assert "total_optimizations" in stats
+
+    def test_tracking_with_no_config_diff(self):
+        """config_diffがない場合のテスト"""
+        results = {
+            "status": "success",
+            "optimization_result": {
+                "applied_optimizations": [],
+            },
+        }
+
+        result = track_optimization_history("opt-no-diff", results)
+
+        metrics = result["tracking_info"]["metrics"]
+        assert metrics["config_changes"]["added"] == 0
+        assert metrics["config_changes"]["modified"] == 0
+        assert metrics["config_changes"]["removed"] == 0
+
+
+class TestRetrieveSimilarModelHistoryExtended:
+    """retrieve_similar_model_history の拡張テスト（カバレッジ向上）"""
+
+    def test_history_with_xgboost_model_type(self):
+        """xgboostモデルタイプのモック精度テスト"""
+        result = retrieve_similar_model_history("xgboost")
+
+        assert result["status"] == "success"
+        records = result["history"]["records"]
+        assert len(records) > 0
+        assert records[0]["model_type"] == "xgboost"
+
+    def test_history_with_neural_network_model_type(self):
+        """neural_networkモデルタイプのテスト"""
+        result = retrieve_similar_model_history("neural_network")
+
+        assert result["status"] == "success"
+        records = result["history"]["records"]
+        assert records[0]["model_type"] == "neural_network"
+
+    def test_history_with_logistic_regression_model_type(self):
+        """logistic_regressionモデルタイプのテスト"""
+        result = retrieve_similar_model_history("logistic_regression")
+
+        assert result["status"] == "success"
+
+    def test_history_with_unknown_model_type(self):
+        """未知のモデルタイプのテスト（デフォルト精度）"""
+        result = retrieve_similar_model_history("custom_model")
+
+        assert result["status"] == "success"
+        records = result["history"]["records"]
+        assert len(records) > 0
+
+    def test_history_statistics_best_model(self):
+        """統計情報のベストモデル検出テスト"""
+        result = retrieve_similar_model_history("random_forest")
+
+        statistics = result["history"]["statistics"]
+        assert "best_performing_model" in statistics
+        best = statistics["best_performing_model"]
+        assert "model_id" in best
+        assert "accuracy" in best
+
+    def test_history_statistics_hyperparameters(self):
+        """統計情報の最頻ハイパーパラメータテスト"""
+        result = retrieve_similar_model_history("random_forest")
+
+        statistics = result["history"]["statistics"]
+        assert "most_common_hyperparameters" in statistics
+        assert "avg_training_time_minutes" in statistics
+        assert "avg_cost_usd" in statistics
+
+    def test_history_limit_boundary_value(self):
+        """limitの境界値テスト"""
+        result = retrieve_similar_model_history("random_forest", limit=1)
+        assert result["status"] == "success"
+        assert len(result["history"]["records"]) <= 1
+
+        result = retrieve_similar_model_history("random_forest", limit=100)
+        assert result["status"] == "success"
+
+    def test_history_records_contain_expected_fields(self):
+        """レコードに期待されるフィールドが含まれるテスト"""
+        result = retrieve_similar_model_history("random_forest")
+
+        for record in result["history"]["records"]:
+            assert "model_id" in record
+            assert "model_type" in record
+            assert "dataset_size" in record
+            assert "training_time_minutes" in record
+            assert "accuracy" in record
+            assert "cost_usd" in record
+            assert "hyperparameters" in record
+
+    def test_history_is_mock_data_flag(self):
+        """モックデータフラグテスト"""
+        result = retrieve_similar_model_history("random_forest")
+
+        assert result["history"].get("is_mock_data") is True
+
+
 class TestIntegrationWorkflow:
     """ワークフロー統合テスト"""
 

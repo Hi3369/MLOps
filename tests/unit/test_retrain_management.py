@@ -421,6 +421,261 @@ class TestSchedulePeriodicRetrain:
             )
 
 
+class TestCheckRetrainTriggersExtended:
+    """check_retrain_triggers の拡張テスト（カバレッジ向上）"""
+
+    def test_trigger_details_data_change(self):
+        """data_changeトリガーの詳細確認テスト"""
+        result = check_retrain_triggers(model_name="detail-model")
+        trigger = result["trigger_result"]["triggers"]["data_change"]
+        assert trigger["enabled"] is True
+        assert "details" in trigger
+        assert "last_data_update" in trigger["details"]
+
+    def test_trigger_details_metrics_degradation(self):
+        """metrics_degradationトリガーの閾値確認テスト"""
+        config = {"metrics_degradation": {"enabled": True, "threshold": 0.8}}
+        result = check_retrain_triggers(model_name="threshold-model", trigger_config=config)
+        trigger = result["trigger_result"]["triggers"]["metrics_degradation"]
+        assert trigger["details"]["threshold"] == 0.8
+
+    def test_trigger_details_drift_detection(self):
+        """drift_detectionトリガーの閾値確認テスト"""
+        config = {"drift_detection": {"enabled": True, "threshold": 0.05}}
+        result = check_retrain_triggers(model_name="drift-model", trigger_config=config)
+        trigger = result["trigger_result"]["triggers"]["drift_detection"]
+        assert trigger["details"]["threshold"] == 0.05
+        assert trigger["details"]["drift_score"] == 0.05
+
+    def test_trigger_disabled_trigger(self):
+        """無効化されたトリガーのテスト"""
+        config = {"data_change": {"enabled": False}}
+        result = check_retrain_triggers(model_name="disabled-model", trigger_config=config)
+        trigger = result["trigger_result"]["triggers"]["data_change"]
+        assert trigger["enabled"] is False
+
+    def test_trigger_check_id_generated(self):
+        """check_idが生成されるテスト"""
+        result = check_retrain_triggers(model_name="id-model")
+        assert "check_id" in result["trigger_result"]
+        assert len(result["trigger_result"]["check_id"]) == 8
+
+    def test_trigger_timestamp_present(self):
+        """タイムスタンプが含まれるテスト"""
+        result = check_retrain_triggers(model_name="ts-model")
+        assert "timestamp" in result["trigger_result"]
+        assert "T" in result["trigger_result"]["timestamp"]
+
+    def test_real_trigger_helper_functions(self):
+        """ヘルパー関数の直接テスト"""
+        from mcp_server.capabilities.retrain_management.tools.check_retrain_triggers import (
+            _check_code_change_trigger,
+            _check_data_change_trigger,
+            _check_drift_detection_trigger,
+            _check_metrics_degradation_trigger,
+            _check_schedule_trigger,
+        )
+
+        # data_change
+        result = _check_data_change_trigger("model", {})
+        assert result["enabled"] is True
+        assert result["triggered"] is False
+
+        # code_change
+        result = _check_code_change_trigger("model", {})
+        assert result["enabled"] is True
+        assert "message" in result["details"]
+
+        # schedule
+        result = _check_schedule_trigger("model", {})
+        assert result["enabled"] is True
+
+        # metrics_degradation
+        result = _check_metrics_degradation_trigger("model", {"threshold": 0.85})
+        assert result["details"]["threshold"] == 0.85
+
+        # drift_detection
+        result = _check_drift_detection_trigger("model", {"threshold": 0.15})
+        assert result["details"]["threshold"] == 0.15
+        assert result["details"]["drift_score"] == 0.05
+
+
+class TestSchedulePeriodicRetrainExtended:
+    """schedule_periodic_retrain の拡張テスト（カバレッジ向上）"""
+
+    def test_validate_schedule_expression_cron_variants(self):
+        """様々なcron式のバリデーションテスト"""
+        from mcp_server.capabilities.retrain_management.tools.schedule_periodic_retrain import (
+            _validate_schedule_expression,
+        )
+
+        assert _validate_schedule_expression("cron(0 0 * * ? *)") is True
+        assert _validate_schedule_expression("cron(30 8 ? * MON-FRI *)") is True
+        assert _validate_schedule_expression("invalid") is False
+        assert _validate_schedule_expression("") is False
+
+    def test_validate_schedule_expression_rate_variants(self):
+        """様々なrate式のバリデーションテスト"""
+        from mcp_server.capabilities.retrain_management.tools.schedule_periodic_retrain import (
+            _validate_schedule_expression,
+        )
+
+        assert _validate_schedule_expression("rate(1 day)") is True
+        assert _validate_schedule_expression("rate(7 days)") is True
+        assert _validate_schedule_expression("rate(1 hour)") is True
+        assert _validate_schedule_expression("rate(24 hours)") is True
+        assert _validate_schedule_expression("rate(30 minutes)") is True
+        assert _validate_schedule_expression("rate(1 minute)") is True
+
+    def test_estimate_next_run_rate_days(self):
+        """rate式（日）の次回実行推定テスト"""
+        from mcp_server.capabilities.retrain_management.tools.schedule_periodic_retrain import (
+            _estimate_next_run,
+        )
+
+        next_run = _estimate_next_run("rate(7 days)", "2025-01-01T00:00:00+00:00")
+        assert next_run != "unknown"
+        assert "2025-01-08" in next_run
+
+    def test_estimate_next_run_rate_hours(self):
+        """rate式（時間）の次回実行推定テスト"""
+        from mcp_server.capabilities.retrain_management.tools.schedule_periodic_retrain import (
+            _estimate_next_run,
+        )
+
+        next_run = _estimate_next_run("rate(1 hour)", "2025-01-01T00:00:00+00:00")
+        assert next_run != "unknown"
+        assert "01:00" in next_run
+
+    def test_estimate_next_run_rate_minutes(self):
+        """rate式（分）の次回実行推定テスト"""
+        from mcp_server.capabilities.retrain_management.tools.schedule_periodic_retrain import (
+            _estimate_next_run,
+        )
+
+        next_run = _estimate_next_run("rate(30 minutes)", "2025-01-01T00:00:00+00:00")
+        assert next_run != "unknown"
+        assert "00:30" in next_run
+
+    def test_estimate_next_run_cron(self):
+        """cron式の次回実行推定テスト（翌日0時概算）"""
+        from mcp_server.capabilities.retrain_management.tools.schedule_periodic_retrain import (
+            _estimate_next_run,
+        )
+
+        next_run = _estimate_next_run("cron(0 0 * * ? *)", "2025-01-01T12:00:00+00:00")
+        assert next_run != "unknown"
+        assert "2025-01-02" in next_run
+
+    def test_schedule_rule_name_format(self):
+        """ルール名フォーマットテスト"""
+        result = schedule_periodic_retrain(
+            model_name="my-model",
+            schedule_expression="rate(1 day)",
+        )
+
+        rule_name = result["schedule_result"]["rule_name"]
+        assert rule_name.startswith("mlops-retrain-my-model-")
+
+    def test_schedule_config_merged(self):
+        """スケジュール設定のマージテスト"""
+        config = {
+            "workflow_name": "custom-wf",
+            "dataset_uri": "s3://bucket/data",
+            "notification_enabled": False,
+        }
+        result = schedule_periodic_retrain(
+            model_name="config-model",
+            schedule_expression="rate(1 day)",
+            config=config,
+        )
+
+        sched_config = result["schedule_result"]["schedule_config"]
+        assert sched_config["workflow_name"] == "custom-wf"
+        assert sched_config["dataset_uri"] == "s3://bucket/data"
+        assert sched_config["notification_enabled"] is False
+
+
+class TestStartRetrainWorkflowExtended:
+    """start_retrain_workflow の拡張テスト（カバレッジ向上）"""
+
+    def test_version_increment_function(self):
+        """_increment_version関数の直接テスト"""
+        from mcp_server.capabilities.retrain_management.tools.start_retrain_workflow import (
+            _increment_version,
+        )
+
+        assert _increment_version("v1.0.0") == "v1.1.0"
+        assert _increment_version("v2.3.5") == "v2.4.0"
+        assert _increment_version("1.0.0") == "1.1.0"
+        assert _increment_version("v0.0.1") == "v0.1.0"
+        assert _increment_version("invalid") == "invalid-new"
+
+    def test_workflow_default_version(self):
+        """デフォルトバージョンテスト"""
+        result = start_retrain_workflow(
+            workflow_name="test-wf",
+            model_config={"model_name": "no-version-model"},
+        )
+
+        assert result["workflow_result"]["next_version"] == "v1.1.0"
+
+    def test_workflow_execution_id_is_uuid(self):
+        """実行IDがUUID形式であるテスト"""
+        result = start_retrain_workflow(
+            workflow_name="test-wf",
+            model_config={"model_name": "uuid-model"},
+        )
+
+        execution_id = result["workflow_result"]["execution_id"]
+        assert len(execution_id) == 36  # UUID4 format: 8-4-4-4-12
+
+    def test_workflow_execution_arn_format(self):
+        """実行ARNフォーマットテスト"""
+        result = start_retrain_workflow(
+            workflow_name="test-wf",
+            model_config={"model_name": "arn-model"},
+        )
+
+        arn = result["workflow_result"]["execution_arn"]
+        assert "arn:aws:states:" in arn
+        assert "test-wf" in arn
+
+    def test_workflow_input_contains_versioning(self):
+        """ワークフロー入力にバージョニング情報が含まれるテスト"""
+        result = start_retrain_workflow(
+            workflow_name="test-wf",
+            model_config={"model_name": "versioned-model", "current_version": "v2.0.0"},
+        )
+
+        input_params = result["workflow_result"]["input_params"]
+        assert "versioning" in input_params
+        assert input_params["versioning"]["current_version"] == "v2.0.0"
+        assert input_params["versioning"]["next_version"] == "v2.1.0"
+
+    def test_workflow_comparison_config_defaults(self):
+        """比較設定のデフォルト値テスト"""
+        result = start_retrain_workflow(
+            workflow_name="test-wf",
+            model_config={"model_name": "compare-model"},
+            comparison_config={"metrics_to_compare": ["f1"]},
+        )
+
+        comp = result["workflow_result"]["input_params"]["comparison_config"]
+        assert comp["metrics_to_compare"] == ["f1"]
+        assert comp["improvement_threshold"] == 0.01
+        assert comp["auto_deploy_on_improvement"] is False
+
+    def test_workflow_model_name_fallback(self):
+        """model_nameがない場合のフォールバックテスト"""
+        result = start_retrain_workflow(
+            workflow_name="test-wf",
+            model_config={"model_type": "xgboost"},
+        )
+
+        assert result["workflow_result"]["model_name"] == "unknown-model"
+
+
 class TestIntegration:
     """統合テスト"""
 
