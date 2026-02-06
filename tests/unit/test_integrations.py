@@ -9,7 +9,6 @@ from unittest.mock import patch
 
 import pytest
 
-
 # ===== MLflowAdapter =====
 
 
@@ -335,3 +334,182 @@ class TestMockFunctions:
             remote_name="remote",
         )
         assert "Importing" in result["dvc_output"]
+
+
+class TestMLflowAdapterExtended:
+    """MLflowAdapter の拡張テスト（カバレッジ向上）"""
+
+    @patch.dict(os.environ, {"MLOPS_ENV": "test"})
+    def test_sync_experiment_with_tags(self):
+        from mcp_server.integrations.mlflow_adapter import MLflowAdapter
+
+        adapter = MLflowAdapter()
+        result = adapter.sync_experiment(
+            experiment_id="exp-tags",
+            parameters={"lr": 0.01},
+            metrics={"acc": 0.95},
+            tags={"team": "ml", "version": "v2"},
+        )
+        assert result["status"] == "success"
+        assert result["parameters_synced"] == 1
+        assert result["metrics_synced"] == 1
+        assert result["mock"] is True
+
+    @patch.dict(os.environ, {"MLOPS_ENV": "test"})
+    def test_sync_experiment_without_tags(self):
+        from mcp_server.integrations.mlflow_adapter import MLflowAdapter
+
+        adapter = MLflowAdapter()
+        result = adapter.sync_experiment(
+            experiment_id="exp-notags",
+            parameters={},
+            metrics={},
+        )
+        assert result["status"] == "success"
+        assert result["parameters_synced"] == 0
+        assert result["metrics_synced"] == 0
+
+    @patch.dict(os.environ, {"MLOPS_ENV": "test"})
+    def test_sync_model_with_metrics(self):
+        from mcp_server.integrations.mlflow_adapter import MLflowAdapter
+
+        adapter = MLflowAdapter()
+        result = adapter.sync_model(
+            model_name="model-with-metrics",
+            model_version="2.0.0",
+            model_uri="s3://bucket/models/v2/",
+            metrics={"accuracy": 0.98, "f1": 0.96, "recall": 0.97},
+        )
+        assert result["status"] == "success"
+        assert result["model_name"] == "model-with-metrics"
+        assert result["model_version"] == "2.0.0"
+
+    @patch.dict(os.environ, {"MLOPS_ENV": "test"})
+    def test_sync_model_without_metrics(self):
+        from mcp_server.integrations.mlflow_adapter import MLflowAdapter
+
+        adapter = MLflowAdapter()
+        result = adapter.sync_model(
+            model_name="model-no-metrics",
+            model_version="1.0.0",
+            model_uri="s3://bucket/models/v1/",
+        )
+        assert result["status"] == "success"
+        assert result["mock"] is True
+
+    @patch.dict(os.environ, {"MLOPS_ENV": "test"})
+    def test_sync_experiment_has_sync_id(self):
+        from mcp_server.integrations.mlflow_adapter import MLflowAdapter
+
+        adapter = MLflowAdapter()
+        result = adapter.sync_experiment(
+            experiment_id="exp-id",
+            parameters={"lr": 0.01},
+            metrics={"acc": 0.9},
+        )
+        assert "sync_id" in result
+        assert len(result["sync_id"]) == 8
+
+    @patch.dict(os.environ, {"MLOPS_ENV": "test"})
+    def test_sync_model_has_mlflow_version(self):
+        from mcp_server.integrations.mlflow_adapter import MLflowAdapter
+
+        adapter = MLflowAdapter()
+        result = adapter.sync_model(
+            model_name="versioned",
+            model_version="3.0.0",
+            model_uri="s3://bucket/models/v3/",
+        )
+        assert result["mlflow_model_version"] == "1"
+
+
+class TestWandbAdapterExtended:
+    """WandbAdapter の拡張テスト（カバレッジ向上）"""
+
+    @patch.dict(os.environ, {"MLOPS_ENV": "test"})
+    def test_sync_experiment_with_tags_list(self):
+        from mcp_server.integrations.mlflow_adapter import WandbAdapter
+
+        adapter = WandbAdapter(project="test-proj")
+        result = adapter.sync_experiment(
+            experiment_id="exp-wandb",
+            parameters={"batch_size": 32, "epochs": 100},
+            metrics={"loss": 0.01, "val_loss": 0.02},
+            tags=["production", "v3", "optimized"],
+        )
+        assert result["status"] == "success"
+        assert result["parameters_synced"] == 2
+        assert result["metrics_synced"] == 2
+        assert result["project"] == "test-proj"
+
+    @patch.dict(os.environ, {"MLOPS_ENV": "test"})
+    def test_sync_experiment_without_tags(self):
+        from mcp_server.integrations.mlflow_adapter import WandbAdapter
+
+        adapter = WandbAdapter()
+        result = adapter.sync_experiment(
+            experiment_id="exp-notags",
+            parameters={},
+            metrics={},
+        )
+        assert result["status"] == "success"
+        assert result["parameters_synced"] == 0
+
+    @patch.dict(os.environ, {"MLOPS_ENV": "test"})
+    def test_sync_experiment_wandb_run_url(self):
+        from mcp_server.integrations.mlflow_adapter import WandbAdapter
+
+        adapter = WandbAdapter(project="url-proj", entity="url-team")
+        result = adapter.sync_experiment(
+            experiment_id="exp-url",
+            parameters={},
+            metrics={},
+        )
+        assert "wandb.ai" in result["wandb_run_url"]
+        assert "url-team" in result["wandb_run_url"]
+        assert "url-proj" in result["wandb_run_url"]
+
+
+class TestDVCAdapterExtended:
+    """DVCAdapter の拡張テスト（カバレッジ向上）"""
+
+    @patch.dict(os.environ, {"MLOPS_ENV": "test"})
+    def test_sync_dataset_with_metadata(self):
+        from mcp_server.integrations.mlflow_adapter import DVCAdapter
+
+        adapter = DVCAdapter()
+        result = adapter.sync_dataset_version(
+            dataset_name="images",
+            version="2.1.0",
+            s3_uri="s3://bucket/datasets/images/v2/",
+            metadata={"records": 50000, "format": "parquet", "size_gb": 2.5},
+        )
+        assert result["status"] == "success"
+        assert result["dataset_name"] == "images"
+        assert result["version"] == "2.1.0"
+
+    @patch.dict(os.environ, {"MLOPS_ENV": "test"})
+    def test_sync_dataset_without_metadata(self):
+        from mcp_server.integrations.mlflow_adapter import DVCAdapter
+
+        adapter = DVCAdapter()
+        result = adapter.sync_dataset_version(
+            dataset_name="text",
+            version="1.0.0",
+            s3_uri="s3://bucket/datasets/text/v1/",
+        )
+        assert result["status"] == "success"
+        assert result["mock"] is True
+
+    @patch.dict(os.environ, {"MLOPS_ENV": "test"})
+    def test_sync_dataset_dvc_output_format(self):
+        from mcp_server.integrations.mlflow_adapter import DVCAdapter
+
+        adapter = DVCAdapter(remote_name="custom-remote")
+        result = adapter.sync_dataset_version(
+            dataset_name="data",
+            version="1.0.0",
+            s3_uri="s3://bucket/data/v1/",
+        )
+        assert "Importing" in result["dvc_output"]
+        assert result["remote_name"] == "custom-remote"
