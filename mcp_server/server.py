@@ -268,6 +268,26 @@ class MLOpsServer:
         except ImportError as e:
             logger.warning(f"Data Versioning Capability not available: {e}")
 
+        # Agent Prompt Management Capability
+        try:
+            from .capabilities.agent_prompt_management.capability import (
+                AgentPromptManagementCapability,
+            )
+
+            agent_prompt_mgmt = AgentPromptManagementCapability()
+            self.capabilities["agent_prompt_management"] = agent_prompt_mgmt
+
+            # ツールをグローバルツールリストに登録
+            for tool_name, tool_func in agent_prompt_mgmt.get_tools().items():
+                full_tool_name = f"agent_prompt_management.{tool_name}"
+                self.tools[full_tool_name] = tool_func
+                logger.info(f"Registered tool: {full_tool_name}")
+
+        except ImportError as e:
+            logger.warning(
+                f"Agent Prompt Management Capability not available: {e}"
+            )
+
         logger.info(f"Total {len(self.tools)} tools registered")
 
     def list_tools(self) -> List[Dict[str, Any]]:
